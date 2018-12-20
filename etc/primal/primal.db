@@ -1,0 +1,8 @@
+#Database information
+
+DBTYPE=mysql
+DBNAME=primal
+DBUSER=primal
+DBPASS=primal
+DBHOST=localhost
+DBPORT=3306

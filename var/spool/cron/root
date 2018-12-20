@@ -1,0 +1,2 @@
+1 * * * * /home/dicom/age.bash >> /var/log/age_dicom.log 2>&1
+*/5 * * * *  /home/dicom/bin/rec_check >> /dev/null 2>&1

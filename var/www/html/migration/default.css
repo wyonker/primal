@@ -1,0 +1,93 @@
+#logout {
+	position: absolute;
+	text-align: right;
+	margin: 10px 10px 10px 10px;
+	right: 0px;
+	width: 100px;
+	top: 0px;
+	z-index: 1;
+}
+
+#error {
+	color: #CC0C0C; /*Deep Red*/
+	font-style: italic;
+}
+
+th a {
+	color: #fff;
+	font-size: 12px;
+	text-decoration: none;
+}
+
+td a {
+	color: #000000;
+	font-size: 12px;
+	text-decoration: none;
+}
+
+a {
+	color: #000000;
+}
+
+a:active {
+	color: #E67B02;
+}
+
+h1 {
+	text-shadow: 4px 2px 2px rgba(150, 150, 150, 0.83)
+}
+
+td {
+	padding: 0px 4px 0px 4px;
+	border: #ffffff 1px solid;
+	vertical-align: middle;
+	white-space: nowrap;
+}
+
+/* Fix for table border left/right extra white*/
+
+th:first-child,
+td:first-child {
+	border-left: none;
+}
+th:last-child,
+td:last-child {
+	border-right: none;
+}
+
+th {
+	color: #ffffff;
+	text-align: center;
+	font-size: 12px;
+	text-shadow: -1px -1px 0 rgba(0,0,0,0.3);
+	background-color: #333;
+	padding-left: 2px;
+	padding-right: 2px;
+	border-top: none;
+
+}
+
+tr {
+	text-align: center;
+	background: #eee;
+	border-bottom: 1px solid #ffffff;
+	font-size: 12px;
+	background: #F5F1E4;
+}
+
+/*Change tr based on hover, needs to find another solution for compatibility*/
+table {
+	padding: 0;
+	border-spacing: 0;
+	margin-left:auto;
+	margin-right:auto;
+	border: #ffffff 0px solid;
+	border-collapse: collapse;
+}
+
+body {
+	background-color: #638067;
+	font-family: Verdana, "Helvetica", sans-serif;
+	font-size: 12px;
+}
+

@@ -1,0 +1,59 @@
+.colmask{
+   position: relative;
+   overflow: hidden;
+   margin: 0px auto;
+   width: 100%;
+   background-color: #FFFFFF
+}
+.header{
+   float: left;
+   width: 100%;
+   background-color: #FFFFFF
+}
+.colmid{
+   position: relative;
+   width: 100%;
+   right: 33%;
+   background-color: #FFFFFF
+}
+.colleft{
+   position: relative;
+   width: 100%;
+   right: 33%;
+   background-color: #FFFFFF
+}
+.col1{
+   position: relative;
+   overflow: hidden;
+   float: left;
+   width: 31%;
+   left: 101%;
+   background-color: #FFFFFF
+}
+.col2{
+   position: relative;
+   overflow: hidden;
+   float: left;
+   width: 32%;
+   left: 36%;
+   background-color: #FFFFFF
+}
+.col3{
+   position: relative;
+   overflow: hidden;
+   float: left;
+   width: 31%;
+   left: 71%;
+   background-color: #FFFFFF
+}
+.footer{
+   float: left;
+   width: 100%;
+   background-color: #FFFFFF
+}
+body {
+   padding: 0px;
+   margin: 0px;
+   font-size: 90%;
+   background-color: #FFFFFF
+}
