@@ -53,7 +53,7 @@ then
             then
                 SDATETIME=`date "+%Y-%m-%d %H:%M:%S"`
                 echo "`date` Processing failed for $DIRNAME.  Study moved to $PRIERROR/$DIRNAME."  >> $PRILOGDIR/$PRILFPROC
-                echo "update process set tendproc='`date +"%Y-%m-%d %H:%M:%S"`', perror='1' where process.puid='$DIRNAME';"|mysql primal;
+                echo "update process set tendproc='`date +"%Y-%m-%d %H:%M:%S"`', perror='1' where process.puid='$DIRNAME';"|$DBCONN
                 touch $PRIPROC/$DIRNAME/error.txt
 				exit 95
             fi

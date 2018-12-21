@@ -41,7 +41,7 @@ do
 		DIRNAME=`ls -1str $PRISENT|head -3|tail -1|tr -s " "|cut -d " " -f2`
 		if [ "$DIRNAME" != "" ] && [ "$DIRNAME" != " " ]
 		then
-			echo "update image set ilocation = NULL where puid = '$DIRNAME';"|mysql -u root primal
+			echo "update image set ilocation = NULL where puid = '$DIRNAME';"|$DBCONN
 			rm -fr $PRISENT/$DIRNAME
 		fi
 		FILLLEVEL=`df -h $PRISENT|tail -1|tr -s " "|cut -d " " -f5|cut -d "%" -f1`

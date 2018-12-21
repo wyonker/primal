@@ -184,7 +184,7 @@ do
 	echo "`date` PRIMAL: $DIRNAME : Found $NUMRESULTS results for patient $PNAME in archive ${PRIQRAEC[$INTLC1]}" >> $PRILOGDIR/$PRILFQR
 	for i in $RESTRICTEDLIST
 	do
-		CURSTUDY=`echo "select count(*) from study where SIUID='$i' and puid='$DIRNAME';"|mysql primal|tail -1`
+		CURSTUDY=`echo "select count(*) from study where SIUID='$i' and puid='$DIRNAME';"|$DBCONN|tail -1`
 		if [ $CURSTUDY -eq 0 ]
 		then
 			if [ $INTLC2 -lt $PRIQRMAX ]
@@ -197,7 +197,7 @@ do
 				/home/dcm4che/bin/movescu -b ${PRIQRDESTAEC[$INTLC1]}@${PRIQRDESTHIP[$INTLC1]}:${PRIQRDESTPORT[$INTLC1]} -c ${PRIQRAEC[$INTLC1]}@${PRIQRHIP[$INTLC1]}:${PRIQRPORT[$INTLC1]} -m StudyInstanceUID="$i" --dest ${PRIQRDESTAEC[$INTLC1]} &
 				sleep 1
 				DBDATE=`date +"%Y-%m-%d %H:%M:%S"`
-				echo "insert into QR set SIUID='$i', PatientPUID='$DIRNAME', QueryDate='$DBDATE', QueryHost='${PRIQRHIP[$INTLC1]}', QueryHostPort='${PRIQRPORT[$INTLC1]}';"|mysql -u root primal
+				echo "insert into QR set SIUID='$i', PatientPUID='$DIRNAME', QueryDate='$DBDATE', QueryHost='${PRIQRHIP[$INTLC1]}', QueryHostPort='${PRIQRPORT[$INTLC1]}';"|$DBCONN
 			fi
 			let INTLC2=$INTLC2+1
 			if [ $INTLC2 -gt $PRIQRMAX ] && [ $PRIQRMAX -ne 0 ]
@@ -219,16 +219,16 @@ then
 	do
 		let NUMQR=$INTLC2-1
 		
-		NUMRET=`echo "select count(*) from QR where PatientPUID='$DIRNAME' and RetrieveDate IS NULL;"|mysql -N -u root primal`
-		RESTRICTEDLIST2=`echo "select SIUID from QR where PatientPUID='$DIRNAME' and RetrieveDate IS NULL;"|mysql -N -u root primal|tr "\n" " "`
+		NUMRET=`echo "select count(*) from QR where PatientPUID='$DIRNAME' and RetrieveDate IS NULL;"|$DBCONNN`
+		RESTRICTEDLIST2=`echo "select SIUID from QR where PatientPUID='$DIRNAME' and RetrieveDate IS NULL;"|$DBCONNN|tr "\n" " "`
 		if [ $NUMRET -gt 0 ]
 		then
 			let INTDIFF=40-$INTLC1
 			INTTIMELEFT=`echo "$INTDIFF*15"|bc -l`
 			echo "`date` PRIMAL: $DIRNAME for patient $PNAME MRN $PAPID  Still waiting for studies $RESTRICTEDLIST2.  Waiting for 15 seconds (Time remaining: $INTTIMELEFT sec)..." >> $PRILOGDIR/$PRILFQR
 			sleep 15
-			NUMRET=`echo "select count(*) from QR where PatientPUID='$DIRNAME' and RetrieveDate IS NULL;"|mysql -N -u root primal`
-			RESTRICTEDLIST2=`echo "select SIUID from QR where PatientPUID='$DIRNAME' and RetrieveDate IS NULL;"|mysql -N -u root primal|tr "\n" " "`
+			NUMRET=`echo "select count(*) from QR where PatientPUID='$DIRNAME' and RetrieveDate IS NULL;"|$DBCONNN`
+			RESTRICTEDLIST2=`echo "select SIUID from QR where PatientPUID='$DIRNAME' and RetrieveDate IS NULL;"|$DBCONNN|tr "\n" " "`
 		else
 			ISDONE=1
 		fi

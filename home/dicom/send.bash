@@ -20,7 +20,7 @@ NUMFILES=`ls -1 $PRIOUT/$DIRNAME/*|wc -l`
 
 if [ $PRIPASSTU -gt 0 ]
 then
-	AET=`echo "select senderAET from receive where PUID = '$DIRNAME' limit 1;"|mysql -u root primal|tail -1`
+	AET=`echo "select senderAET from receive where PUID = '$DIRNAME' limit 1;"|$DBCONN|tail -1`
 	if [ "$AET" != "" ]
 	then
 		PRIAET=`echo "$AET"`
@@ -34,33 +34,33 @@ do
 	let NUMDEST=$NUMDEST+1
 done
 
-NUMCOMPLETE=`echo "select count(*) from send where puid = '$DIRNAME' and complete = '1'"|mysql -u root primal|tail -1`
+NUMCOMPLETE=`echo "select count(*) from send where puid = '$DIRNAME' and complete = '1'"|$DBCONN|tail -1`
 while [ $NUMCOMPLETE -lt $INTNUMREC ] && [ $LC -lt 3600 ]
 do
 	sleep 1
-	NUMCOMPLETE=`echo "select count(*) from send where puid = '$DIRNAME' and complete = '1'"|mysql -u root primal|tail -1`
+	NUMCOMPLETE=`echo "select count(*) from send where puid = '$DIRNAME' and complete = '1'"|$DBCONN|tail -1`
 	let LC=$LC+1
 done
 
 if [ $LC -lt 3600 ]
 then
-	ISERROR=`echo "select serror from send where puid = '$DIRNAME' group by serror;"|mysql -N -u root primal`
+	ISERROR=`echo "select serror from send where puid = '$DIRNAME' group by serror;"|$DBCONNN`
 	ISERROR=`echo "$ISERROR"|sort|tail -1|tr "\t" " "|cut -d " " -f1`
 	if [ $ISERROR -eq 1 ]
 	then
 		CURRDIR=$PRIERROR
 	else
 		#If this is a QR receiver, we need to update the QR table
-		INTQR=`echo "select count(*) from QR where SIUID='$SIUID' and puid='';"|mysql -N -u root primal`
+		INTQR=`echo "select count(*) from QR where SIUID='$SIUID' and puid='';"|$DBCONNN`
 		if [ $INTQR -gt 0 ]
 		then
-			TEMPPUID=`echo "select PatientPUID from QR where SIUID='$SIUID' and puid='' limit 1;"|mysql -N -u root primal`
+			TEMPPUID=`echo "select PatientPUID from QR where SIUID='$SIUID' and puid='' limit 1;"|$DBCONNN`
 			TEMPDATE=`date +"%Y-%m-%d %H:%M:%S"`
-			echo "update QR set puid='$DIRNAME', RetrieveDate='$TEMPDATE' where SIUID='$SIUID' and PatientPUID='$TEMPPUID';"|mysql -N -u root primal
+			echo "update QR set puid='$DIRNAME', RetrieveDate='$TEMPDATE' where SIUID='$SIUID' and PatientPUID='$TEMPPUID';"|$DBCONNN
 		fi
 		CURRDIR=$PRISENT
 	fi
-	echo "update image set ilocation = '$CURRDIR/$DIRNAME' where PUID = '$DIRNAME';"|mysql -u root primal
+	echo "update image set ilocation = '$CURRDIR/$DIRNAME' where PUID = '$DIRNAME';"|$DBCONN
 
 	if [ $ISERROR -eq 1 ]
     then
