@@ -64,6 +64,22 @@ else
 	sleep 1
 fi
 
+if [ ! -e "/etc/primal/primal.db" ]
+then
+    echo "Creating sample primal.db file"
+    cp etc/primal/primal.db /etc/primal/
+	ISNEW=2
+    if [ ! -e "/etc/primal/primal.db" ]
+    then
+        echo "ERROR:  Could not create /etc/primal/primal.db file.  Exiting."
+        exit 1
+    fi
+else
+    echo "Good, file exists too."
+	ISNEW=1
+	sleep 1
+fi
+
 if [ -e "/etc/primal/primal.version" ]
 then
 	rm -f /etc/primal/primal.version

@@ -1,12 +1,6 @@
 #!/bin/bash
 
-ISTHERE=`which dnf|grep -c "no dnf in"`
-if [ $ISTHERE -gt 0 ]
-then
-	THISPM="yum"
-else
-	THISPM="dnf"
-fi
+THISPM="yum"
 
 $THISPM install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 $THISPM install -y 
