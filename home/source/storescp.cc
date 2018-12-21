@@ -340,6 +340,8 @@ int ReadDBConfFile()
 				mainDB.DBUSER=strValue;
 			} else if (strKey.compare("DBPASS") == 0) {
 				mainDB.DBPASS=strValue;
+			} else if (strKey.compare("DBHOST") == 0) {
+				mainDB.DBHOST=strValue;
 			} else if (strKey.compare("DBPORT") == 0) {
 				mainDB.intDBPORT=atoi(strValue.c_str());
 			}
@@ -884,6 +886,8 @@ int main(int argc, char *argv[])
 		cout << "MySQL Initilization failed";
 		return 1;
 	}
+	ReadDBConfFile();
+	//mconnect=mysql_real_connect(mconnect, "localhost", "primal", "primal", "primal", 0,NULL,0);
 	mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
 	if (!mconnect)
     {

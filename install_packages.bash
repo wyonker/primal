@@ -3,7 +3,7 @@
 THISPM="yum"
 
 $THISPM install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-$THISPM install -y 
+
 $THISPM install -y install 
 $THISPM install -y dsniff.x86_64 
 $THISPM install -y iftop.x86_64 
