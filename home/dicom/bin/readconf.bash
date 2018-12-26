@@ -345,7 +345,7 @@ DBPASS=`cat /etc/primal/primal.db|grep DBPASS|cut -d "=" -f2-`
 DBHOST=`cat /etc/primal/primal.db|grep DBHOST|cut -d "=" -f2-`
 DBPORT=`cat /etc/primal/primal.db|grep DBPORT|cut -d "=" -f2-`
 
-DBCONN=`mysql -u $DBUSER -p"$DBPASS" -h $DBHOST -P $DBPORT $DBNAME`
-DBCONNN=`mysql -N -u $DBUSER -p"$DBPASS" -h $DBHOST -P $DBPORT $DBNAME`
+DBCONN=`echo "mysql -u $DBUSER -p"$DBPASS" -h $DBHOST -P $DBPORT $DBNAME"`
+DBCONNN=`echo "mysql -N -u $DBUSER -p"$DBPASS" -h $DBHOST -P $DBPORT $DBNAME"`
 
 

@@ -103,8 +103,6 @@ if (!isset($_GET["o"])) {
 	$intSortOrder = 1;
 }
 
-echo "Time Index before select count: " . xdebug_time_index() . "<br>";
-
 //$query="select a.puid, a.pname, a.pid, a.pdob, a.pmod, a.sdatetime, r.tstartrec, r.tendrec, r.rec_images, r.rerror, r.senderAET, p.tstartproc, p.tendproc, p.perror, s.tdest, s.tstartsend, s.tendsend, s.timages, s.serror, t.AccessionNum, t.StudyDate from patient as a left join receive as r on a.puid = r.puid left join process as p on a.puid = p.puid left join send as s on a.puid = s.puid left join study as t on a.puid = t.puid";
 $query="select count(*) as total from send;";
 $result = mysql_query($query);
@@ -136,8 +134,6 @@ if(!isset($_GET["c"]) || $_GET["c"] == 0) {
 	$sort_column = "r.tstartrec";
 }
 
-echo "Time Index before select: " . xdebug_time_index() . "<br>";
-
 if($_SERVER['REQUEST_METHOD'] == 'POST')
 {
 	$query=Check_Input($sort_column, $sort_order, $tempvar, $tempvar2);
@@ -161,8 +157,6 @@ if(!isset($_get['c']))
 //We need to limit the amount of RAM used by this array.  
 //First let's set the first study we want to store to be from the page prior to the one we want on the screen ( in case of overlap)
 //The maximum should be taken care of by the limit on the query
-
-echo "Time Index before sort: " . xdebug_time_index() . "<br>";
 
 while($row = mysql_fetch_assoc($result))
 {
@@ -234,7 +228,6 @@ while($row = mysql_fetch_assoc($result))
 }
 
 $count_rows=$lc1-1;
-echo "Sorted " . $count_rows . " rows of data.<br>";
 
 if ($_GET["c"] >= 1 && $_GET["c"] <= 8)
 {
@@ -260,8 +253,6 @@ if (isset($_GET["c"]))
 	$_GET["o"]=1;
 }
 */
-
-echo "Time Index before select from page_columns: " . xdebug_time_index() . "<br>";
 
 $lc21=0;
 $query="select * from page_columns;";

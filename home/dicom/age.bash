@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.00.00b14
-# Build 2
-# 2015-11-23
+# Version 3.02.02
+# Build 3
+# 2018-12-26
 # License GPLv3
 
 RECEIVERS=`cat /etc/primal/primal.conf|grep "<scp"|cut -c5-|cut -d ">" -f1|tr "\n" " "`
@@ -17,7 +17,12 @@ do
 
 	DIRFOUND=`find $PRISENT -name "$1_*" -type d -ctime +$PRIRET|wc -l`
 	echo "Receiver: $1   Number of directories found that are to be removed:  $DIRFOUND   Days of retentnion:  $PRIRET"
-	find $PRISENT -name "$1_*" -type d -ctime +$PRIRET -exec rm -fr {} \;
+	if [ "$PRIARCHTYPE0" == "S3" ] || [ "$PRIARCHTYPE0" == "disk" ]
+	then
+		find $PRISENT -name "$1_*" -type d -ctime +$PRIRET -exec /home/dicom/age2.bash {} \;
+	else
+		find $PRISENT -name "$1_*" -type d -ctime +$PRIRET -exec rm -fr {} \;
+	fi
 	DIRFOUND=`find $PRISENT -name "$1_*" -type d -ctime +$PRIRET|wc -l`
 	echo "Receiver: $1   Number of directories found after processing (should be zero):  $DIRFOUND   Days of retentnion:  $PRIRET"
 

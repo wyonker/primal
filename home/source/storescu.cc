@@ -640,6 +640,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	//mconnect=mysql_real_connect(mconnect, "localhost", "primal", "primal", "primal", 0,NULL,0);
+	std::cout << "mainDB.DBHOST = " << mainDB.DBHOST << " mainDB.DBUSER = " << mainDB.DBUSER << " mainDB.DBPASS = " << mainDB.DBPASS << " mainDB.DBNAME = " << mainDB.DBNAME << " mainDB.intDBPORT = " << mainDB.intDBPORT << "." << std::endl;
 	mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
 	if (!mconnect)
     {
