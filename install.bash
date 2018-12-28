@@ -405,8 +405,8 @@ echo "Modifying Firewalld"
 	firewall-cmd --permanent --zone=internal --add-port=2002/tcp
 
 echo "Yea well, firewalld must die anyway..."
-	systemctl disable firewalld.service rolekit
-	systemctl stop firewalld.service
+	systemctl disable firewalld
+	systemctl stop firewalld
 
 echo "Restarting Apache"
 	systemctl enable httpd.service

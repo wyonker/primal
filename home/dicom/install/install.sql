@@ -44,6 +44,7 @@ create table user	 (loginid varchar(36) not null primary key,
 					  access datetime);
 create table study   (SIUID varchar(68) not null,
                       puid varchar(24) not null,
+                      sServerName varchar(64) not null,
                       StudyDesc varchar(256),
 					  StudyNumImg int(8),
 					  AccessionNum varchar(32),

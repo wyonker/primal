@@ -305,6 +305,7 @@ struct DataBase {
 	int intDBPORT;
 } mainDB;
 
+std::string strHostname;
 
 int ReadDBConfFile()
 {
@@ -418,6 +419,12 @@ class ConfFile
 	        }
 	    }
 	    infile.close();
+
+		//Need the host name
+        char hostname[1024];
+        hostname[1023] = '\0';
+        gethostname(hostname, 1023);
+        strHostname=hostname;
 	};
 
 	int ConfFile::ValidateConf(void)
@@ -804,7 +811,7 @@ int ConfFile::WriteStudy(OFString strSIUID, OFString strStudyDesc) {
 			}
 	}
 	if(strNumResults == "0") {
-		strQuery = "insert into study (SIUID, puid, StudyDesc, StudyNumImg, AccessionNum, StudyDate) values ('" + string(strSIUID.c_str()) + "', '" + pData.strPUID + "', '" + string(strStudyDesc.c_str()) + "', '" + std::to_string(pData.intNumFiles) + "', '" + pData.strACCN + "', '" + string(pData.strStudyDate.c_str()) + "');";;
+		strQuery = "insert into study (SIUID, puid, sServerName, StudyDesc, StudyNumImg, AccessionNum, StudyDate) values ('" + string(strSIUID.c_str()) + "', '" + pData.strPUID + "', '" + strHostname + "', '" + string(strStudyDesc.c_str()) + "', '" + std::to_string(pData.intNumFiles) + "', '" + pData.strACCN + "', '" + string(pData.strStudyDate.c_str()) + "');";;
 		//OFLOG_DEBUG(storescpLogger, "WriteStudy strQuery = " << strQuery.c_str());
 		mysql_ping(mconnect);
 		mysql_query(mconnect, strQuery.c_str());

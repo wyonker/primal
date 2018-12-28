@@ -33,4 +33,4 @@ $THISPM install -y ilmbase
 $THISPM install -y libwmf-lite 
 $THISPM install -y java-1.8.0-openjdk.x86_64 java-1.8.0-openjdk-devel.x86_64 java-1.8.0-openjdk-headless.x86_64 
 $THISPM install -y vim-common.x86_64 vim-enhanced.x86_64 
-$THISPM install -y git.x86_64 awscli
+$THISPM install -y git.x86_64 awscli telnet
