@@ -164,7 +164,7 @@ while($row = mysql_fetch_assoc($result))
 	$intPOS=strpos($row["puid"], "_");
 	$strRecName=substr($row["puid"], 0, ($intPOS));
 	$strRecName .= " ";
-	if(strpos($_SESSION['rec_sec'], $strRecName) !== FALSE) {
+	if((strpos($_SESSION['rec_sec'], $strRecName) !== FALSE) || (strpos($_SESSION['rec_sec'], "ALL") !== FALSE)) {
 		$studies[$lc1]["tstartrec"] = $row["tstartrec"];
 		$studies[$lc1]["pname"] = $row["pname"];
 		$studies[$lc1]["pid"] = $row["pid"];
@@ -185,6 +185,7 @@ while($row = mysql_fetch_assoc($result))
 		$studies[$lc1]["serror"] = $row["serror"];
 		$studies[$lc1]["senderAET"] = $row["senderAET"];
 		$studies[$lc1]["pmod"] = $row["StudyModType"];
+		/*
 		if(is_null($row["StudyModType"])) {
 			$query4="select count(*) as total from study where puid = '" . $studies[$lc1]["puid"] . "';";
 			$result4=mysql_query($query4);
@@ -222,6 +223,7 @@ while($row = mysql_fetch_assoc($result))
 			$query3="update study set StudyModType ='" . $studies[$lc1]["pmod"] . "' where puid = '" . $studies[$lc1]["puid"] . "';";
 			$result3 = mysql_query($query3);
 		}
+		*/
 		$lc1++;
 	}
 	//$_SESSION["studies"] = $studies;

@@ -1,4 +1,6 @@
 #!/bin/bash
+#Version 2
+#2018-12-13
 
 CURDIR=`pwd`
 ISNEW=3
@@ -18,7 +20,7 @@ echo "SELinux must die!!!"
 
 echo "Installing any packages that are missing."
 	./install_packages.bash
-	dnf update -y
+	yum update -y
 	sleep 1
 
 echo "Installing pstreams library."
@@ -105,6 +107,8 @@ else
 	sleep 1
 fi
 chmod 755 /etc/rc.d/rc.local
+systemctl start rc-local
+systemctl enable rc-local
 
 ISINSTARTUP=`cat /etc/rc.d/rc.local|grep "/home/dicom/startup.bash start"|wc -l`
 if [ $ISINSTARTUP -lt 1 ]
@@ -221,17 +225,33 @@ echo "Installing web componet"
 	chown apache.apache -R /var/www/html/*
 	chmod 777 -R /var/www/html/*
 
+rm -f home/build/dcmnet/apps/storescp
+rm -f home/build/dcmnet/apps/storescu
+
 echo "Compiling executables for this platform."
 cd home/build; ./build.bash
 cd $CURDIR
 
-echo "Please check if there are errors at the end for storescu.o or storescp.o. Type 'yes' to continue"
-	read USER_INPUT
-	USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
-	while [ "$USER_INPUT" != "yes" ]
-	do
-		USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
-	done
+#echo "Please check if there are errors at the end for storescu.o or storescp.o. Type 'yes' to continue"
+#	read USER_INPUT
+#	USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
+#	while [ "$USER_INPUT" != "yes" ]
+#	do
+#		USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
+#	done
+
+if [ ! -e home/build/dcmnet/apps/storescp ]
+then
+	echo "Error:  storescp did not build properly.  Please run home/build/build.bash manually for more information."
+	exit 1
+fi
+
+
+if [ ! -e home/build/dcmnet/apps/storescu ]
+then
+	echo "Error:  storescu did not build properly.  Please run home/build/build.bash manually for more information."
+	exit 1
+fi
 
 ISRUNNING=`ps -ef|grep scp.bash|wc -l`
 if [ $ISRUNNING -gt 0 ]
