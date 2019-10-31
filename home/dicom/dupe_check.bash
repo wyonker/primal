@@ -21,7 +21,7 @@ do
 	SOPIUID=`echo "$IMAGEDUMP"|grep "(0008,0018)"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 	SIUID=`echo "$IMAGEDUMP"|grep "(0020,000d)"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 	SERIUID=`echo "$IMAGEDUMP"|grep "(0020,000e)"|head -1|cut -d "[" -f2|cut -d "]" -f1`
-	ISFOUND=`echo "select count(*) from image as i left join series as s on i.SERIUID = s.SERIUID where i.puid != '$DIRNAME' and s.SIUID = '$SIUID' and i.SOPIUID = '$SOPIUID';"|mysql primal|tail -1`
+	ISFOUND=`echo "select count(*) from image as i left join series as s on i.SERIUID = s.SERIUID where i.puid != '$DIRNAME' and s.SIUID = '$SIUID' and i.SOPIUID = '$SOPIUID';"|$DBCONN|tail -1`
 	if [ $ISFOUND -eq 0 ]
 	then
 		ISDUPE=0
@@ -31,7 +31,7 @@ done
 if [ $ISDUPE -eq 1 ]
 then
 	#If we still think this is a duplicate, Let's check tehs status of the study to make sure there was no error.
-	STATUS=`echo "select status from patient where puid = '$DIRNAME';"|mysql -u root primal|tail -1`
+	STATUS=`echo "select status from patient where puid = '$DIRNAME';"|$DBCONN|tail -1`
 	if [ "$STATUS" == "ERR" ]
 	then
 		#There was an error so this never got sent.  Can't be a duplicate then

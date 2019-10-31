@@ -1,4 +1,6 @@
 #!/bin/bash
+#Version 2
+#2018-12-13
 
 CURDIR=`pwd`
 ISNEW=3
@@ -18,7 +20,7 @@ echo "SELinux must die!!!"
 
 echo "Installing any packages that are missing."
 	./install_packages.bash
-	dnf update -y
+	yum update -y
 	sleep 1
 
 echo "Installing pstreams library."
@@ -64,6 +66,22 @@ else
 	sleep 1
 fi
 
+if [ ! -e "/etc/primal/primal.db" ]
+then
+    echo "Creating sample primal.db file"
+    cp etc/primal/primal.db /etc/primal/
+	ISNEW=2
+    if [ ! -e "/etc/primal/primal.db" ]
+    then
+        echo "ERROR:  Could not create /etc/primal/primal.db file.  Exiting."
+        exit 1
+    fi
+else
+    echo "Good, file exists too."
+	ISNEW=1
+	sleep 1
+fi
+
 if [ -e "/etc/primal/primal.version" ]
 then
 	rm -f /etc/primal/primal.version
@@ -89,14 +107,16 @@ else
 	sleep 1
 fi
 chmod 755 /etc/rc.d/rc.local
+systemctl start rc-local
+systemctl enable rc-local
 
 ISINSTARTUP=`cat /etc/rc.d/rc.local|grep "/home/dicom/startup.bash start"|wc -l`
 if [ $ISINSTARTUP -lt 1 ]
 then
 	echo "Inserting PRIMAL startup script..."
 	echo "sleep 60" >> /etc/rc.d/rc.local
-	echo "/home/dicom/startup.bash start" >> /etc/rc.d/rc.local
-	ISINSTARTUP=`cat /etc/rc.d/rc.local|grep "/home/dicom/startup.bash start"|wc -l`
+	echo "/home/dicom/startup.bash start ALL" >> /etc/rc.d/rc.local
+	ISINSTARTUP=`cat /etc/rc.d/rc.local|grep "/home/dicom/startup.bash start ALL"|wc -l`
 	if [ $ISINSTARTUP -gt 0 ]
 	then
 		echo "Added to rc.local file."
@@ -186,6 +206,13 @@ echo "Copying PRIMAL software to /home"
 	cp -pr home/dicom/share/* /home/dicom/share/
 	chown apache.apache -R /home/dicom
 	chmod 777 -R /home/dicom
+	mkdir /home/dicom/logs
+	mkdir /home/dicom/inbound
+	mkdir /home/dicom/processing
+	mkdir /home/dicom/outbound
+	mkdir /home/dicom/sent
+	mkdir /home/dicom/hold
+	mkdir /home/dicom/error
 
 echo "Copying dcm4che to /home"
 	if [ ! -e "/home/dcm4che" ]
@@ -205,17 +232,33 @@ echo "Installing web componet"
 	chown apache.apache -R /var/www/html/*
 	chmod 777 -R /var/www/html/*
 
+rm -f home/build/dcmnet/apps/storescp
+rm -f home/build/dcmnet/apps/storescu
+
 echo "Compiling executables for this platform."
 cd home/build; ./build.bash
 cd $CURDIR
 
-echo "Please check if there are errors at the end for storescu.o or storescp.o. Type 'yes' to continue"
-	read USER_INPUT
-	USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
-	while [ "$USER_INPUT" != "yes" ]
-	do
-		USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
-	done
+#echo "Please check if there are errors at the end for storescu.o or storescp.o. Type 'yes' to continue"
+#	read USER_INPUT
+#	USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
+#	while [ "$USER_INPUT" != "yes" ]
+#	do
+#		USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
+#	done
+
+if [ ! -e home/build/dcmnet/apps/storescp ]
+then
+	echo "Error:  storescp did not build properly.  Please run home/build/build.bash manually for more information."
+	exit 1
+fi
+
+
+if [ ! -e home/build/dcmnet/apps/storescu ]
+then
+	echo "Error:  storescu did not build properly.  Please run home/build/build.bash manually for more information."
+	exit 1
+fi
 
 ISRUNNING=`ps -ef|grep scp.bash|wc -l`
 if [ $ISRUNNING -gt 0 ]
@@ -389,8 +432,8 @@ echo "Modifying Firewalld"
 	firewall-cmd --permanent --zone=internal --add-port=2002/tcp
 
 echo "Yea well, firewalld must die anyway..."
-	systemctl disable firewalld.service rolekit
-	systemctl stop firewalld.service
+	systemctl disable firewalld
+	systemctl stop firewalld
 
 echo "Restarting Apache"
 	systemctl enable httpd.service

@@ -103,8 +103,6 @@ if (!isset($_GET["o"])) {
 	$intSortOrder = 1;
 }
 
-echo "Time Index before select count: " . xdebug_time_index() . "<br>";
-
 //$query="select a.puid, a.pname, a.pid, a.pdob, a.pmod, a.sdatetime, r.tstartrec, r.tendrec, r.rec_images, r.rerror, r.senderAET, p.tstartproc, p.tendproc, p.perror, s.tdest, s.tstartsend, s.tendsend, s.timages, s.serror, t.AccessionNum, t.StudyDate from patient as a left join receive as r on a.puid = r.puid left join process as p on a.puid = p.puid left join send as s on a.puid = s.puid left join study as t on a.puid = t.puid";
 $query="select count(*) as total from send;";
 $result = mysql_query($query);
@@ -136,8 +134,6 @@ if(!isset($_GET["c"]) || $_GET["c"] == 0) {
 	$sort_column = "r.tstartrec";
 }
 
-echo "Time Index before select: " . xdebug_time_index() . "<br>";
-
 if($_SERVER['REQUEST_METHOD'] == 'POST')
 {
 	$query=Check_Input($sort_column, $sort_order, $tempvar, $tempvar2);
@@ -162,15 +158,13 @@ if(!isset($_get['c']))
 //First let's set the first study we want to store to be from the page prior to the one we want on the screen ( in case of overlap)
 //The maximum should be taken care of by the limit on the query
 
-echo "Time Index before sort: " . xdebug_time_index() . "<br>";
-
 while($row = mysql_fetch_assoc($result))
 {
 	//Per receiver security
 	$intPOS=strpos($row["puid"], "_");
 	$strRecName=substr($row["puid"], 0, ($intPOS));
 	$strRecName .= " ";
-	if(strpos($_SESSION['rec_sec'], $strRecName) !== FALSE) {
+	if((strpos($_SESSION['rec_sec'], $strRecName) !== FALSE) || (strpos($_SESSION['rec_sec'], "ALL") !== FALSE)) {
 		$studies[$lc1]["tstartrec"] = $row["tstartrec"];
 		$studies[$lc1]["pname"] = $row["pname"];
 		$studies[$lc1]["pid"] = $row["pid"];
@@ -191,6 +185,7 @@ while($row = mysql_fetch_assoc($result))
 		$studies[$lc1]["serror"] = $row["serror"];
 		$studies[$lc1]["senderAET"] = $row["senderAET"];
 		$studies[$lc1]["pmod"] = $row["StudyModType"];
+		/*
 		if(is_null($row["StudyModType"])) {
 			$query4="select count(*) as total from study where puid = '" . $studies[$lc1]["puid"] . "';";
 			$result4=mysql_query($query4);
@@ -228,13 +223,13 @@ while($row = mysql_fetch_assoc($result))
 			$query3="update study set StudyModType ='" . $studies[$lc1]["pmod"] . "' where puid = '" . $studies[$lc1]["puid"] . "';";
 			$result3 = mysql_query($query3);
 		}
+		*/
 		$lc1++;
 	}
 	//$_SESSION["studies"] = $studies;
 }
 
 $count_rows=$lc1-1;
-echo "Sorted " . $count_rows . " rows of data.<br>";
 
 if ($_GET["c"] >= 1 && $_GET["c"] <= 8)
 {
@@ -260,8 +255,6 @@ if (isset($_GET["c"]))
 	$_GET["o"]=1;
 }
 */
-
-echo "Time Index before select from page_columns: " . xdebug_time_index() . "<br>";
 
 $lc21=0;
 $query="select * from page_columns;";

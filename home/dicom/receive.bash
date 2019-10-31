@@ -26,7 +26,7 @@ SIUID=`echo "$SERIESINFO"|grep "(0020,000d)"|head -1|cut -d "[" -f2|cut -d "]" -
 NUMFILES=`ls -1 $PRIPROC/$DIRNAME/*|wc -l`
 SDATETIME=`date "+%Y-%m-%d %H:%M:%S"`
 echo "`date` Started processing study for Patient: $PNAME MRN: $PAPID with $NUMFILES images." >> $PRILOGDIR/$PRILFPROC
-echo "insert into process (puid, tstartproc) values ('$DIRNAME', '`date +"%Y-%m-%d %H:%M:%S"`');"|mysql primal
+echo "insert into process (puid, tstartproc) values ('$DIRNAME', '`date +"%Y-%m-%d %H:%M:%S"`');"|$DBCONN
 echo "insert into event (event_id, SIUID, event_type, num_img, event_uname, ts) values (now(), '$SIUID', 'mod_start', $NUMFILES, '`hostname -a`', '$SDATETIME');"|cqlsh -k test;
 
 #Need to process any custom scripting for tags here.  
@@ -54,7 +54,7 @@ then
 			then
 				SDATETIME=`date "+%Y-%m-%d %H:%M:%S"`
 				echo "`date` Processing failed for $DIRNAME.  Study moved to $PRIERROR/$DIRNAME."  >> $PRILOGDIR/$PRILFPROC
-				echo "update process set tendproc='`date +"%Y-%m-%d %H:%M:%S"`', perror='1' where process.puid='$DIRNAME';"|mysql primal;
+				echo "update process set tendproc='`date +"%Y-%m-%d %H:%M:%S"`', perror='1' where process.puid='$DIRNAME';"|$DBCONN
 				echo "insert into event (event_id, SIUID, event_type, num_img, event_uname, ts) values (now(), '$SIUID', 'mod_finished', $NUMFILES, '`hostname -a`', '$SDATETIME');"|cqlsh -k test;
 				INTISERROR=1
 			fi
@@ -102,7 +102,7 @@ then
 	mv $PRIPROC/$DIRNAME $PRIERROR >> $PRILOGDIR/$PRILFPROC
 	SDATETIME=`date "+%Y-%m-%d %H:%M:%S"`
 	echo "`date` Processing failed for $DIRNAME.  Study moved to $PRIERROR/$DIRNAME."  >> $PRILOGDIR/$PRILFPROC
-	echo "update process set tendproc='`date +"%Y-%m-%d %H:%M:%S"`', perror='1' where process.puid='$DIRNAME';"|mysql primal;
+	echo "update process set tendproc='`date +"%Y-%m-%d %H:%M:%S"`', perror='1' where process.puid='$DIRNAME';"|$DBCONN
 	echo "insert into event (event_id, SIUID, event_type, num_img, event_uname, src_dest, ts) values (now(), '$SIUID', 'mod_error', $NUMFILES, '`hostname -a`', 'Processing failed', '$SDATETIME');"|cqlsh -k test;
 	INTISERROR=1
 else
@@ -119,7 +119,7 @@ echo "`date` Finished processing study for Patient: $PNAME MRN: $PAPID with $NUM
 if [ "$INTISERROR" != "1" ]
 then
 	SDATETIME=`date "+%Y-%m-%d %H:%M:%S"`
-	echo "update process set tendproc='`date +"%Y-%m-%d %H:%M:%S"`', perror='0' where process.puid='$DIRNAME';"|mysql primal;
+	echo "update process set tendproc='`date +"%Y-%m-%d %H:%M:%S"`', perror='0' where process.puid='$DIRNAME';"|$DBCONN
 	echo "insert into event (event_id, SIUID, event_type, num_img, event_uname, ts) values (now(), '$SIUID', 'mod_finished', $NUMFILES, '`hostname -a`', '$SDATETIME');"|cqlsh -k test;
 fi
 

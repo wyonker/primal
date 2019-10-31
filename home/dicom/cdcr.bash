@@ -23,19 +23,19 @@ do
 	SOPIUID=`echo "$IMAGEDUMP"|grep "(0008,0018)"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 	SIUID=`echo "$IMAGEDUMP"|grep "(0020,000d)"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 	SERIUID=`echo "$IMAGEDUMP"|grep "(0020,000e)"|head -1|cut -d "[" -f2|cut -d "]" -f1`
-	ISFOUND=`echo "select count(*) from image as i left join series as s on s.SERIUID = i.SERIUID where s.SIUID = '$SIUID' and i.SOPIUID = '$SOPIUID' and i.PUID = '$DIRNAME';"|mysql primal|tail -1`
+	ISFOUND=`echo "select count(*) from image as i left join series as s on s.SERIUID = i.SERIUID where s.SIUID = '$SIUID' and i.SOPIUID = '$SOPIUID' and i.PUID = '$DIRNAME';"|$DBCONN|tail -1`
 	if [ $ISFOUND -lt 1 ]
 	then
-		echo "insert into image (puid, SERIUID, SOPIUID, ifilename, TransferSyntaxUID) values ('$DIRNAME', '$SERIUID', '$SOPIUID', '$i', '$TRANSSYN');"|mysql -u root primal;
+		echo "insert into image (puid, SERIUID, SOPIUID, ifilename, TransferSyntaxUID) values ('$DIRNAME', '$SERIUID', '$SOPIUID', '$i', '$TRANSSYN');"|$DBCONN;
 	else
-		echo "update image set TransferSyntaxUID = '$TRANSSYN' where SOPIUID = '$SOPIUID' and PUID = '$DIRNAME';"|mysql -u root primal
+		echo "update image set TransferSyntaxUID = '$TRANSSYN' where SOPIUID = '$SOPIUID' and PUID = '$DIRNAME';"|$DBCONN
 	fi
 done
 
 if [ $PRICDCR -eq 1 ] || [ $PRICDCR -eq 3 ]
 then
 	#We need to compress this study.  Let's see if it is compressed already.
-	TSUID=`echo "select TransferSyntaxUID from image as i left join series as s on s.SERIUID = i.SERIUID where s.SIUID = '$SIUID' and i.PUID = '$DIRNAME' limit 1;"|mysql -u root primal|tail -1`
+	TSUID=`echo "select TransferSyntaxUID from image as i left join series as s on s.SERIUID = i.SERIUID where s.SIUID = '$SIUID' and i.PUID = '$DIRNAME' limit 1;"|$DBCONN|tail -1`
 	ISFOUND=`echo "$TSUID"|awk -F "JPEG" '{print NF-1}'`
 	ISFOUND2=`echo "$TSUID"|awk -F "MPEG" '{print NF-1}'`
 	if [ $ISFOUND -gt 0 ] || [ $ISFOUND2 -gt 0 ]
@@ -76,7 +76,7 @@ fi
 if [ $PRICDCR -eq 2 ] || [ $PRICDCR -eq 3 ]
 then
 	#We need to uncompress this study.  Let's see if it's compressed already.
-	TSUID=`echo "select TransferSyntaxUID from image as i left join series as s on s.SERIUID = i.SERIUID where s.SIUID = '$SIUID' and i.PUID = '$DIRNAME' limit 1;"|mysql -u root primal|tail -1`
+	TSUID=`echo "select TransferSyntaxUID from image as i left join series as s on s.SERIUID = i.SERIUID where s.SIUID = '$SIUID' and i.PUID = '$DIRNAME' limit 1;"|$DBCONN|tail -1`
 	ISFOUND=`echo "$TSUID"|awk -F "Lossless" '{print NF-1}'`
 	if [ $ISFOUND -lt 1 ]
 	then

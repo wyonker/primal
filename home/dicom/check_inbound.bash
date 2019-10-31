@@ -21,7 +21,7 @@ do
 		for i in $LISTOFDIR
 		do
 			#First check to see if the study is in the database
-			ISINDB=`echo "select count(*) from receive where PUID='$i';"|mysql -N -u root primal`
+			ISINDB=`echo "select count(*) from receive where PUID='$i';"|$DBCONN`
 			TEMPDATE=`ls --full-time $PRIIF|grep $i|tr "\t" " "|tr -s " "|cut -d " " -f6-7|cut -d "." -f1`
 			TIMELASTCHANGED=`date -d "$TEMPDATE" +%s`
 			let MAXAGE=$PRIRECTO*7
@@ -95,10 +95,10 @@ do
 					ENDRECDATE=`date "+%Y-%m-%d %H:%M:%S"`
 					if [ $ISINDB -lt 1 ]
 					then
-						echo "insert into patient set puid='$i', pname='$PNAME', pid='$PAPID', paccn='0', pdob='$PDOB', PatientComments='$PCOMM';"|mysql -N -u root primal
-						echo "insert into receive set puid='$i', rservername='`hostname`', tstartrec='$STARTRECDATE', tendrec='$ENDRECDATE', rec_images='$NUMFILES'"|mysql -N -u root primal
+						echo "insert into patient set puid='$i', pname='$PNAME', pid='$PAPID', paccn='0', pdob='$PDOB', PatientComments='$PCOMM';"|$DBCONNN
+						echo "insert into receive set puid='$i', rservername='`hostname`', tstartrec='$STARTRECDATE', tendrec='$ENDRECDATE', rec_images='$NUMFILES'"|$DBCONNN
 					else
-						echo "update receive set tendrec='$ENDRECDATE' where puid='$i' and rservername='`hostname`';"|mysql -N -u root primal
+						echo "update receive set tendrec='$ENDRECDATE' where puid='$i' and rservername='`hostname`';"|$DBCONNN
 					fi
 					echo "Check_Inbound  PUID $i was orpahned.  Moving to processing..." >> $PRILOGDIR/$PRILFIN
 					mv $PRIIF/$i $PRIPROC/

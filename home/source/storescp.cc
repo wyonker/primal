@@ -300,6 +300,57 @@ struct PatientData {
 	std::size_t intMoved=0, intLastMoved=0;
 } pData;
 
+struct DataBase {
+	std::string DBTYPE, DBNAME, DBUSER, DBPASS, DBHOST;
+	int intDBPORT;
+} mainDB;
+
+std::string strHostname;
+
+int ReadDBConfFile()
+{
+	std::string strLine, strKey, strValue;
+	std::size_t intPOS, intStartPOS, intStartConf=0, intEndConf=0;
+	std::ifstream infile("/etc/primal/primal.db", std::ifstream::in);
+
+	while(!infile.eof() && intEndConf != 1)
+	{
+		getline(infile,strLine); // Saves the line in STRING.
+		intPOS=strLine.find("=");
+		if(intPOS!=std::string::npos) {
+			strKey=strLine.substr(0,intPOS);
+			strValue=strLine.substr(intPOS+1);
+			//Remove leading space and tabs
+			intStartPOS = strKey.find_first_not_of(" \t");
+			if( string::npos != intStartPOS )
+				strKey = strKey.substr( intStartPOS );
+			intStartPOS = strKey.find_last_not_of(" \t");
+			if( string::npos != intStartPOS )
+				strKey = strKey.substr(0, intStartPOS + 1 );
+			intStartPOS = strValue.find_first_not_of(" \t");
+			if( string::npos != intStartPOS )
+				strValue = strValue.substr( intStartPOS );
+			intStartPOS = strValue.find_last_not_of(" \t");
+			if( string::npos != intStartPOS )
+				strValue = strValue.substr(0, intStartPOS + 1 );
+			if (strKey.compare("DBTYPE") == 0) {
+				mainDB.DBTYPE=strValue;
+			} else if (strKey.compare("DBNAME") == 0) {
+				mainDB.DBNAME=strValue;
+			} else if (strKey.compare("DBUSER") == 0) {
+				mainDB.DBUSER=strValue;
+			} else if (strKey.compare("DBPASS") == 0) {
+				mainDB.DBPASS=strValue;
+			} else if (strKey.compare("DBHOST") == 0) {
+				mainDB.DBHOST=strValue;
+			} else if (strKey.compare("DBPORT") == 0) {
+				mainDB.intDBPORT=atoi(strValue.c_str());
+			}
+		}
+	}
+	infile.close();
+};
+
 std::list<std::string> lstStudies;
 
 class ConfFile
@@ -368,6 +419,12 @@ class ConfFile
 	        }
 	    }
 	    infile.close();
+
+		//Need the host name
+        char hostname[1024];
+        hostname[1023] = '\0';
+        gethostname(hostname, 1023);
+        strHostname=hostname;
 	};
 
 	int ConfFile::ValidateConf(void)
@@ -754,7 +811,7 @@ int ConfFile::WriteStudy(OFString strSIUID, OFString strStudyDesc) {
 			}
 	}
 	if(strNumResults == "0") {
-		strQuery = "insert into study (SIUID, puid, StudyDesc, StudyNumImg, AccessionNum, StudyDate) values ('" + string(strSIUID.c_str()) + "', '" + pData.strPUID + "', '" + string(strStudyDesc.c_str()) + "', '" + std::to_string(pData.intNumFiles) + "', '" + pData.strACCN + "', '" + string(pData.strStudyDate.c_str()) + "');";;
+		strQuery = "insert into study (SIUID, puid, sServerName, StudyDesc, StudyNumImg, AccessionNum, StudyDate) values ('" + string(strSIUID.c_str()) + "', '" + pData.strPUID + "', '" + strHostname + "', '" + string(strStudyDesc.c_str()) + "', '" + std::to_string(pData.intNumFiles) + "', '" + pData.strACCN + "', '" + string(pData.strStudyDate.c_str()) + "');";;
 		//OFLOG_DEBUG(storescpLogger, "WriteStudy strQuery = " << strQuery.c_str());
 		mysql_ping(mconnect);
 		mysql_query(mconnect, strQuery.c_str());
@@ -836,7 +893,9 @@ int main(int argc, char *argv[])
 		cout << "MySQL Initilization failed";
 		return 1;
 	}
-	mconnect=mysql_real_connect(mconnect, "localhost", "primal", "primal", "primal", 0,NULL,0);
+	ReadDBConfFile();
+	//mconnect=mysql_real_connect(mconnect, "localhost", "primal", "primal", "primal", 0,NULL,0);
+	mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
 	if (!mconnect)
     {
         cout<<"connection failed\n";
