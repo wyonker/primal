@@ -1,0 +1,1 @@
+(0010,0010) PN [BARINGER^DEBORAH^A^]           # PatientName

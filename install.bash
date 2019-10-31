@@ -115,8 +115,8 @@ if [ $ISINSTARTUP -lt 1 ]
 then
 	echo "Inserting PRIMAL startup script..."
 	echo "sleep 60" >> /etc/rc.d/rc.local
-	echo "/home/dicom/startup.bash start" >> /etc/rc.d/rc.local
-	ISINSTARTUP=`cat /etc/rc.d/rc.local|grep "/home/dicom/startup.bash start"|wc -l`
+	echo "/home/dicom/startup.bash start ALL" >> /etc/rc.d/rc.local
+	ISINSTARTUP=`cat /etc/rc.d/rc.local|grep "/home/dicom/startup.bash start ALL"|wc -l`
 	if [ $ISINSTARTUP -gt 0 ]
 	then
 		echo "Added to rc.local file."
@@ -206,6 +206,13 @@ echo "Copying PRIMAL software to /home"
 	cp -pr home/dicom/share/* /home/dicom/share/
 	chown apache.apache -R /home/dicom
 	chmod 777 -R /home/dicom
+	mkdir /home/dicom/logs
+	mkdir /home/dicom/inbound
+	mkdir /home/dicom/processing
+	mkdir /home/dicom/outbound
+	mkdir /home/dicom/sent
+	mkdir /home/dicom/hold
+	mkdir /home/dicom/error
 
 echo "Copying dcm4che to /home"
 	if [ ! -e "/home/dcm4che" ]
