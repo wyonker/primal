@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.00.00b24
-# Build 1
-# 2016-02-02
+# Version 3.10.04b02
+# Build 2
+# 2019-11-07
 # License GPLv3
 
 TEMPVAR=`echo $2|tr "/" "\n"|wc -l`
@@ -21,11 +21,11 @@ then
 fi
 
 NUMDEST=$3
-if [ ${PRIDESTCDCR[$NUMDEST]} -eq 1 ]
+if [ $PRICDCR -eq 1 ]
 then
 	#Need to send the compressed study
 	FILEEXT=`echo "*.j2k"`
-elif [ ${PRIDESTCDCR[$NUMDEST]} -eq 2 ]
+elif [ $PRICDCR -eq 2 ]
 then
 	#Need to send the uncompressed study
 	FILEEXT=`echo "*.ucr"`
@@ -33,6 +33,15 @@ else
 	#Just send the study as we received it
 	FILEEXT=`echo "*.dcm"`
 fi
+#Are we supposed to just dump this?
+if [ "${PRIDESTHIP[$NUMDEST]}" == "0.0.0.0" ]
+then
+	#Let's just update the DB and return
+	NUMIMGS=`ls -Al $2|wc -l`
+	echo "update send set tendsend='`date "+%Y-%m-%d %H:%M:%S"`', serror='0', timages='$NUMIMGS', complete = '1' where send.puid='$1' and tdest='$3';"|$DBCONNN
+	exit 0
+fi
+
 #Before we start sending, we need to see if there is a queue
 QUEUELENGTH=`echo "select count(*) from ticket where destination = '${PRIDESTAEC[$NUMDEST]}' order by ticket_num;"|$DBCONNN`
 NUMSENDS=`ps -ef|grep primalscu|grep -e "-aec ${PRIDESTAEC[$NUMDEST]}"|wc -l`
