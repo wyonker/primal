@@ -164,6 +164,12 @@ while($row = mysql_fetch_assoc($result))
 	$intPOS=strpos($row["puid"], "_");
 	$strRecName=substr($row["puid"], 0, ($intPOS));
 	$strRecName .= " ";
+    //Need to get the modality.
+	$query10="select Modality from series where puid = '" . $row["puid"] . "' group by Modality";
+	$result10 = mysql_query($query);
+	while($row2 =  mysql_fetch_assoc($result10)) {
+		$temppmod += $row["Modality"];
+	}
 	if((strpos($_SESSION['rec_sec'], $strRecName) !== FALSE) || (strpos($_SESSION['rec_sec'], "ALL") !== FALSE)) {
 		$studies[$lc1]["tstartrec"] = $row["tstartrec"];
 		$studies[$lc1]["pname"] = $row["pname"];
@@ -184,7 +190,8 @@ while($row = mysql_fetch_assoc($result))
 		$studies[$lc1]["perror"] = $row["perror"];
 		$studies[$lc1]["serror"] = $row["serror"];
 		$studies[$lc1]["senderAET"] = $row["senderAET"];
-		$studies[$lc1]["pmod"] = $row["StudyModType"];
+		//$studies[$lc1]["pmod"] = $row["StudyModType"];
+		$studies[$lc1]["pmod"] = $temppmod;
 		/*
 		if(is_null($row["StudyModType"])) {
 			$query4="select count(*) as total from study where puid = '" . $studies[$lc1]["puid"] . "';";
