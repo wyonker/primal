@@ -34,11 +34,13 @@ else
 	FILEEXT=`echo "*.dcm"`
 fi
 #Are we supposed to just dump this?
-if [ "${PRIDESTHIP[$NUMDEST]}" == "0.0.0.0" ]
+if [ "${PRIDESTHIP[$NUMDEST]}" = "0.0.0.0" ]
 then
 	#Let's just update the DB and return
-	NUMIMGS=`ls -Al $2|wc -l`
-	echo "update send set tendsend='`date "+%Y-%m-%d %H:%M:%S"`', serror='0', timages='$NUMIMGS', complete = '1' where send.puid='$1' and tdest='$3';"|$DBCONNN
+	NUMIMGS=`ls -1 $2|wc -l`
+	THISPUID=`echo "$2"|rev|cut -d "/" -f1|rev`
+	echo "insert into send (puid, sservername, tdest, tstartsend, tendsend, timages, serror, complete) values ('$THISPUID', '`hostname -s`', '$3', '`date "+%Y-%m-%d %H:%M:%S"`', '`date "+%Y-%m-%d %H:%M:%S"`','$NUMIMGS', 0, 1);"|$DBCONNN
+	#echo "update send set tendsend='`date "+%Y-%m-%d %H:%M:%S"`', serror='0', timages='$NUMIMGS', complete = '1' where send.puid='$THISPUID' and tdest='$3';"|$DBCONNN
 	exit 0
 fi
 
