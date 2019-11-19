@@ -195,9 +195,16 @@ while($row = mysql_fetch_assoc($result))
 	$strRecName .= " ";
     //Need to get the modality.
 	$query10="select Modality from series where puid = '" . $row["puid"] . "' group by Modality";
-	$result10 = mysql_query($query);
+	$result10 = mysql_query($query10);
+	unset($temppmod);
+	$intLC10=0;
 	while($row2 =  mysql_fetch_assoc($result10)) {
-		$temppmod += $row["Modality"];
+		$intLC10++;
+		if ($intLC10 > 1) {
+			$temppmod .= " " . $row2["Modality"];
+		} else {
+			$temppmod .= $row2["Modality"];
+		}
 	}
 	if((strpos($_SESSION['rec_sec'], $strRecName) !== FALSE) || (strpos($_SESSION['rec_sec'], "ALL") !== FALSE)) {
 		$studies[$lc1]["tstartrec"] = $row["tstartrec"];
