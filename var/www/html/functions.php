@@ -32,6 +32,21 @@ function Display_Header2()
 	}
 }
 
+function Display_Servers() {
+	echo '<div class="form-popup" id="myForm">';
+	echo '<form action="index.php" class="form-container">';
+    echo '<h1>Select Servers to View</h1>';
+	echo '<select name="Servers" multiple>';
+	foreach($_SESSION['SERVERS'] AS $strServerName=>$intServerList) {
+	  echo '<option value="' . $strServerName . '">' . $strServerName  . '</option>';
+	}
+	echo '</select>';
+    echo '<button type="submit" class="btn">OK</button>';
+    echo '<button type="button" class="btn cancel" onclick="closeForm()">Close</button>';
+  	echo '</form>';
+	echo '</div>';
+}
+
 function Display_Footer()
 {
 	echo "<br>";

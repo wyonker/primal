@@ -79,6 +79,19 @@ if($_SESSION['login_sec_level'] >= 250)
 }
 echo '<button type="submit" name="refresh">Refresh ' . $_SESSION['refresh'] . 's</button>';
 
+if (!isset($_SESSION['SERVERS'])) {
+	$query="select sServerName from study group by sServerName;";
+	$result = mysql_query($query);
+	$qdata=mysql_fetch_assoc($result);
+	$arrServerList=array();
+	$arrServerList["All"] = 1;
+	while($row = mysql_fetch_assoc($result)) {
+		$arrServerList[[$row["sServerName"]] = 0;
+	}
+	$_SESSION['SERVERS']=$arrServerList;
+}
+Display_Servers();
+
 unset($_SESSION["result"]);
 unset($studies);
 
@@ -140,7 +153,23 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
 } elseif(isset($_SESSION['cached_query'])) {
 	$query=$_SESSION['cached_query'];
 } else {
-	$query="select a.puid, a.pname, a.pid, a.pdob, a.pmod, a.sdatetime, r.tstartrec, r.tendrec, r.rec_images, r.rerror, r.senderAET, p.tstartproc, p.tendproc, p.perror, s.tdest, s.tstartsend, s.tendsend, s.timages, s.serror, t.AccessionNum, t.StudyModType, t.StudyDate from patient as a left join receive as r on a.puid = r.puid left join process as p on a.puid = p.puid left join send as s on a.puid = s.puid left join study as t on a.puid = t.puid order by " . $sort_column . " " . $sort_order;
+	//Limit results to only selected servers.
+	if($_SESSION["SERVERS"] == 1) {
+		$query="select a.puid, a.pname, a.pid, a.pdob, a.pmod, a.sdatetime, r.tstartrec, r.tendrec, r.rec_images, r.rerror, r.senderAET, p.tstartproc, p.tendproc, p.perror, s.tdest, s.tstartsend, s.tendsend, s.timages, s.serror, t.AccessionNum, t.StudyModType, t.StudyDate from patient as a left join receive as r on a.puid = r.puid left join process as p on a.puid = p.puid left join send as s on a.puid = s.puid left join study as t on a.puid = t.puid order by " . $sort_column . " " . $sort_order;
+	} else {
+		$query="select a.puid, a.pname, a.pid, a.pdob, a.pmod, a.sdatetime, r.tstartrec, r.tendrec, r.rec_images, r.rerror, r.senderAET, p.tstartproc, p.tendproc, p.perror, s.tdest, s.tstartsend, s.tendsend, s.timages, s.serror, t.AccessionNum, t.StudyModType, t.StudyDate from patient as a left join receive as r on a.puid = r.puid left join process as p on a.puid = p.puid left join send as s on a.puid = s.puid left join study as t on a.puid = t.puid ";
+		$intLC11=0;
+		foreach($_SESSION['SERVERS'] as $strServerName => $intServerActive) {
+			if($intServerActive == 1) {
+				if($intLC11 == 0) {
+					$query.="where t.sServerName = '" . $strServerName . "' ";
+				} else {
+					$query.="and t.sServerName = '" . $strServerName . "' ";
+				}
+			}
+			$query.=" order by " . $sort_column . " " . $sort_order;
+		}
+	}
 }
 $query.=" limit " . ($tempvar * $tempvar2);
 //echo "<br>query = " . $query . "<br>";
@@ -190,50 +219,9 @@ while($row = mysql_fetch_assoc($result))
 		$studies[$lc1]["perror"] = $row["perror"];
 		$studies[$lc1]["serror"] = $row["serror"];
 		$studies[$lc1]["senderAET"] = $row["senderAET"];
-		//$studies[$lc1]["pmod"] = $row["StudyModType"];
 		$studies[$lc1]["pmod"] = $temppmod;
-		/*
-		if(is_null($row["StudyModType"])) {
-			$query4="select count(*) as total from study where puid = '" . $studies[$lc1]["puid"] . "';";
-			$result4=mysql_query($query4);
-			$qdata=mysql_fetch_assoc($result);
-			$is_empty_study = $qdata['total'];;
-			if($is_empty_study == 0) {
-				$query4="delete from patient where puid = '" . $studies[$lc1]["puid"] . "';";
-				$result4=mysql_query($query4);
-				$query4="delete from receive where puid = '" . $studies[$lc1]["puid"] . "';";
-				$result4=mysql_query($query4);
-				$query4="delete from process where puid = '" . $studies[$lc1]["puid"] . "';";
-				$result4=mysql_query($query4);
-				$query4="delete from send where puid = '" . $studies[$lc1]["puid"] . "';";
-				$result4=mysql_query($query4);
-				$query4="delete from series where puid = '" . $studies[$lc1]["puid"] . "';";
-				$result4=mysql_query($query4);
-				$query4="delete from image where puid = '" . $studies[$lc1]["puid"] . "';";
-				$result4=mysql_query($query4);
-				echo "Purghing puid " . $studies[$lc1]["puid"] . " from the database...<br>";
-			}
-			echo "Getting here for " . $studies[$lc1]["puid"] . "...<br>";
-			$query2="select Modality from series where puid ='" . $studies[$lc1]["puid"] . "';";
-			$result2 = mysql_query($query2);
-			$lc2=0;
-			while($row2 = mysql_fetch_assoc($result2)) {
-				if($lc2 > 0) {
-					if(strstr($studies[$lc1]["pmod"], $row2["Modality"]) === FALSE) {
-						$studies[$lc1]["pmod"] .= "/" . $row2["Modality"];
-					}
-				} else {
-					$studies[$lc1]["pmod"] = $row2["Modality"];
-				}
-				$lc2++;
-			}
-			$query3="update study set StudyModType ='" . $studies[$lc1]["pmod"] . "' where puid = '" . $studies[$lc1]["puid"] . "';";
-			$result3 = mysql_query($query3);
-		}
-		*/
 		$lc1++;
 	}
-	//$_SESSION["studies"] = $studies;
 }
 
 $count_rows=$lc1-1;
