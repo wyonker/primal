@@ -80,6 +80,7 @@ if($_SESSION['login_sec_level'] >= 250)
 echo '<button type="submit" name="refresh">Refresh ' . $_SESSION['refresh'] . 's</button>';
 
 if (!isset($_SESSION['SERVERS'])) {
+	//Build array of servers.
 	$query="select sServerName from study group by sServerName;";
 	$result = mysql_query($query);
 	$qdata=mysql_fetch_assoc($result);

@@ -33,6 +33,7 @@ function Display_Header2()
 }
 
 function Display_Servers() {
+	//Pop-up that lists servers.
 	echo '<div class="form-popup" id="myForm">';
 	echo '<form action="index.php" class="form-container">';
     echo '<h1>Select Servers to View</h1>';
