@@ -12,7 +12,7 @@ do
 	ISINST=`rpm -qa|grep -c $TEMPSTR`
 	if [ $ISINST -gt 0 ]
 	then
-		echo "On system:  $i"
+		echo "Already On system:  $i"
 	else
 		$THISPM install -y $i >/dev/null 2>&1
 		if [ $? -ne 0 ]
