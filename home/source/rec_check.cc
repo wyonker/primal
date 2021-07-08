@@ -70,6 +70,8 @@ class ConfFile
 			}
         }
         infile.close();
+
+        return 0;
     };
 
     int ConfFile::ValidateConf(void)
@@ -203,6 +205,8 @@ int ReadDBConfFile()
         }
     }
     infile.close();
+
+    return 0;
 };
 
 std::string Get_Date_Time() {

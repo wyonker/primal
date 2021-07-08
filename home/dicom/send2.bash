@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.10.04b02
-# Build 2
-# 2019-11-07
+# Version 3.20.04b04
+# Build 3
+# 2019-12-05
 # License GPLv3
 
 TEMPVAR=`echo $2|tr "/" "\n"|wc -l`
@@ -39,6 +39,7 @@ then
 	#Let's just update the DB and return
 	NUMIMGS=`ls -1 $2|wc -l`
 	THISPUID=`echo "$2"|rev|cut -d "/" -f1|rev`
+    echo "`date`  Skipping destination $3 for PUID $THISPUID." >> $PRILOGDIR/$PRILFOUT
 	echo "insert into send (puid, sservername, tdest, tstartsend, tendsend, timages, serror, complete) values ('$THISPUID', '`hostname -s`', '$3', '`date "+%Y-%m-%d %H:%M:%S"`', '`date "+%Y-%m-%d %H:%M:%S"`','$NUMIMGS', 0, 1);"|$DBCONNN
 	#echo "update send set tendsend='`date "+%Y-%m-%d %H:%M:%S"`', serror='0', timages='$NUMIMGS', complete = '1' where send.puid='$THISPUID' and tdest='$3';"|$DBCONNN
 	exit 0

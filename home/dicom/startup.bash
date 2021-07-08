@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.00.00b1
-# Build 2
-# 2016-01-14
+# Version 3.31.15
+# Build 4
+# 2020-07-07
 # License GPLv3
 
 source /root/.bashrc
@@ -57,11 +57,13 @@ then
 	then
 		ISRUNNING1=`ps -ef|grep "scp.bash"|grep -v grep|wc -l`
 		ISRUNNING2=`ps -ef|grep "storescp"|grep -v grep|wc -l`
+		ISRUNNING3=`ps -ef|grep "prim_store_sever"|grep -v grep|wc -l`
 	else
 		ISRUNNING1=`ps -ef|grep "scp.bash $STARTVAR"|grep -v grep|wc -l`
 		ISRUNNING2=`ps -ef|grep "storescp"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
+		ISRUNNING3=`ps -ef|grep "prim_store_server"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
 	fi
-	let ISRUNNING=$ISRUNNING1+$ISRUNNING2
+	let ISRUNNING=$ISRUNNING1+$ISRUNNING2+$ISRUNNING3
 		
 	if [ $ISRUNNING -gt 0 ]
 	then
@@ -139,7 +141,53 @@ then
 				let LC1=$LC1+1
 			done
 		fi
+
+		#The prim_store_server could have just went away.  Better get a new count
+		if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ]
+		then
+			ISRUNNING3=`ps -ef|grep "prim_store_server"|grep -v grep|wc -l`
+		else
+			ISRUNNING3=`ps -ef|grep "prim_store_server"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
+		fi
+		if [ $ISRUNNING3 -gt 0 ]
+		then
+			if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ]
+			then
+				SSSTRING=" -ss "
+			else
+				SSSTRING=" -ss $STARTVAR"
+			fi
+			ISDONE=0
+			LC1=0
+			while [ $ISDONE -ne 1 ]
+			do
+				KILLLIST=`ps -ef|grep prim_store_server|grep -e "$SSSTRING"|grep -v grep|tr -s " "|cut -d " " -f2|tr "\n" " "|sed 's/ $/\n/g'`
+				if [ $LC1 -eq 0 ]
+				then
+					kill $KILLLIST
+				else
+					kill -9 $KILLLIST
+				fi
+				sleep 1
+				ISDEAD=`ps -ef|grep prim_store_server|grep -v grep|wc -l`
+				if [ $ISDEAD -lt 1 ]
+				then
+					ISDONE=1
+				fi
+				if [ $LC1 -gt 2 ]
+				then
+					echo "`date` Error:  Could not stop all prim_store_server processes.  Exiting..."
+					exit 1
+				fi
+				let LC1=$LC1+1
+			done
+		fi
 	fi
+	LIST="prim_receive_server prim_process_server prim_send_server prim_qr_server"
+	for i in $LIST
+	do
+		systemctl stop $i
+	done
 	logger -t primal "`date` Finished stopping PRIMAL receivers..."
 	echo "`date` Finished stopping PRIMAL receivers..."
 	if [ "$NEEDHL7" == "yes" ]
@@ -185,6 +233,12 @@ then
 			/usr/bin/screen -aA -h 20000 -d -m -S "PRIMAL SCP receiver $i" /home/dicom/scp.bash $i
 		fi
 	done
+	LIST="prim_receive_server prim_process_server prim_send_server prim_qr_server"
+	for i in $LIST
+	do
+		systemctl start $i.service >> /home/dicom/logs/primal.log 2>&1 &
+	done
+
 	logger -t primal "`date` Finished PRIMAL startup..."
 	echo "`date` Finished PRIMAL startup..."
 

@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.00.00b14
-# Build 2
-# 2015-11-23
+# Version 3.20.04
+# Build 3
+# 2019-12-09
 # License GPLv3
 
 TEMPVAR=`echo $2|tr "/" "\n"|wc -l`
@@ -170,6 +170,11 @@ do
 	done
 	NUMRESULTS=`echo "$UNSORTEDMASTER"|wc -l`
 	SORTEDLIST=`echo "$UNSORTEDMASTER"|sort -u -k2|sort -nr -k1|cut -d " " -f2|tr "\n" " "`
+	if [ $PRIQRLIST -eq 1]
+	then
+		echo "$SORTEDLIST" > /tmp/$DIRNAME.cfind.txt
+		exit 0
+	fi
 	if [ "$PRIQRAGE" != "ALL" ] && [ "$PRIQRAGE" != "all" ]
 	then
 		STARTRANGE=`date -d "$PRIQRAGE days ago" +%Y%m%d`

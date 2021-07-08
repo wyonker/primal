@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.00.00b24
-# Build 1
-# 2016-02-08
+# Version 3.30.14
+# Build 2
+# 2020-07-10
 # License GPLv3
 
 RECNUM=$1
@@ -24,7 +24,7 @@ do
 			ISINDB=`echo "select count(*) from receive where PUID='$i';"|$DBCONN`
 			TEMPDATE=`ls --full-time $PRIIF|grep $i|tr "\t" " "|tr -s " "|cut -d " " -f6-7|cut -d "." -f1`
 			TIMELASTCHANGED=`date -d "$TEMPDATE" +%s`
-			let MAXAGE=$PRIRECTO*7
+			let MAXAGE=$PRIRECTO*60
 			MAXLASTCHANGE=`date -d "$MAXAGE seconds ago" +%s`
 			if [ $TIMELASTCHANGED -lt $MAXLASTCHANGE ]
 			then

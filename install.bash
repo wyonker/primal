@@ -1,6 +1,7 @@
 #!/bin/bash
-#Version 2
-#2018-12-13
+#Version 4
+#2020-06-26
+# License GPLv3
 
 CURDIR=`pwd`
 ISNEW=3
@@ -13,14 +14,43 @@ then
     exit 1
 fi
 
-echo "SELinux must die!!!"
-	setenforce 0
-	cd /etc/selinux; sed -i 's/=enforcing/=disabled/g' config; cd $CURDIR
+echo "Checking SELinux status"
+	ISENABLED=`getenforce`
+	if [ "ISENABLED" != "Disabled" ]
+	then
+		echo "SELinux is enabled.  Disabling..."
+		setenforce 0
+	else
+		echo "SELinux is dsiabled.  Good."
+	fi
+	ISENABLED=`cat /etc/selinux/config|grep "^SELINUX="|cut -d "=" -f2|tr '[:upper:]' '[:lower:]'`
+	if [ "ISENABLED" != "disabled" ]
+	then
+		echo "SELinux is not disabled in the configuration file.  Disabling..."
+		cd /etc/selinux; sed -i 's/=enforcing/=disabled/g' config; cd $CURDIR
+	else
+		echo "SELinux is not configured.  Good."
+	fi
 	sleep 1
 
 echo "Installing any packages that are missing."
 	./install_packages.bash
-	yum update -y
+	yum update -y --skip-broken
+	sleep 1
+
+find / -iname "libssh2_config.h" -type f -exec cp {}  /usr/include/ \;
+
+echo "Enabling devtoolset-8"
+	source scl_source enable devtoolset-8
+
+echo "Setting devtooset-8 as the default"
+	ISTHERE=`grep -c "source scl_source enable devtoolset-8" /root/.bashrc`
+	if [ $ISTHERE -lt 1 ]
+	then
+		echo "source scl_source enable devtoolset-8" >> /root/.bashrc
+	else
+		echo "devtoolset-8 is already the default."
+	fi
 	sleep 1
 
 echo "Installing pstreams library."
@@ -114,6 +144,7 @@ ISINSTARTUP=`cat /etc/rc.d/rc.local|grep "/home/dicom/startup.bash start"|wc -l`
 if [ $ISINSTARTUP -lt 1 ]
 then
 	echo "Inserting PRIMAL startup script..."
+	echo "ulimit -q 3276800" >> /etc/rc.d/rc.local
 	echo "sleep 60" >> /etc/rc.d/rc.local
 	echo "/home/dicom/startup.bash start ALL" >> /etc/rc.d/rc.local
 	ISINSTARTUP=`cat /etc/rc.d/rc.local|grep "/home/dicom/startup.bash start ALL"|wc -l`
@@ -213,6 +244,8 @@ echo "Copying PRIMAL software to /home"
 	mkdir /home/dicom/sent
 	mkdir /home/dicom/hold
 	mkdir /home/dicom/error
+	mkdir -p /home/dicom/share/dcmtk
+	cp /usr/local/share/dcmtk/dicom.dic /home/dicom/share/dcmtk/dicom.dic
 
 echo "Copying dcm4che to /home"
 	if [ ! -e "/home/dcm4che" ]
@@ -223,11 +256,16 @@ echo "Copying dcm4che to /home"
 	cp -pr home/dcm4che /home/
 
 echo "Installing web componet"
-	rm -f /var/www/html/*
-	cp -p var/www/html/* /var/www/html/
-	if [ ! -e "/var/www/html/tmp" ]
+	if [ ! -e "/var/www/html/primal" ]
 	then
-		mkdir /var/www/html/tmp
+		mkdir /var/www/html/primal
+		chown apache.apache /var/www/html/primal
+	fi
+	rm -f /var/www/html/primal/*
+	cp -p var/www/html/primal/* /var/www/html/primal/
+	if [ ! -e "/var/www/html/primal/tmp" ]
+	then
+		mkdir /var/www/html/primal/tmp
 	fi
 	chown apache.apache -R /var/www/html/*
 	chmod 777 -R /var/www/html/*
@@ -235,9 +273,128 @@ echo "Installing web componet"
 rm -f home/build/dcmnet/apps/storescp
 rm -f home/build/dcmnet/apps/storescu
 
-echo "Compiling executables for this platform."
-cd home/build; ./build.bash
-cd $CURDIR
+echo "Compiling DCMTK for this platform."
+if [ -e "dcmtk-3.6.5.tar.gz" ]
+then
+	echo "DCMTK v3.6.5 found.  Installing..."
+	tar -xf dcmtk-3.6.5.tar.gz
+	if [ -e dcmtk-3.6.5-build ]
+	then
+		rm -fr dcmtk-3.6.5-build
+	fi
+	mkdir dcmtk-3.6.5-build
+	cd dcmtk-3.6.5-build
+	cmake -DCMTK_CXX11_FLAGS:STRING=-std=c++17 -DCMTK_ENABLE_STL:STRING=ON -DCMTK_ENABLE_CXX11:STRING=INFERRED -DCMTK_ENABLE_PRIVATE_TAGS:STRING=ON ../dcmtk-3.6.5
+    make -j4 install
+	cd $CURDIR
+fi
+
+echo "Compiling PRIMAL services for this platform"
+	cd home/source
+	if [ -e prim_receive_server ]
+	then
+		rm -f prim_receive_server
+	fi
+	if [ -e prim_send_server ]
+	then
+		rm -f prim_send_server
+	fi
+	if [ -e prim_qr_server ]
+	then
+		rm -f prim_qr_server
+	fi
+	if [ -e prim_process_server ]
+	then
+		rm -f prim_process_server
+	fi
+	if [ -e prim_store_server ]
+	then
+		rm -f prim_store_server
+	fi
+	./ohif.bash
+	systemctl stop prim_receive_server
+	systemctl stop prim_send_server
+	systemctl stop prim_store_server
+	systemctl stop prim_process_server
+	systemctl stop prim_qr_server
+	mv -f prim_receive_server /usr/local/bin/
+	mv -f prim_send_server /usr/local/bin/
+	mv -f prim_process_server /usr/local/bin/
+	mv -f prim_qr_server /usr/local/bin/
+	cd $CURDIR
+	if [ -e "/etc/systemd/system/prim_qr_server.service" ]
+	then
+		rm -f /etc/systemd/system/prim_qr_server.service
+	fi
+	echo "[Unit]" > /etc/systemd/system/prim_qr_server.service
+	echo "Description = PRIMAL Query/Retrieve service" >> /etc/systemd/system/prim_qr_server.service
+	echo "After = network.target" >> /etc/systemd/system/prim_qr_server.service
+	echo "" >> /etc/systemd/system/prim_qr_server.service
+	echo "[Service]" >> /etc/systemd/system/prim_qr_server.service
+	echo "ExecStart = /usr/local/bin/prim_qr_server" >> /etc/systemd/system/prim_qr_server.service
+	echo "Restart=always" >> /etc/systemd/system/prim_qr_server.service
+	echo "" >> /etc/systemd/system/prim_qr_server.service
+	echo "[Install]" >> /etc/systemd/system/prim_qr_server.service
+	echo "WantedBy = multi-user.target" >> /etc/systemd/system/prim_qr_server.service
+    systemctl daemon-reload
+	systemctl start prim_qr_server.service
+	systemctl enable prim_qr_server.service
+
+	if [ -e "/etc/systemd/system/prim_receive_server.service" ]
+	then
+		rm -f /etc/systemd/system/prim_receive_server.service
+	fi
+	echo "[Unit]" > /etc/systemd/system/prim_receive_server.service
+	echo "Description = PRIMAL receive service" >> /etc/systemd/system/prim_receive_server.service
+	echo "After = network.target" >> /etc/systemd/system/prim_receive_server.service
+	echo "" >> /etc/systemd/system/prim_receive_server.service
+	echo "[Service]" >> /etc/systemd/system/prim_receive_server.service
+	echo "ExecStart = /usr/local/bin/prim_receive_server" >> /etc/systemd/system/prim_receive_server.service
+	echo "Restart=always" >> /etc/systemd/system/prim_receive_server.service
+	echo "" >> /etc/systemd/system/prim_receive_server.service
+	echo "[Install]" >> /etc/systemd/system/prim_receive_server.service
+	echo "WantedBy = multi-user.target" >> /etc/systemd/system/prim_receive_server.service
+    systemctl daemon-reload
+	systemctl start prim_receive_server.service
+	systemctl enable prim_receive_server.service
+
+	if [ -e "/etc/systemd/system/prim_send_server.service" ]
+	then
+		rm -f /etc/systemd/system/prim_send_server.service
+	fi
+	echo "[Unit]" > /etc/systemd/system/prim_send_server.service
+	echo "Description = PRIMAL send service" >> /etc/systemd/system/prim_send_server.service
+	echo "After = network.target" >> /etc/systemd/system/prim_send_server.service
+	echo "" >> /etc/systemd/system/prim_send_server.service
+	echo "[Service]" >> /etc/systemd/system/prim_send_server.service
+	echo "ExecStart = /usr/local/bin/prim_send_server" >> /etc/systemd/system/prim_send_server.service
+	echo "Restart=always" >> /etc/systemd/system/prim_send_server.service
+	echo "" >> /etc/systemd/system/prim_send_server.service
+	echo "[Install]" >> /etc/systemd/system/prim_send_server.service
+	echo "WantedBy = multi-user.target" >> /etc/systemd/system/prim_send_server.service
+    systemctl daemon-reload
+	systemctl start prim_send_server.service
+	systemctl enable prim_send_server.service
+
+	if [ -e "/etc/systemd/system/prim_process_server.service" ]
+	then
+		rm -f /etc/systemd/system/prim_process_server.service
+	fi
+	echo "[Unit]" > /etc/systemd/system/prim_process_server.service
+	echo "Description = PRIMAL process service" >> /etc/systemd/system/prim_process_server.service
+	echo "After = network.target" >> /etc/systemd/system/prim_process_server.service
+	echo "" >> /etc/systemd/system/prim_process_server.service
+	echo "[Service]" >> /etc/systemd/system/prim_process_server.service
+	echo "ExecStart = /usr/local/bin/prim_process_server" >> /etc/systemd/system/prim_process_server.service
+	echo "Restart=always" >> /etc/systemd/system/prim_process_server.service
+	echo "" >> /etc/systemd/system/prim_process_server.service
+	echo "[Install]" >> /etc/systemd/system/prim_process_server.service
+	echo "WantedBy = multi-user.target" >> /etc/systemd/system/prim_process_server.service
+    systemctl daemon-reload
+	systemctl start prim_process_server.service
+	systemctl enable prim_process_server.service
+
+    systemctl daemon-reload
 
 #echo "Please check if there are errors at the end for storescu.o or storescp.o. Type 'yes' to continue"
 #	read USER_INPUT
@@ -247,18 +404,17 @@ cd $CURDIR
 #		USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
 #	done
 
-if [ ! -e home/build/dcmnet/apps/storescp ]
-then
-	echo "Error:  storescp did not build properly.  Please run home/build/build.bash manually for more information."
-	exit 1
-fi
+#if [ ! -e home/build/dcmnet/apps/storescp ]
+#then
+#	echo "Error:  storescp did not build properly.  Please run home/build/build.bash manually for more information."
+#	exit 1
+#fi
 
-
-if [ ! -e home/build/dcmnet/apps/storescu ]
-then
-	echo "Error:  storescu did not build properly.  Please run home/build/build.bash manually for more information."
-	exit 1
-fi
+#if [ ! -e home/build/dcmnet/apps/storescu ]
+#then
+#	echo "Error:  storescu did not build properly.  Please run home/build/build.bash manually for more information."
+#	exit 1
+#fi
 
 ISRUNNING=`ps -ef|grep scp.bash|wc -l`
 if [ $ISRUNNING -gt 0 ]
@@ -353,29 +509,37 @@ if [ -e "/home/dicom/bin/storescp" ]
 then
 	rm -f /home/dicom/bin/storescp
 fi
-if [ -e "home/build/dcmnet/apps/storescp" ]
+if [ -e "dcmtk-3.6.5-build/bin/storescp" ]
 then
-	cp home/build/dcmnet/apps/storescp /home/dicom/bin/
+	cp dcmtk-3.6.5-build/bin/storescp /home/dicom/bin/
 else
 	echo "Error:  storescp is not found.  Exiting..."
 	exit 1
 fi
 
-if [ -e "/home/dicom/bin/primalscu" ]
+if [ -e "/home/dicom/bin/dcmdump" ]
 then
-	rm -f /home/dicom/bin/primalscu
+	rm -f /home/dicom/bin/dcmdump
+fi
+if [ -e "dcmtk-3.6.5-build/bin/dcmdump" ]
+then
+	cp dcmtk-3.6.5-build/bin/dcmdump /home/dicom/bin/
+else
+	echo "Error:  dcmdump is not found.  Exiting..."
+	exit 1
 fi
 
-if [ -e "home/build/dcmnet/apps/storescu" ]
+if [ -e "dcmtk-3.6.5-build/bin/storescu" ]
 then
-	cp home/build/dcmnet/apps/storescu /home/dicom/bin/primalscu
+	cp dcmtk-3.6.5-build/bin/storescu /home/dicom/bin/primalscu
+	cp dcmtk-3.6.5-build/bin/storescu /home/dicom/bin/storescu
 else
 	echo "Error:  storescu is not found.  Exiting..."
 	exit 1
 fi
 
 rm /home/dicom/bin/*.cfg
-cp home/build/dcmnet/etc/*.cfg /home/dicom/bin/
+cp dcmtk-3.6.5/dcmnet/etc/*.cfg /home/dicom/bin/
 
 if [ -e "/home/dicom/bin/rec_check" ]
 then
@@ -439,6 +603,17 @@ echo "Restarting Apache"
 	systemctl enable httpd.service
 	systemctl restart httpd.service
 
+echo "Addind POSIX command line queue manager mq"
+	THISPATH=`pwd`
+	cd home/source
+	git clone https://github.com/goeb/mq.git >/dev/null 2>&1
+	cd mq
+	./bootstrap >/dev/null 2>&1
+	./configure >/dev/null 2>&1
+	make all >/dev/null 2>&1
+	make install >/dev/null 2>&1
+	cd $THISPATH
+
 if [ $ISNEW -eq 2 ]
 then
 	echo "PRIMAL installation is complete.  This appears to be a new installation.  To run the software you will need to edit /etc/primal/primal.conf."
@@ -448,3 +623,26 @@ else
 	echo "PRIMAL upgrade complete.  Please restart your receivers if they were not restarted already."
 fi
 
+echo "fs.file-max = 100000" >> /etc/sysctl.conf
+sed -i 's/# End of file//g' /etc/security/limits.conf 
+sed -i '/* soft nproc/d' /etc/security/limits.conf 
+sed -i '/* hard nproc/d' /etc/security/limits.conf 
+sed -i '/* soft nofile/d' /etc/security/limits.conf 
+sed -i '/* hard nofile/d' /etc/security/limits.conf 
+
+echo " * soft nproc 65535
+ * hard nproc 65535
+ * soft nofile 65535
+ * hard nofile 65535
+# End of file" >> /etc/security/limits.conf
+
+echo "/home/dicom/logs/*log {
+    missingok
+    notifempty
+	compress
+	copytruncate
+	maxsize 1G
+	rotate 5
+	weekly
+    su apache apache
+}" > /etc/logrotate.d/primal

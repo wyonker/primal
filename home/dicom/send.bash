@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.00.00b24
-# Build 2
-# 2016-02-01
+# Version 3.20.05b1
+# Build 4
+# 2019-12-10
 # License GPLv3
 
 TEMPVAR=`echo $2|tr "/" "\n"|wc -l`
@@ -28,9 +28,40 @@ then
 fi
 
 NUMDEST=0
-while [ $NUMDEST -le $INTNUMREC ]
+while [ $NUMDEST -lt $INTNUMREC ]
 do
-	/home/dicom/send2.bash $1 $PRIOUT/$DIRNAME $NUMDEST & >> $PRILOGDIR/$PRILFOUT
+	if [ ${PRIDESTAD[$INTNUMREC]} -eq -1 ]
+	then
+		/home/dicom/send2.bash $1 $PRIOUT/$DIRNAME $NUMDEST & >> $PRILOGDIR/$PRILFOUT
+	else
+		INTRETURN=`/home/dicom/send_cond $NUMDEST $DIRNAME`
+		if [ $INTRETURN -ne 0 ] && [ $INTRETURN -ne 1 ]
+		then
+			if [ ${PRIDESTAD[$INTNUMREC]} -eq 0 ]
+			then
+				echo "`date` ERROR:  Rule check failed to returned $INTRETURN.  Must return 0 or 1.  Will follow the default and route." >> $PRILOGDIR/$PRILFOUT
+				/home/dicom/send2.bash $1 $PRIOUT/$DIRNAME $NUMDEST & >> $PRILOGDIR/$PRILFOUT
+			elif [ ${PRIDESTAD[$INTNUMREC]} -eq 1 ]
+			then
+				echo "`date` ERROR:  Rule check failed to returned $INTRETURN.  Must return 0 or 1.  Will follow the default and not route." >> $PRILOGDIR/$PRILFOUT
+			else
+				echo "`date` ERROR:  Rule check failed to returned $INTRETURN.  Must return 0 or 1.  Unable to determine what the default is (UNDEFINED BEHAVIOR).  Exiting..." >> $PRILOGDIR/$PRILFOUT
+				exit 1
+			fi
+		elif [ ${PRIDESTAD[$INTNUMREC]} -eq 0 ] && [ $INTRETURN -eq 0 ]
+		then
+			/home/dicom/send2.bash $1 $PRIOUT/$DIRNAME $NUMDEST & >> $PRILOGDIR/$PRILFOUT
+		elif [ ${PRIDESTAD[$INTNUMREC]} -eq 0 ] && [ $INTRETURN -eq 1 ]
+		then
+				echo "`date` INFO:  Not routing because of a rule match for destination $INTRETURN." >> $PRILOGDIR/$PRILFOUT
+		elif [ ${PRIDESTAD[$INTNUMREC]} -eq 1 ] && [ $INTRETURN -eq 1 ]
+		then
+			/home/dicom/send2.bash $1 $PRIOUT/$DIRNAME $NUMDEST & >> $PRILOGDIR/$PRILFOUT
+		elif [ ${PRIDESTAD[$INTNUMREC]} -eq 1 ] && [ $INTRETURN -eq 0 ]
+		then
+				echo "`date` INFO:  Not routing because no rules match for destination $INTRETURN." >> $PRILOGDIR/$PRILFOUT
+		fi
+	fi
 	let NUMDEST=$NUMDEST+1
 done
 

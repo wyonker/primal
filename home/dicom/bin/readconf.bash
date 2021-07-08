@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 1.00.0
-# Build 6
-# 2014-12-16
+# Version 1.30.1
+# Build 9
+# 2020-07-10
 
 RECNUM=`echo "$1"`
 re='^[0-9]+$'
@@ -79,11 +79,17 @@ then
 fi
 
 PRIRET=`echo "$STRTEMP"|grep PRIRET|tr -s " "|cut -d "#" -f1|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
-if [ $PRIRET -lt 3 ] || [ $PRIRET -gt 300 ]
+if [ $PRIRET -lt -1 ] || [ $PRIRET -gt 300 ]
 then
-    echo "Error:  The retention time must be defined.  If you wish to keep sent files forever, please set it to 0 in the configuration file.  Error for receiver #$1.  Exiting..."
+    echo "Error:  The retention time must be defined.  If you wish to keep sent files forever, please set it to -1 in the configuration file.  Error for receiver #$1.  Exiting..."
     logger -t primal "Error:  The retention time must be defined.  If you wish to keep sent files forever, please set it to 0 in the configuration file.  Error for receiver #$1.  Exiting..."
     exit 1
+fi
+
+PRIRECTYPE=`echo "$STRTEMP"|grep PRIRECTYPE|tr -s " "|cut -d "#" -f1|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
+if [ "$PRIRECTYPE" != "DICOM"  ] && [ "$PRIRECTYPE" != "TAR" ]
+then
+    PRIRECTYPE="DICOM"
 fi
 
 PRIPORT=`echo "$STRTEMP"|grep PRIPORT|tr -s " "|cut -d "#" -f1|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
@@ -109,7 +115,7 @@ then
 fi
 
 PRIAET=`echo "$STRTEMP"|grep PRIAET|tr -s " "|cut -d "#" -f1|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
-if ! [[ "$PRIAET" =~ ^[a-zA-Z0-9_]+$ ]]
+if ! [[ "$PRIAET" =~ ^[a-zA-Z0-9_-]+$ ]]
 then
     echo "Error:  AET must exist and can only contain alpha and numeric characters.  Receiver #$1 failed check.  Exiting..."
     logger -t primal "Error:  AET must exist and can only contain alpha and numeric characters.  Receiver #$1 failed check.  Exiting..."
@@ -148,6 +154,7 @@ PRIQRREC=`echo "$STRTEMP"|grep PRIQRREC|tr -s " "|cut -d "#" -f1|cut -d "=" -f2|
 PRIQRAGE=`echo "$STRTEMP"|grep PRIQRAGE|tr -s " "|cut -d "#" -f1|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
 PRIQRWAIT=`echo "$STRTEMP"|grep PRIQRWAIT|tr -s " "|cut -d "#" -f1|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
 PRIQRMAX=`echo "$STRTEMP"|grep PRIQRMAX|tr -s " "|cut -d "#" -f1|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
+PRIQRLIST=`echo "$STRTEMP"|grep PRIQRLIST|tr -s " "|cut -d "#" -f1|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
 QRRECEXISTS=`cat /etc/primal/primal.conf|grep "<scp$PRIQRREC>"|grep -v grep|wc -l`
 if [ "$PRIQRREC" != "" ]
 then
@@ -302,6 +309,19 @@ do
         PRIDESTPORT[$LC]=`echo "$STRTEMP"|grep PRIDESTPORT$LC|tr -s " "|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
         PRIDESTAEC[$LC]=`echo "$STRTEMP"|grep PRIDESTAEC$LC|tr -s " "|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
         PRIDESTCDCR[$LC]=`echo "$STRTEMP"|grep PRIDESTCDCR$LC|tr -s " "|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
+        ISTHERE1=`echo "$STRTEMP"|grep -c PRIDESTAD$LC`
+        if [ $ISTHERE1 -gt 0 ]
+        then
+            PRIDESTAD[$LC]=`echo "$STRTEMP"|grep PRIDESTAD$LC|tr -s " "|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
+            if [ ${PRIDESTAD[$LC]} -ne -1 ] && [ ${PRIDESTAD[$LC]} -ne 0 ] && [ ${PRIDESTAD[$LC]} -ne 1 ]
+            then
+    			echo "Error:  PRIDESTAD for destination $LC for receiver $RECNUM needs to be one of the following: -1, 0 or 1.  Current value is ${PRIDESTAD[$LC]}).  Exiting..."
+	    		echo "`date` Error:  PRIDESTAD for destination $LC for receiver $RECNUM needs to be one of the following: -1, 0 or 1.  Current value is ${PRIDESTAD[$LC]}).  Exiting..." >> $PRILOGDIR/$PRILFPROC
+		    	exit 1
+            fi
+        else
+            PRIDESTAD[$LC]=-1
+        fi
 		if ! [[ ${PRIDESTCDCR[$LC]} =~ $re ]]
 		then
 			echo "Error:  Compression level is not set for Destionation $LC for receiver $RECNUM.  Exiting..."

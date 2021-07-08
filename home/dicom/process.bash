@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.00.00b14
-# Build 7
-# 2015-11-125
+# Version 3.30.00
+# Build 9
+# 2020-04-14
 # License GPLv3
 
 TEMPVAR=`echo $2|tr "/" "\n"|wc -l`
@@ -19,7 +19,7 @@ fi
 STARTPROCTIME=`date +%s`
 STRTEMP1="`cat /tmp/$DIRNAME` $STARTPROCTIME"
 echo "$STRTEMP1" > /tmp/$DIRNAME
-FILENAME=`ls -1 $PRIPROC/$DIRNAME/*|head -1`
+FILENAME=`ls -1 $PRIPROC/$DIRNAME/*.dcm|head -1`
 SERIESINFO=`dcmdump $FILENAME|egrep '(0010,0010)|(0010,0020)|(0020,000d)'`
 PNAME=`echo "$SERIESINFO"|grep "(0010,0010)"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 PAPID=`echo "$SERIESINFO"|grep "(0010,0020)"|head -1|cut -d "[" -f2|cut -d "]" -f1`
@@ -28,18 +28,6 @@ NUMFILES=`ls -1 $PRIPROC/$DIRNAME/*|wc -l`
 SDATETIME=`date "+%Y-%m-%d %H:%M:%S"`
 echo "`date` Started processing study for Patient: $PNAME MRN: $PAPID with $NUMFILES images." >> $PRILOGDIR/$PRILFPROC
 echo "insert into process (puid, pservername, tstartproc) values ('$DIRNAME', '`hostname`', '`date +"%Y-%m-%d %H:%M:%S"`');"|$DBCONN
-
-#Going to rename the files
-PDEPTH2=`echo "$PRIPROC"|awk -F "/" '{print NF}'`
-LIST=`ls -1 $PRIPROC/$DIRNAME/ 2>/dev/null|cut -d "/" -f$PDEPTH2`
-cd $PRIPROC/$DIRNAME
-for i in $LIST
-do
-	#find $2 -name "*" -type f -exec mv {} {}.dcm \; >> $PRILOGDIR/$PRILFIN 2>&1
-	SOPIUID=`dcmdump $i|grep "(0008,0018)"|head -1|cut -d "[" -f2|cut -d "]" -f1`
-	mv $i $i.dcm
-	echo "update image set ifilename = '$i.dcm' where SOPIUID = '$SOPIUID' and PUID = '$DIRNAME';"|$DBCONN
-done
 
 if [ "$PRIQRREC" != "" ]
 then
@@ -128,7 +116,8 @@ else
 		echo "update QR set puid='$DIRNAME', RetrieveDate='$TEMPDATE' where SIUID='$SIUID' and PatientPUID='$TEMPPUID';"|$DBCONNN
 	fi
 
-	nohup /home/dicom/send.bash $1 $PRIOUT/$DIRNAME & >> $PRILOGDIR/$PRILFOUT 2>&1
+	#nohup /home/dicom/send.bash $1 $PRIOUT/$DIRNAME & >> $PRILOGDIR/$PRILFOUT 2>&1
+	mq send /prim_send $DIRNAME
 fi
 
 rm -f /tmp/$DIRNAME.bash
