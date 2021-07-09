@@ -1,6 +1,6 @@
 #!/bin/bash
-#Version 4
-#2020-06-26
+#Version 5
+#2021-07-09
 # License GPLv3
 
 CURDIR=`pwd`
@@ -321,6 +321,7 @@ echo "Compiling PRIMAL services for this platform"
 	mv -f prim_send_server /usr/local/bin/
 	mv -f prim_process_server /usr/local/bin/
 	mv -f prim_qr_server /usr/local/bin/
+	mv -f prim_store_server /usr/local/bin/
 	cd $CURDIR
 	if [ -e "/etc/systemd/system/prim_qr_server.service" ]
 	then
