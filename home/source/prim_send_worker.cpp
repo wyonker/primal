@@ -400,6 +400,8 @@ int fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC, 
     if(iprimConf != conf1.primConf.end()) {
         strTemp = conf1.primConf[strRecNum + "_PRIDESTSCRIPT" + to_string(intLC)];
         strCmd = "/usr/local/scripts/" + conf1.primConf[strRecNum + "_PRIDESTSCRIPT" + to_string(intLC)] + " " + to_string(intLC) + " " + conf1.primConf[strRecNum + "_PRIOUT"] + "/" + strPrimID;
+        strLogMessage = " SEND " + strPrimID + " INFO:  BASH executing: " + conf1.primConf[strRecNum + "_PRIDESTSCRIPT" + to_string(intLC)];
+        fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
         strReturn = exec(strCmd.c_str());
         sstream.clear();
         sstream.str(strReturn);
@@ -408,10 +410,17 @@ int fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC, 
             getline(sstream, strDestHIP);
             getline(sstream, strDestPort);
             getline(sstream, strAEC);
-            strLogMessage =strPrimID + "SEND  INFO:  BASH " + conf1.primConf[strRecNum + "_PRIDESTSCRIPT" + to_string(intLC)] + " replacing IP, port and AET for dest " + strDestHIP + "...";
+            strLogMessage =strPrimID + "SEND  INFO:  BASH " + conf1.primConf[strRecNum + "_PRIDESTSCRIPT" + to_string(intLC)] + " replacing IP: " + strDestHIP + ", port: " + strDestPort + " and AET: " + strAEC + " for dest " + to_string(intLC) + "...";
             fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
             intCondDest = 1;
         }
+    }
+    //We really need to send to this destination.
+    intRetryStatus = fCheckResend(strFullPath, intLC);
+    strLogMessage="intRetryStatus = " + to_string(intRetryStatus);
+    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
+    if(intRetryStatus == 1 || intRetryStatus == 2) {
+        return intRetryStatus;
     }
     if(strDestHIP.find("0.0.0.0") != std::string::npos) {
         //We use 0.0.0.0 to be a dummy destination
@@ -427,13 +436,7 @@ int fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC, 
         }
         strLogMessage=strPrimID + " SEND  Skipping this send because dummy host " + strDestHIP + " found.";
         fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
-        return 0;
-    }
-    //We really need to send to this destination.
-    intRetryStatus = fCheckResend(strFullPath, intLC);
-    std::cout << "intRetryStatus = " << to_string(intRetryStatus) << std::endl;
-    if(intRetryStatus == 1 || intRetryStatus == 2) {
-        return intRetryStatus;
+        return 1;
     }
     iprimConf = conf1.primConf.find(strRecNum + "_PRIDESTTYPE" + to_string(intLC));
     if(iprimConf != conf1.primConf.end()) {
@@ -821,9 +824,15 @@ int fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC, 
                     intErrors = 1;
                 }
             } else {
-                strQuery="insert into send set puid='" + strPrimID + "', sservername='" + strHostName + "'";
-                strQuery+=", tdest='DCM:" + conf1.primConf[strRecNum + "_PRIDESTHIP" + to_string(intLC)] + "'";
-                strQuery+=", tstartsend='" + strDate + "', tdestnum=" + to_string(intLC) + " serror=1;";
+                if(intCondDest != 1) {
+                    strQuery="insert into send set puid='" + strPrimID + "', sservername='" + strHostName + "'";
+                    strQuery+=", tdest='DCM:" + conf1.primConf[strRecNum + "_PRIDESTHIP" + to_string(intLC)] + "'";
+                    strQuery+=", tstartsend='" + strDate + "', tdestnum=" + to_string(intLC) + " serror=1;";
+                } else {
+                    strQuery="insert into send set puid='" + strPrimID + "', sservername='" + strHostName + "'";
+                    strQuery+=", tdest='DCM:" + strDestHIP + "'";
+                    strQuery+=", tstartsend='" + strDate + "', tdestnum=" + to_string(intLC) + " serror=1;";
+                }
                 mysql_query(mconnect_local, strQuery.c_str());
                 if(*mysql_error(mconnect_local)) {
                     strLogMessage="SQL Error: ";
@@ -937,7 +946,7 @@ int fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC, 
         }
         strCmd += " +crf " + conf1.primConf[strRecNum + "_PRIOUT"] + "/" + strPrimID + "/" + strPrimID + ".info ";
         //strCmd.append(" +rn ");
-        if (intAETMapped != 1) {
+        if (intCondDest != 1) {
             iprimConf = conf1.primConf.find(strRecNum + "_PRIDESTHIP" + to_string(intLC));
             if(iprimConf != conf1.primConf.end()) {
                 strCmd.append(conf1.primConf.find(strRecNum + "_PRIDESTHIP" + to_string(intLC))->second);
@@ -949,7 +958,7 @@ int fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC, 
             strCmd.append(strDestHIP);
         }
         strCmd.append(" ");
-        if (intAETMapped != 1) {
+        if (intCondDest != 1) {
             iprimConf = conf1.primConf.find(strRecNum + "_PRIDESTPORT" + to_string(intLC));
             if(iprimConf != conf1.primConf.end()) {
                 strCmd.append(conf1.primConf.find(strRecNum + "_PRIDESTPORT" + to_string(intLC))->second);
@@ -986,7 +995,7 @@ int fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC, 
         }
         strCmd.append(" 2>&1");
         strDate=GetDate();
-        if (intAETMapped != 1) {
+        if (intCondDest != 1) {
             strQuery="insert into send set puid='" + strPrimID + "', sservername='" + strHostName + "'";
             strQuery+=", tdest='DCM:" + conf1.primConf[strRecNum + "_PRIDESTHIP" + to_string(intLC)] + "'";
             strQuery+=", tstartsend='" + strDate + "', tdestnum=" + to_string(intLC) + ";";
@@ -999,6 +1008,8 @@ int fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC, 
         //std::cout << "strCmd = " << strCmd << std::endl;
         if(intError == 0) {
             //std::cout << "Executing " << strCmd << "." << std::endl;
+            strLogMessage="strCmd = " + strCmd + ".";
+            fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
             intPos=system(strCmd.c_str());
             //std::cout << "Return = " << intPos << std::endl;
         } else {
@@ -1067,7 +1078,6 @@ int fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC, 
             //strQuery+=" order by tstartsend desc limit 1) as t2 ";
             //strQuery+="using (tstartsend) set tendsend='" + strDate + "', complete='1', timages= " + to_string(intNumFiles);
             //strQuery+=", serror = serror + 1 where puid='" + strPrimID + "' and tdestnum=" + to_string(intLC) + ";";
-            std::cout << "strQuery: " << strQuery << std::endl;
         } else {
             strQuery="update send set tendsend='" + strDate + "', complete='1', timages= " + to_string(intNumFiles);
             strQuery+=", serror = 0 where puid='" + strPrimID + "' and tdestnum=" + to_string(intLC) + " and tendsend is NULL;";
@@ -1391,7 +1401,7 @@ int main(int argc, char** argv) {
     strRecNum = "1";
     if(argc == 2) {
         strFullPath = argv[1];
-        strLogMessage = "Starting prim_send_worker version 2.10.01 for " + strFullPath + ".";
+        strLogMessage = "Starting prim_send_worker version 2.10.05 for " + strFullPath + ".";
         fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
         fLoopSend(strFullPath);
         mysql_library_end();

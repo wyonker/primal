@@ -831,7 +831,8 @@ void fQueueMonitor() {
     std::string strMessage, strCallingAETitle, strCalledAETitle, strPrimalID, strQuery, strLogMessage, strRecNum;
     std::size_t intMessageType, intTemp, intNumRows;
     std::vector<std::string> vMessage;
-
+    std::stringstream sstream("1");
+    
     std::cout << "Starting queue monitor" << std::endl;
     while(true) {
         strMessage=fGetMessage("/prim_receive");
@@ -844,7 +845,10 @@ void fQueueMonitor() {
             strCallingAETitle=vMessage[2];
             strCalledAETitle=vMessage[3];
         }
-        intMessageType=stoi(vMessage[1]);
+        sstream.clear();
+        sstream.str(vMessage[1]);
+        sstream >> intMessageType;
+        //intMessageType=stoi(vMessage[1]);
         if(intMessageType != 1) {
             std::cout << "Message type = " << to_string(intMessageType) << std::endl;
         }
@@ -921,7 +925,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    strLogMessage="Starting prim_receive_server version 2.01.00";
+    strLogMessage="Starting prim_receive_server version 2.01.01";
     fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
     if(argc == 1) {
         std::cout << "Launching children..." << std::endl;

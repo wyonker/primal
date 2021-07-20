@@ -82,13 +82,17 @@ int main(int argc, char** argv) {
     //struct tm * now2 = localtime( & t2 );
     std::string strLine, strClientID, strGWIP, strQuery, strCaseID, strACCN, strSIUID, strQuery2, strLogMessage, strThisIP, strThisName;
     std::string strPath, strFilename, strCmd, strQuery3, strQuery4, strReturn;
-    std::size_t intPos, intResults, intLC, intDicomCasesID, intNumRows, intReturn;
+    std::size_t intPos, intResults, intLC, intDicomCasesID, intReturn;
     std::time_t tmStartTime;
     std::stringstream sstream("1");
 
+    MYSQL_ROW row2;
+    MYSQL_ROW row3;
     MYSQL_ROW row4;
+    MYSQL_RES *result2;
+    MYSQL_RES *result3;
     MYSQL_RES *result4;
-
+    
     if(argc != 3) {
         std::cout << "Wrong number of arguments: " << to_string(argc) << std::endl;
     }
@@ -105,7 +109,7 @@ int main(int argc, char** argv) {
     std::vector<std::vector<std::string> >::iterator itvecDCB;
     std::vector<std::string>::iterator itcol;
 
-    std::cout << "prim_aidoc version 2.01.02" << std::endl;
+    std::cout << "prim_aidoc version 2.02.01" << std::endl;
     strClientID = argv[1];
     strGWIP = argv[2];
     mconnect=mysql_init(NULL);
@@ -187,146 +191,147 @@ int main(int argc, char** argv) {
                 sstream.clear();
                 sstream.str(row[5]);
                 sstream >> intDicomCasesID;
+            } else {
+                std::cout << "Dicom Cases ID is blank.  This shoud not happen.  Skipping..." << std::endl;
+                continue;
             }
             std::cout << "Found CaseID: " << strCaseID << " ACCN: " << strACCN << " SIUID: " << strSIUID << std::endl;
             strQuery2 = "select count(*) from studies where SIUID = '" + strSIUID + "' and dicom_cases_id = " + to_string(intDicomCasesID) + ";";
             if(mysql_query(mconnect2, strQuery2.c_str())) {
-                std::cerr << mysql_error(mconnect2) << std::endl;
+                std::cout << mysql_error(mconnect2) << std::endl;
                 mysql_close(mconnect2);
                 return 1;
             }
-            MYSQL_RES *result2 = mysql_store_result(mconnect2);
+            result2 = mysql_store_result(mconnect2);
             if(result2 == NULL) {
-                std::cerr << mysql_error(mconnect2) << std::endl;
+                std::cout << mysql_error(mconnect2) << std::endl;
                 mysql_close(mconnect2);
                 return 1;
             }
-            MYSQL_ROW row2;
             if( (row2 = mysql_fetch_row(result2)) != NULL ) {
-                intResults = atoi(row2[0]);
+                sstream.clear();
+                sstream.str(row2[0]);
+                sstream >> intResults;
+                //intResults = atoi(row2[0]);
                 mysql_free_result(result2);
-                if(intResults < 1) {
-                    //We have not seen this SIUID before.  Better send it.
-                    std::cout << "Searching DCB for SIUID: " << strSIUID << std::endl;
-                    for (itvecDCB = vecDCB.begin(); itvecDCB != vecDCB.end(); ++itvecDCB) {
-                        intLC=0;
-                        for (itcol = itvecDCB->begin(); itcol != itvecDCB->end(); itcol++) {
-                            if(intLC == 0) {
-                                strThisName = *itcol;
-                            } else if (intLC == 1) {
-                                strThisIP = *itcol;
-                            }
-                            intLC++;
+                if(intResults > 0) {
+                    std::cout << "Skipping duplicated SIUID: " << strSIUID << " with a duplicate DicomID: " << to_string(intDicomCasesID) << std::endl;
+                    continue;
+                }
+                //We have not seen this SIUID before.  Better send it.
+                std::cout << "Searching DCB for SIUID: " << strSIUID << std::endl;
+                for (itvecDCB = vecDCB.begin(); itvecDCB != vecDCB.end(); ++itvecDCB) {
+                    intLC=0;
+                    for (itcol = itvecDCB->begin(); itcol != itvecDCB->end(); itcol++) {
+                        if(intLC == 0) {
+                            strThisName = *itcol;
+                        } else if (intLC == 1) {
+                            strThisIP = *itcol;
                         }
-                        //std::cout << "strThisIP = " << strThisIP << " strThisName = " << strThisName << std::endl;
-                        strQuery3 = "select count(*) from imports where study_uids='[\"" + strSIUID + "\"]'";
-                        mconnect3=mysql_init(NULL);
-                        mysql_options(mconnect3,MYSQL_OPT_RECONNECT,"1");
-                        mysql_options(mconnect3,MYSQL_OPT_READ_TIMEOUT,"10");
-                        //mconnect3=mysql_real_connect(mconnect3, "radisphere-core-db.candescenthealth.com", "app_readonly", "1Wg.O;xS3jZ;6ul6yc*<", strThisName.c_str(), 3306,NULL,0);
-                        mconnect3=mysql_real_connect(mconnect3, "rad-core-prod-cluster.cluster-ro-cziyzud3nvxx.us-east-1.rds.amazonaws.com", "app_readonly", "1Wg.O;xS3jZ;6ul6yc*<", strThisName.c_str(), 3306,NULL,0);
-                        if (!mconnect3) {
-                            //std::cout << "connection failed for DB " << strThisName << " on " << "radisphere-core-db.candescenthealth.com.  Sleeping for 5 seconds before trying again." << std::endl;
-                            std::cout << "connection failed for DB " << strThisName << " on " << "rad-core-prod-cluster.cluster-ro-cziyzud3nvxx.us-east-1.rds.amazonaws.com.  Exiting..." << std::endl;
-                            std::cerr << mysql_error(mconnect3) << std::endl;
-                            mysql_close(mconnect3);
-                            return 1;
-                        }
-                        if(mysql_query(mconnect3, strQuery3.c_str())) {
-                            std::cerr << mysql_error(mconnect3) << std::endl;
-                            mysql_close(mconnect3);
-                            return 1;
-                        }
-                        MYSQL_RES *result3 = mysql_store_result(mconnect3);
-                        if(result3 == NULL) {
-                            std::cerr << mysql_error(mconnect3) << std::endl;
-                            mysql_close(mconnect3);
-                            return 1;
-                        }
-                        MYSQL_ROW row3;
-                        if((row3 = mysql_fetch_row(result3)) != NULL) {
-                            intResults = atoi(row3[0]);
-                            mysql_free_result(result3);
-                            if(intResults > 0) {
-                                std::cout << "Found the study in " << strThisName << " DB." << std::endl;
-                                strQuery3 = "select source from imports where study_uids='[\"" + strSIUID + "\"]' order by date_created limit 50";
-                                mysql_query(mconnect3, strQuery3.c_str());
-                                result3 = mysql_store_result(mconnect3);
-                                //MYSQL_ROW row3;
-                                while((row3 = mysql_fetch_row(result3))) {
-                                    strPath = row3[0];
-                                    std::cout << "row3 = " << strPath << std::endl;
-                                    intPos = strPath.find_last_of("/");
-                                    if(intPos != std::string::npos) {
-                                        strFilename = strPath.substr(intPos + 1);
+                        intLC++;
+                    }
+                    std::cout << "strThisIP = " << strThisIP << " strThisName = " << strThisName << std::endl;
+                    strQuery3 = "select count(*) from imports where study_uids='[\"" + strSIUID + "\"]'";
+                    mconnect3=mysql_init(NULL);
+                    mysql_options(mconnect3,MYSQL_OPT_RECONNECT,"1");
+                    mysql_options(mconnect3,MYSQL_OPT_READ_TIMEOUT,"10");
+                    //mconnect3=mysql_real_connect(mconnect3, "radisphere-core-db.candescenthealth.com", "app_readonly", "1Wg.O;xS3jZ;6ul6yc*<", strThisName.c_str(), 3306,NULL,0);
+                    mconnect3=mysql_real_connect(mconnect3, "rad-core-prod-cluster.cluster-ro-cziyzud3nvxx.us-east-1.rds.amazonaws.com", "app_readonly", "1Wg.O;xS3jZ;6ul6yc*<", strThisName.c_str(), 3306,NULL,0);
+                    if (!mconnect3) {
+                        std::cout << "connection failed for DB " << strThisName << " on " << "rad-core-prod-cluster.cluster-ro-cziyzud3nvxx.us-east-1.rds.amazonaws.com.  Exiting..." << std::endl;
+                        std::cout << mysql_error(mconnect3) << std::endl;
+                        mysql_close(mconnect3);
+                        return 1;
+                    }
+                    if(mysql_query(mconnect3, strQuery3.c_str())) {
+                        std::cout << mysql_error(mconnect3) << std::endl;
+                        mysql_close(mconnect3);
+                        return 1;
+                    }
+                    result3 = mysql_store_result(mconnect3);
+                    if(result3 == NULL) {
+                        std::cerr << mysql_error(mconnect3) << std::endl;
+                        mysql_close(mconnect3);
+                        return 1;
+                    }
+                    if((row3 = mysql_fetch_row(result3)) != NULL) {
+                        sstream.clear();
+                        sstream.str(row3[0]);
+                        sstream >> intResults;
+                        //intResults = atoi(row3[0]);
+                        mysql_free_result(result3);
+                        if(intResults > 0) {
+                            std::cout << "Found the study in " << strThisName << " DB." << std::endl;
+                            strQuery3 = "select source from imports where study_uids='[\"" + strSIUID + "\"]' order by date_created limit 50";
+                            mysql_query(mconnect3, strQuery3.c_str());
+                            result3 = mysql_store_result(mconnect3);
+                            //MYSQL_ROW row3;
+                            while((row3 = mysql_fetch_row(result3))) {
+                                strPath = row3[0];
+                                std::cout << "row3 = " << strPath << std::endl;
+                                intPos = strPath.find_last_of("/");
+                                if(intPos != std::string::npos) {
+                                    strFilename = strPath.substr(intPos + 1);
+                                } else {
+                                    strFilename = strPath;
+                                }
+                                //See if we have pulled this file before
+                                strQuery4 = "select count(*) from dcb where caseid = '" + strCaseID + "' and source = '" + strFilename + "';";
+                                mysql_query(mconnect2, strQuery4.c_str());
+                                if(*mysql_error(mconnect2)) {
+                                    strLogMessage="SQL Error: ";
+                                    strLogMessage+=mysql_error(mconnect2);
+                                    strLogMessage+="strQuery = " + strQuery4 + ".";
+                                    std::cout << strLogMessage << std::endl;
+                                }
+                                result4 = mysql_store_result(mconnect2);
+                                if((row4 = mysql_fetch_row(result4)) != NULL) {
+                                    sstream.clear();
+                                    sstream.str(row4[0]);
+                                    sstream >> intReturn;
+                                    if(intReturn > 0) {
+                                        std::cout << "Have pulled " << strFilename << " for case ID " << strCaseID << " before.  Skipping..." << std::endl;
                                     } else {
-                                        strFilename = strPath;
-                                    }
-                                    //See if we have pulled this file before
-                                    strQuery4 = "select count(*) from dcb where caseid = '" + strCaseID + "' and source = '" + strFilename + "';";
-                                    mysql_query(mconnect2, strQuery4.c_str());
-                                    if(*mysql_error(mconnect2)) {
-                                        strLogMessage="SQL Error: ";
-                                        strLogMessage+=mysql_error(mconnect2);
-                                        strLogMessage+="strQuery = " + strQuery4 + ".";
-                                        std::cout << strLogMessage << std::endl;
-                                    }
-                                    result4 = mysql_store_result(mconnect2);
-                                    if(result4) {
-                                        intNumRows = mysql_num_rows(result4);
-                                        if(intNumRows > 0) {
-                                            row4 = mysql_fetch_row(result4);
-                                            strReturn=row4[0];
-                                            //std::cout << "strReturn: " << strReturn << std::endl;
-                                            mysql_free_result(result4);
-                                            sstream.clear();
-                                            sstream.str(strReturn);
-                                            sstream >> intReturn;
-                                        }
-                                        if(intReturn > 0) {
-                                            std::cout << "Have pulled " << strFilename << " for case ID " << strCaseID << " before.  Skipping..." << std::endl;
-                                        } else {
-                                            strCmd = "scp " + strThisIP + ":" + strPath + " /tmp/";
-                                            std::cout << "Executing: " << strCmd << std::endl;
-                                            system(strCmd.c_str());
-                                            if(fs::exists("/tmp/" + strFilename)) {
-                                                fs::rename("/tmp/" + strFilename, "/home/dicom/inbound2/" + strFilename + ".tar");
-                                                strQuery2 = "insert into studies (event_date, source_gateway, clientID, SIUID, DCBserver, AccessionNum, caseid, Complete, dicom_cases_id) ";
-                                                strQuery2 += "VALUES(\"" + GetDate() + "\", \"" + strGWIP + "\", \"" + strClientID + "\", \"" + strSIUID + "\", \"";
-                                                strQuery2 += strThisName + "\", \"" + strACCN + "\", \"" + strCaseID + "\", 1, " + to_string(intDicomCasesID) + ");";
-                                                if(mysql_query(mconnect2, strQuery2.c_str())) {
-                                                    std::cerr << mysql_error(mconnect2) << std::endl;
-                                                    mysql_close(mconnect2);
-                                                    return 1;
-                                                }
-                                                strQuery2 = "insert into dcb (caseid, source) ";
-                                                strQuery2 += "VALUES('" + strCaseID + "', '" + strFilename + "');";
-                                                mysql_query(mconnect2, strQuery2.c_str());
-                                                if(*mysql_error(mconnect2)) {
-                                                    strLogMessage="SQL Error: ";
-                                                    strLogMessage+=mysql_error(mconnect2);
-                                                    strLogMessage+="strQuery = " + strQuery2 + ".";
-                                                    std::cout << strLogMessage << std::endl;
-                                                }
+                                        strCmd = "scp " + strThisIP + ":" + strPath + " /tmp/";
+                                        std::cout << "Executing: " << strCmd << std::endl;
+                                        system(strCmd.c_str());
+                                        if(fs::exists("/tmp/" + strFilename)) {
+                                            fs::rename("/tmp/" + strFilename, "/home/dicom/inbound2/" + strFilename + ".tar");
+                                            std::cout << "Adding case ID: " << strCaseID << " to DB." << std::endl;
+                                            strQuery2 = "insert into studies (event_date, source_gateway, clientID, SIUID, DCBserver, AccessionNum, caseid, Complete, dicom_cases_id) ";
+                                            strQuery2 += "VALUES(\"" + GetDate() + "\", \"" + strGWIP + "\", \"" + strClientID + "\", \"" + strSIUID + "\", \"";
+                                            strQuery2 += strThisName + "\", \"" + strACCN + "\", \"" + strCaseID + "\", 1, " + to_string(intDicomCasesID) + ");";
+                                            if(mysql_query(mconnect2, strQuery2.c_str())) {
+                                                std::cout << mysql_error(mconnect2) << std::endl;
+                                                mysql_close(mconnect2);
+                                                return 1;
+                                            }
+                                            std::cout << "Adding case ID: " << strCaseID << " to dcb DB." << std::endl;
+                                            strQuery2 = "insert into dcb (caseid, source) ";
+                                            strQuery2 += "VALUES('" + strCaseID + "', '" + strFilename + "');";
+                                            mysql_query(mconnect2, strQuery2.c_str());
+                                            if(*mysql_error(mconnect2)) {
+                                                strLogMessage="SQL Error: ";
+                                                strLogMessage+=mysql_error(mconnect2);
+                                                strLogMessage+="strQuery = " + strQuery2 + ".";
+                                                std::cout << strLogMessage << std::endl;
                                             }
                                         }
                                     }
                                 }
-                                mysql_free_result(result3);
-                                if(mconnect3) {
-                                    mysql_close(mconnect3);
-                                }
-                                break;
+                                std::cout << "Done with DB row: " << strPath << std::endl;
                             }
-                        }
-                        if(mconnect3) {
+                            mysql_free_result(result3);
                             mysql_close(mconnect3);
                         }
+                        //if(mconnect3) {
+                        //    mysql_close(mconnect3);
+                        //}
                     }
-                } else {
-                    std::cout << "Skipping duplicated SIUID: " << strSIUID << " with a duplicate DicomID: " << to_string(intDicomCasesID) << std::endl;
+                    std::cout << "Done with DCB: " << strThisName << " for case ID: " << strCaseID << std::endl;
                 }
             }
+            std::cout << "Done with case ID: " << strCaseID << std::endl;
         }
         mysql_free_result(result);
         std::cout << "Ran for " << std::difftime(std::time(nullptr), tmStartTime) << " second(s), sleeping for 10 seconds..." << std::endl;

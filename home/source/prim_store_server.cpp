@@ -365,11 +365,12 @@ void fGetCaseID(std::string strFullPath, std::string strPrimalID, std::string st
 }
 
 std::size_t fProcFile(std::string strTemp, std::string strRecNum) {
-    std::size_t intDBEntries, intPos, intLC2, intFound, intNumRows;
-    std::string strTemp2, strCMD, strCmd, strLogMessage, strFilename, strPrimalID, strRawDCMdump, strPName, strMRN;
+    std::size_t intDBEntries, intPos, intLC2, intFound, intNumRows, intReturn;
+    std::string strTemp2, strCMD, strCmd, strLogMessage, strFilename, strPrimalID, strRawDCMdump, strPName, strMRN, strReturn;
     std::string strDOB, strSerIUID, strSerDesc, strModality, strSopIUID, strSIUID, strStudyDate, strACCN, strStudyDesc;
     std::string strPatientComments, strTemp3, strQuery, strDBReturn, strStartRec, strResult, strStudyTime, strStudyDateTime;
     int intLC, intTemp;
+    std::stringstream sstream("1");
 
     mysql_thread_init();
     MYSQL_ROW row;
@@ -447,13 +448,23 @@ std::size_t fProcFile(std::string strTemp, std::string strRecNum) {
         intLC2++;
     }
     if(intFound != 1) {
-        strLogMessage = " STOR ERROR:  Archive " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/_DICOM.tar.gz" + " does not exist.  Skipping this study...";
+        strLogMessage = " STOR WARN  Archive " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/_DICOM.tar.gz" + " does not exist.";
         fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
-        std::cout << strLogMessage << std::endl;
-        return 1;
     }
+    //Find all .dcm files and move them to the parent directory
     strCMD = "find " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + " -iname \"*.dcm\" -exec mv {} " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/ \\;";
     system(strCMD.c_str());
+    strCMD = "ls -1 " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/*.dcm|wc -l";
+    strReturn = exec(strCMD.c_str());
+    sstream.clear();
+    sstream.str(strReturn);
+    sstream >> intReturn;
+    if(intReturn < 1) {
+        strLogMessage = " STOR ERROR  " + strPrimalID + " File does not contain any .dcm files.  Exiting...";
+        fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+        return 1;
+    }
+
     intLC=0;
     for (const auto & entry2 : fs::directory_iterator(conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/")) {
         strTemp2=entry2.path().string();
@@ -786,7 +797,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     intMaxThreads = std::thread::hardware_concurrency();
-    strLogMessage = "Starting prim_store_server version 1.10.01 with " + to_string(intMaxThreads) + " threads.";
+    strLogMessage = "Starting prim_store_server version 1.11.00 with " + to_string(intMaxThreads) + " threads.";
     std::cout << strLogMessage << std::endl;
     conf1.ReadConfFile();
     fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);

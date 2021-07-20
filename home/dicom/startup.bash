@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.31.15
-# Build 4
-# 2020-07-07
+# Version 3.31.16
+# Build 5
+# 2021-07-20
 # License GPLv3
 
 source /root/.bashrc
@@ -56,11 +56,11 @@ then
 	if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ]
 	then
 		ISRUNNING1=`ps -ef|grep "scp.bash"|grep -v grep|wc -l`
-		ISRUNNING2=`ps -ef|grep "storescp"|grep -v grep|wc -l`
+		ISRUNNING2=`ps -ef|grep "storescp --fork"|grep -v grep|wc -l`
 		ISRUNNING3=`ps -ef|grep "prim_store_sever"|grep -v grep|wc -l`
 	else
 		ISRUNNING1=`ps -ef|grep "scp.bash $STARTVAR"|grep -v grep|wc -l`
-		ISRUNNING2=`ps -ef|grep "storescp"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
+		ISRUNNING2=`ps -ef|grep "storescp --fork"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
 		ISRUNNING3=`ps -ef|grep "prim_store_server"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
 	fi
 	let ISRUNNING=$ISRUNNING1+$ISRUNNING2+$ISRUNNING3
@@ -87,7 +87,7 @@ then
 					kill -9 $KILLLIST
 				fi
 				sleep 1
-				ISDEAD=`ps -ef|grep storescp|grep -v grep|wc -l`
+				ISDEAD=`ps -ef|grep "storescp --fork"|grep -v grep|wc -l`
 				if [ $ISDEAD -lt 1 ]
 				then
 					ISDONE=1
@@ -104,9 +104,9 @@ then
 		#The storescp could have just went away.  Better get a new count
 		if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ]
 		then
-			ISRUNNING2=`ps -ef|grep "storescp"|grep -v grep|wc -l`
+			ISRUNNING2=`ps -ef|grep "storescp --fork"|grep -v grep|wc -l`
 		else
-			ISRUNNING2=`ps -ef|grep "storescp"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
+			ISRUNNING2=`ps -ef|grep "storescp --fork"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
 		fi
 		if [ $ISRUNNING2 -gt 0 ]
 		then
@@ -120,7 +120,7 @@ then
 			LC1=0
 			while [ $ISDONE -ne 1 ]
 			do
-				KILLLIST=`ps -ef|grep storescp|grep -e "$SSSTRING"|grep -v grep|tr -s " "|cut -d " " -f2|tr "\n" " "|sed 's/ $/\n/g'`
+				KILLLIST=`ps -ef|grep "storescp --fork"|grep -e "$SSSTRING"|grep -v grep|tr -s " "|cut -d " " -f2|tr "\n" " "|sed 's/ $/\n/g'`
 				if [ $LC1 -eq 0 ]
 				then
 					kill $KILLLIST
@@ -128,7 +128,7 @@ then
 					kill -9 $KILLLIST
 				fi
 				sleep 1
-				ISDEAD=`ps -ef|grep storescp|grep -v grep|wc -l`
+				ISDEAD=`ps -ef|grep "storescp --fork"|grep -v grep|wc -l`
 				if [ $ISDEAD -lt 1 ]
 				then
 					ISDONE=1
