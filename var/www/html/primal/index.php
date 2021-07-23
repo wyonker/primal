@@ -38,7 +38,11 @@ if(isset($_POST['refresh']))
 
 if($_SESSION['refresh'] != 0)
 {
-	header( "Refresh: " . $_SESSION['refresh'] . '; URL=http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+	if(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+		header( "Refresh: " . $_SESSION['refresh'] . '; URL=https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+	} else {
+		header( "Refresh: " . $_SESSION['refresh'] . '; URL=http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+	}
 }
 
 require_once('config.php');
