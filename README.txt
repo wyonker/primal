@@ -34,7 +34,7 @@ That should be all that is required to recieve, modify and send DICOM files.
 
 The web interface can be accessed from:
 
-http://localhost/index.php
+http://localhost/primal/index.php
 Username:  primal
 Password:  primal
 
