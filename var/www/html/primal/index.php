@@ -517,7 +517,7 @@ case 1:
 	if($ucolumns[0]["visible"] == 0) {
 		if ($sort_column == 0 && $intSortOrder == 0)
 		{
-			echo '<th><a href="' $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=0&o=1&p=' . $_GET["p"] . '">Start Receive</a><br/>';
+			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=0&o=1&p=' . $_GET["p"] . '">Start Receive</a><br/>';
 			if(isset($_SESSION['input_startdt']))
 			{
 				echo '<input type="date" name="input_startdt" value="' . $_SESSION['input_startdt'] . '"/></br>';
