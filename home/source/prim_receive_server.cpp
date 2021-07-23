@@ -856,6 +856,18 @@ void fQueueMonitor() {
         strPrimalID=vMessage[0].substr(intTemp+1);
         intTemp = strPrimalID.find_first_of("_");
         strRecNum = strPrimalID.substr(0, intTemp);
+        strQuery="select count(*) from receive where puid='" + strPrimalID + "'";
+        mysql_query(mconnect, strQuery.c_str());
+        if(*mysql_error(mconnect)) {
+            strLogMessage="SQL Error: ";
+            strLogMessage+=mysql_error(mconnect);
+            strLogMessage+="\nstrQuery = " + strQuery;
+            fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+            continue;
+        }
+        result = mysql_store_result(mconnect);
+        if(result) {
+            result = mysql_store_result(mconnect_local);
         strQuery="select senderAET from receive where puid='" + strPrimalID + "'";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
