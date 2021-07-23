@@ -34,6 +34,7 @@ create table send    (puid varchar(24) not null,
                       tendsend datetime,
                       timages int(6),
                       serror int(1) not null default 0,
+					  sretry int(1) not null default 0,
 					  complete int(1));
 create table user	 (loginid varchar(36) not null primary key,
 					  login_sec_level int(5) not null,

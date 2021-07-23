@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.30.01
-# Build 7
-# 2020-09-12
+# Version 3.30.02
+# Build 8
+# 2021-07-20
 # License GPLv3
 
 re='^[0-9]+$'

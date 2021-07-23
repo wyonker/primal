@@ -863,6 +863,7 @@ void fQueueMonitor() {
             strLogMessage+=mysql_error(mconnect);
             strLogMessage+="\nstrQuery = " + strQuery;
             fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+            continue;
         }
         result = mysql_store_result(mconnect);
         if(result) {
@@ -876,6 +877,7 @@ void fQueueMonitor() {
                     strLogMessage+=mysql_error(mconnect);
                     strLogMessage+="strQuery = " + strQuery + ".";
                     fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+                    continue;
                 }
             } else {
                 mysql_free_result(result);
@@ -925,7 +927,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    strLogMessage="Starting prim_receive_server version 2.01.01";
+    strLogMessage="Starting prim_receive_server version 2.01.02";
     fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
     if(argc == 1) {
         std::cout << "Launching children..." << std::endl;
