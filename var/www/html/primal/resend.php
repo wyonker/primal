@@ -1,6 +1,6 @@
 <?php
 	//License GPLv3
-	//Version 1.00.02
+	//Version 1.00.03
 	//2021-08-06
 	session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
@@ -411,7 +411,7 @@ if($ISERROR == 1) {
 	}
 	$strOutput.="</td></tr></table>";
 	while($row = mysql_fetch_assoc($result)) {
-		exec("/home/dcm4che/bin/dcm2jpg " . $row['ilocation'] . "/" . $row['ifilename'] . " /var/www/html/primal/tmp/" . $row['ifilename'] . ".jpg 2>&1", $return, $retval);
+		exec("/usr/local/bin/dcmj2pnm +oj " . $row['ilocation'] . "/" . $row['ifilename'] . " /var/www/html/primal/tmp/" . $row['ifilename'] . ".jpg 2>&1", $return, $retval);
 		$strOutput.='<img src="/primal/tmp/' . $row['ifilename'] . '.jpg" alt="Image" width="600">';
 		$strOutput.="<br>";
 	}
