@@ -13,6 +13,7 @@
 function Display_Header2()
 {
 	echo '<H1>PRIMAL Web Interface</H1>';
+	echo '<H2>' . gethostname() . '</H2>';
 	echo '<div id="logout">' . $_SESSION['login_username'] . '<br><a href="/primal/logout.php">Logout</a>';
 	$query="SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'primalarc';";
 	$result=mysql_query($query);
