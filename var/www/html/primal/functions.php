@@ -1,6 +1,8 @@
 <?php
-// License GPLv3
-function Display_Header()
+	// License GPLv3
+	//Version 1.00.07
+	//2021-08-03
+	function Display_Header()
 {
 	header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
 	header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -11,24 +13,24 @@ function Display_Header()
 function Display_Header2()
 {
 	echo '<H1>PRIMAL Web Interface</H1>';
-	echo '<div id="logout">' . $_SESSION['login_username'] . '<br><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/logout.php">Logout</a>';
+	echo '<div id="logout">' . $_SESSION['login_username'] . '<br><a href="/primal/logout.php">Logout</a>';
 	$query="SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'primalarc';";
 	$result=mysql_query($query);
 	$num_rows = mysql_num_rows($result);
 	if($_SERVER['PHP_SELF'] != "/primal/index.php")
 	{
-		echo '<br><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/options.php">Options</a>';
+		echo '<br><a href="/primal/options.php">Options</a>';
 		if($num_rows > 0 && substr($_SESSION['login_sec_bit'], 0, 1) == 1)
 		{
-			echo '<br><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/migration/index.php">Migration</a>';
+			echo '<br><a href="/primal/migration/index.php">Migration</a>';
 		}
-		echo '<br><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/index.php">Main Page</a></div>';
+		echo '<br><a href="/primal/index.php">Main Page</a></div>';
 	} else {
 		if($num_rows > 0 && substr($_SESSION['login_sec_bit'], 0, 1) == 1)
 		{
-			echo '<br><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/migration/index.php">Migration</a>';
+			echo '<br><a href="/primal/migration/index.php">Migration</a>';
 		}
-		echo '<br><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/options.php">Options</a></div>';
+		echo '<br><a href="/primal/options.php">Options</a></div>';
 	}
 }
 

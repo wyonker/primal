@@ -1,5 +1,7 @@
 <?php
 	//License GPLv3
+	//Version 1.00.02
+	//2021-08-06
 	session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -238,12 +240,12 @@ echo '<tr><td># Images</td><td align="left">' . $_SESSION['strNumImg'] . "</td><
 echo '<tr><td>Study Description</td><td align="left">' . $_SESSION['strStudyDesc'] . "</td></tr>";
 if(file_exists($_SESSION["ilocation"] . "/payload.json")) {
 	echo '<tr><td>JSON File</td><td align="left">';
-	echo '<a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $_GET["p"];
+	echo '<a href="/primal/resend.php?p=' . $_GET["p"];
 	echo '&j=' . $_GET["p"] . '">View</a></td></tr>';
 }
 if(file_exists($_SESSION["ilocation"] . "/package.conf")) {
 	echo '<tr><td>PKG File</td><td align="left">';
-	echo '<a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $_GET["p"];
+	echo '<a href="/primal/resend.php?p=' . $_GET["p"];
 	echo '&k=' . $_GET["p"] . '">View</a></td></tr>';
 }
 echo '</table><br>';
@@ -293,10 +295,10 @@ if(! isset($_GET['e']))
 while($intLC1 < sizeof($SERIUID)) {
 	if($_GET['e'] == $SERIUID[$intLC1]['SERIUID']) {
 		$e_var = "collapse";
-		echo '<tr style="background-color:#886A08;"><td><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $_GET["p"];
+		echo '<tr style="background-color:#886A08;"><td><a href="/primal/resend.php?p=' . $_GET["p"];
 	} else { 
 		$e_var = $SERIUID[$intLC1]['SERIUID'];
-		echo '<tr><td><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $_GET["p"];
+		echo '<tr><td><a href="/primal/resend.php?p=' . $_GET["p"];
 	}
 	echo '&e=' . $e_var . '">' . $SERIUID[$intLC1]['SERIUID'] . '</a></td>';
 	echo '<td>' . $SERIUID[$intLC1]['SeriesDesc'] . '</td>';
@@ -320,10 +322,10 @@ while($intLC1 < sizeof($SERIUID)) {
 						unset($intSetNext);
 					}
 				}
-				echo '<td colspan="2"><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $_GET["p"];
+				echo '<td colspan="2"><a href="/primal/resend.php?p=' . $_GET["p"];
 				echo '&e=' . $SERIUID[$intLC1]['SERIUID'] . '&v=' . $row['SOPIUID'];
 				echo '">' . $row['ifilename'] . '</a></td>';
-				echo '<td><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $_GET["p"];
+				echo '<td><a href="/primal/resend.php?p=' . $_GET["p"];
 				echo '&e=' . $SERIUID[$intLC1]['SERIUID'] . '&z=' . $row['SOPIUID'];
 				echo '">View</a></td>';
 				echo '</tr>';
@@ -388,7 +390,7 @@ if($ISERROR == 1) {
 			$intLC3++;
 		}
 		$strOutput.="</pre><br>";
-		$strOutput.='<a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $_GET["p"] . '">Back</a>';
+		$strOutput.='<a href="/primal/resend.php?p=' . $_GET["p"] . '">Back</a>';
 		$strOutput.="<br><br>";
 	}
 	$strOutput.='</div id="divright">';
@@ -399,18 +401,18 @@ if($ISERROR == 1) {
 	$strOutput.='<table style="width: 100%"><tr><th>Series Description</th><th>Image number</th></tr>';
 	$strOutput.='<tr><td>' . $SERIUID[$intSel]['SeriesDesc'] . "</td><td>";
 	if($intNumInSer > 1) {
-		$strOutput.='<a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $_GET["p"];
+		$strOutput.='<a href="/primal/resend.php?p=' . $_GET["p"];
 		$strOutput.='&e=' . $_GET["e"] . '&z=' . $strPreviousSOPIUID . '"><</a> ';
 	}
 	$strOutput.='(' . $intNumInSer . ' of ' . $SERIUID[$intSel]['numimg'] . ')';
 	if($intNumInSer < $SERIUID[$intSel]['numimg']) {
-		$strOutput.=' <a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $_GET["p"];
+		$strOutput.=' <a href="/primal/resend.php?p=' . $_GET["p"];
 		$strOutput.='&e=' . $_GET["e"] . '&z=' . $strNextSOPIUID . '">></a> ';
 	}
 	$strOutput.="</td></tr></table>";
 	while($row = mysql_fetch_assoc($result)) {
-		exec("/home/dcm4che/bin/dcm2jpg " . $row['ilocation'] . "/" . $row['ifilename'] . " /var/www/html/tmp/" . $row['ifilename'] . ".jpg 2>&1", $return, $retval);
-		$strOutput.='<img src="http://' . $_SERVER['HTTP_HOST'] . '/tmp/' . $row['ifilename'] . '.jpg" alt="Image" width="600">';
+		exec("/home/dcm4che/bin/dcm2jpg " . $row['ilocation'] . "/" . $row['ifilename'] . " /var/www/html/primal/tmp/" . $row['ifilename'] . ".jpg 2>&1", $return, $retval);
+		$strOutput.='<img src="/primal/tmp/' . $row['ifilename'] . '.jpg" alt="Image" width="600">';
 		$strOutput.="<br>";
 	}
 	$strOutput.='</div id="divright">';
@@ -422,7 +424,7 @@ if($ISERROR == 1) {
 	while (isset($_SESSION['PRIDESTHIP'][$intLC1])) {
 		echo "<tr><td>" . $_SESSION['PRIDESTAEC'][$intLC1] . "</td><td>" . $_SESSION['PRIDESTHIP'][$intLC1];
 		echo "</td><td>" . $_SESSION['PRIDESTPORT'][$intLC1] . "</td><td>" . $_SESSION['PRIDESTCDCR'][$intLC1] . "</td><td>";
-		$strURL='<a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $_GET["p"];
+		$strURL='<a href="/primal/resend.php?p=' . $_GET["p"];
 		if(! isset($_GET['d0'])) {
 		} elseif($_GET['d0'] == "a") {
 			$_GET['d' . $intLC1]=1;
@@ -463,7 +465,7 @@ if($ISERROR == 1) {
 	echo '</form>';
 if(isset($_GET['d0'])) {
 	$intLC1=0;
-	$strURL='<a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $_GET["p"];
+	$strURL='<a href="/primal/resend.php?p=' . $_GET["p"];
 	while (isset($_SESSION['PRIDESTHIP'][$intLC1])) {
 		$strURL=$strURL . "&d" . $intLC1 . "=" . $_GET['d' . $intLC1];
 		$intLC1++;

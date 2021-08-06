@@ -1,7 +1,7 @@
 <?php
     //License GPLv3
-	//Version 1.00.06
-	//2021-07-22
+	//Version 1.00.07
+	//2021-08-03
 	session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -479,10 +479,10 @@ if($count_rows > $_SESSION['page_size'] && $_SESSION['page_size'] != 0)
 {
 	$count_pages = floor($count_rows/$_SESSION['page_size']);
 	$lc1=0;
-	echo '<a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . $lc1 . '">First</a> ';
+	echo '<a href="/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . $lc1 . '">First</a> ';
 	if ($_GET["p"] > 0)
 	{
-		echo '<a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . ($_GET["p"]-1) . '"> << </a> ';
+		echo '<a href="/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . ($_GET["p"]-1) . '"> << </a> ';
 	}
 	while($lc1 <= $count_pages)
 	{
@@ -492,16 +492,16 @@ if($count_rows > $_SESSION['page_size'] && $_SESSION['page_size'] != 0)
 			{
 				echo " <b>" . ($lc1+1) . "</b> " ;
 			} else {
-				echo '<a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . $lc1 . '">' . ($lc1+1) . '</a> ';
+				echo '<a href="/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . $lc1 . '">' . ($lc1+1) . '</a> ';
 			}
 		}
 		$lc1++;
 	}
 	if ($_GET["p"] < $count_pages)
 	{
-		echo '<a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . ($_GET["p"]+1) . '"> >> </a> ';
+		echo '<a href="/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . ($_GET["p"]+1) . '"> >> </a> ';
 	}
-	echo '<a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . ($total_pages) . '">Last</a> ';
+	echo '<a href="/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . ($total_pages) . '">Last</a> ';
 }
 if(isset($err_msg))
 	echo '<div style="color:#FF0000;"><blink>' . $err_msg . "</blink></div><br>";
@@ -517,7 +517,7 @@ case 1:
 	if($ucolumns[0]["visible"] == 0) {
 		if ($sort_column == 0 && $intSortOrder == 0)
 		{
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=0&o=1&p=' . $_GET["p"] . '">Start Receive</a><br/>';
+			echo '<th><a href="/primal/index.php?c=0&o=1&p=' . $_GET["p"] . '">Start Receive</a><br/>';
 			if(isset($_SESSION['input_startdt']))
 			{
 				echo '<input type="date" name="input_startdt" value="' . $_SESSION['input_startdt'] . '"/></br>';
@@ -531,7 +531,7 @@ case 1:
 				echo '<input type="date" name="input_enddt" /></br>';
 			}
 		} else {
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=0&o=0&p=' . $_GET["p"] . '">Start Receive</a><br/>';
+			echo '<th><a href="/primal/index.php?c=0&o=0&p=' . $_GET["p"] . '">Start Receive</a><br/>';
 			if(isset($_SESSION['input_startdt']))
 			{
 				echo '<input type="date" name="input_startdt" value="' . $_SESSION['input_startdt'] . '"/></br>';
@@ -551,7 +551,7 @@ case 2:
 	if($ucolumns[1]["visible"] == 0) {
 		if ($sort_column == 1 && $intSortOrder == 0)
 		{
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=1&o=1&p=' . $_GET["p"] . '">Patient Name</a><br/>';
+			echo '<th><a href="/primal/index.php?c=1&o=1&p=' . $_GET["p"] . '">Patient Name</a><br/>';
 			if(isset($_SESSION['input_pname']))
 			{
 				echo '<input type="text" name="input_pname" value="' . $_SESSION['input_pname'] . '"/></th>';
@@ -559,7 +559,7 @@ case 2:
 				echo '<input type="text" name="input_pname" /></th>';
 			}
 		} else {
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=1&o=0&p=' . $_GET["p"] . '">Patient Name</a><br/>';
+			echo '<th><a href="/primal/index.php?c=1&o=0&p=' . $_GET["p"] . '">Patient Name</a><br/>';
 			if(isset($_SESSION['input_pname']))
 			{
 				echo '<input type="text" name="input_pname" value="' . $_SESSION['input_pname'] . '"/></th>';
@@ -573,14 +573,14 @@ case 3:
 	if($ucolumns[2]["visible"] == 0) {
 		if ($sort_column == 2 && $intSortOrder == 0)
 		{
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=2&o=1&p=' . $_GET["p"] . '">Patient ID</a></br>';
+			echo '<th><a href="/primal/index.php?c=2&o=1&p=' . $_GET["p"] . '">Patient ID</a></br>';
 			if(isset($_SESSION['input_pid'])) {
 				echo '<input type="text" name="input_pid" />' . $_SESSION["input_pid"] . '</th>';
 			} else {
 				echo '<input type="text" name="input_pid" /></th>';
 			}
 		} else {
-			echo '<th><a href="' $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=2&o=0&p=' . $_GET["p"] . '">Patient ID</a></br>';
+			echo '<th><a href="/primal/index.php?c=2&o=0&p=' . $_GET["p"] . '">Patient ID</a></br>';
 			if(isset($_SESSION['input_pid'])) {
 				echo '<input type="text" name="input_pid" />' . $_SESSION["input_pid"] . '</th>';
 			} else {
@@ -593,7 +593,7 @@ case 4:
 	if($ucolumns[3]["visible"] == 0) {
 		if ($sort_column == 3 && $intSortOrder == 0)
 		{
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=3&o=1&p=' . $_GET["p"] . '">Accession #</a></br>';
+			echo '<th><a href="/primal/index.php?c=3&o=1&p=' . $_GET["p"] . '">Accession #</a></br>';
 			if(isset($_SESSION['input_accn']))
 			{
 				echo '<input type="text" name="input_accn" value="' . $_SESSION['input_accn'] . '"/></th>';
@@ -601,7 +601,7 @@ case 4:
 				echo '<input type="text" name="input_accn" /></th>';
 			}
 		} else {
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=3&o=0&p=' . $_GET["p"] . '">Accession #</a></br>';
+			echo '<th><a href="/primal/index.php?c=3&o=0&p=' . $_GET["p"] . '">Accession #</a></br>';
 			if(isset($_SESSION['input_accn']))
 			{
 				echo '<input type="text" name="input_accn" value="' . $_SESSION['input_accn'] . '"/></th>';
@@ -615,9 +615,9 @@ case 5:
 	if($ucolumns[4]["visible"] == 0) {
 		if ($sort_column == 4 && $intSortOrder == 0)
 		{
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=4&o=1&p=' . $_GET["p"] . '">DOB</a></th>';
+			echo '<th><a href="/primal/index.php?c=4&o=1&p=' . $_GET["p"] . '">DOB</a></th>';
 		} else {
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=4&o=0&p=' . $_GET["p"] . '">DOB</a></th>';
+			echo '<th><a href="/primal/index.php?c=4&o=0&p=' . $_GET["p"] . '">DOB</a></th>';
 		}
 	}
 break;
@@ -625,9 +625,9 @@ case 6:
 	if($ucolumns[5]["visible"] == 0) {
 		if ($sort_column == 5 && $intSortOrder == 0)
 		{
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=5&o=1&p=' . $_GET["p"] . '">MOD</a></th>';
+			echo '<th><a href="/primal/index.php?c=5&o=1&p=' . $_GET["p"] . '">MOD</a></th>';
 		} else {
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=5&o=0&p=' . $_GET["p"] . '">MOD</a></th>';
+			echo '<th><a href="/primal/index.php?c=5&o=0&p=' . $_GET["p"] . '">MOD</a></th>';
 		}
 	}
 break;
@@ -635,9 +635,9 @@ case 7:
 	if($ucolumns[6]["visible"] == 0) {
 		if ($sort_column == 6 && $intSortOrder == 0)
 		{
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=6&o=1&p=' . $_GET["p"] . '">Study Date</a></th>';
+			echo '<th><a href="/primal/index.php?c=6&o=1&p=' . $_GET["p"] . '">Study Date</a></th>';
 		} else {
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=6&o=0&p=' . $_GET["p"] . '">Study Date</a></th>';
+			echo '<th><a href="/primal/index.php?c=6&o=0&p=' . $_GET["p"] . '">Study Date</a></th>';
 		}
 	}
 break;
@@ -645,18 +645,18 @@ case 8:
 	if($ucolumns[7]["visible"] == 0) {
 		if ($sort_column == 7 && $intSortOrder == 0)
 		{
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=7&o=1&p=' . $_GET["p"] . '">End Receive</a></th>';
+			echo '<th><a href="/primal/index.php?c=7&o=1&p=' . $_GET["p"] . '">End Receive</a></th>';
 		} else {
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=7&o=0&p=' . $_GET["p"] . '">End Receive</a></th>';
+			echo '<th><a href="/primal/index.php?c=7&o=0&p=' . $_GET["p"] . '">End Receive</a></th>';
 		}
 	}
 break;
 case 9:
 	if($ucolumns[8]["visible"] == 0) {
 		if ($sort_column == 8 && $intSortOrder == 0) {
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=8&o=1&p=' . $_GET["p"] . '">#<br>images<br>rec</a></th>';
+			echo '<th><a href="/primal/index.php?c=8&o=1&p=' . $_GET["p"] . '">#<br>images<br>rec</a></th>';
 		} else {
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=8&o=0&p=' . $_GET["p"] . '">#<br>images<br>rec</a></th>';
+			echo '<th><a href="/primal/index.php?c=8&o=0&p=' . $_GET["p"] . '">#<br>images<br>rec</a></th>';
 		}
 	}
 break;
@@ -678,9 +678,9 @@ break;
 case 13:
 	if($ucolumns[12]["visible"] == 0) {
 		if ($sort_column == 9 && $intSortOrder == 0) {
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=9&o=1&p=' . $_GET["p"] . '">Start Send Date</a></th>';
+			echo '<th><a href="/primal/index.php?c=9&o=1&p=' . $_GET["p"] . '">Start Send Date</a></th>';
 		} else {
-			echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=9&o=0&p=' . $_GET["p"] . '">Start Send Date</a></th>';
+			echo '<th><a href="/primal/index.php?c=9&o=0&p=' . $_GET["p"] . '">Start Send Date</a></th>';
 		}
 	}
 break;
@@ -711,7 +711,7 @@ case 17:
 		} else {
 			$bolSortOrder=0;
 		}
-		echo '<th><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/index.php?c=10&o=' . $bolSortOrder . '&p=' . $_GET["p"] . '">Sender<br>AET</a></th>';
+		echo '<th><a href="/primal/index.php?c=10&o=' . $bolSortOrder . '&p=' . $_GET["p"] . '">Sender<br>AET</a></th>';
 	}
 break;
 case 18:
@@ -737,7 +737,7 @@ case 1:
 break;
 case 2:
 	if($ucolumns[1]["visible"] == 0) {
-		echo '<td><a href="' . $strHTTP . $_SERVER['HTTP_HOST'] . '/primal/resend.php?p=' . $studies[$lc1]["puid"] . '"> ' . $studies[$lc1]["pname"] . '</a></td>';
+		echo '<td><a href="/primal/resend.php?p=' . $studies[$lc1]["puid"] . '"> ' . $studies[$lc1]["pname"] . '</a></td>';
 	}
 break;
 case 3:
