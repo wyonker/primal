@@ -152,8 +152,9 @@ if (!isset($_GET["o"])) {
 
 //$query="select a.puid, a.pname, a.pid, a.pdob, a.pmod, a.sdatetime, r.tstartrec, r.tendrec, r.rec_images, r.rerror, r.senderAET, p.tstartproc, p.tendproc, p.perror, s.tdest, s.tstartsend, s.tendsend, s.timages, s.serror, t.AccessionNum, t.StudyDate from patient as a left join receive as r on a.puid = r.puid left join process as p on a.puid = p.puid left join send as s on a.puid = s.puid left join study as t on a.puid = t.puid";
 $query="select count(*) as total from send;";
-$result = mysql_query($query);
-$qdata=mysql_fetch_assoc($result);
+//$result = mysql_query($query);
+$result=$conn->query($strQuery);
+$qdata=mysqli_fetch_assoc($result);
 $num_rows = $qdata['total'];;
 $total_pages = floor($num_rows/$_SESSION['page_size']);
 //echo "num_rows = " . $num_rows . " : total_pages = " . $total_pages . "<br>";
@@ -261,7 +262,7 @@ if(!empty($_POST["input_enddt"])) {
 */
 //echo "<br>query = " . $query . "<br>";
 //echo "query = " . $_SESSION["query"] . "</br>";
-$result = mysql_query($query);
+$result = $conn->query($query);
 $lc1=0;
 if(!isset($_GET["p"]))
 	$_GET["p"] = 0;
@@ -276,19 +277,18 @@ if(!isset($_get['c']))
 
 //echo "Time Index before sort: " . xdebug_time_index() . "<br>";
 
-while($row = mysql_fetch_assoc($result))
-{
+while($row = mysqli_fetch_assoc($result)) {
 	//Per receiver security
 	$intPOS=strpos($row["puid"], "_");
 	$strRecName=substr($row["puid"], 0, ($intPOS));
 	$strRecName .= " ";
     //Need to get the modality.
 	$query10="select Modality from series where puid = '" . $row["puid"] . "' group by Modality";
-	$result10 = mysql_query($query10);
+	$result10 = $conn->query($query10);
 	unset($temppmod);
 	$temppmod="";
 	$intLC10=0;
-	while($row2 =  mysql_fetch_assoc($result10)) {
+	while($row2 =  mysqli_fetch_assoc($result10)) {
 			$intLC10++;
 			if ($intLC10 > 1) {
 					$temppmod .= " " . $row2["Modality"];
@@ -395,9 +395,8 @@ if (isset($_GET["c"]))
 
 $lc21=0;
 $query="select * from page_columns;";
-$result = mysql_query($query);
-while($row = mysql_fetch_assoc($result))
-{
+$result = $conn->query($query);
+while($row = mysqli_fetch_assoc($result)) {
     $ucolumns[$lc21]["id"] = $row["id"];
     $ucolumns[$lc21]["name"] = $row["name"];
     $ucolumns[$lc21]["dorder"] = $row["dorder"];
@@ -408,10 +407,9 @@ while($row = mysql_fetch_assoc($result))
 }
 
 $query="select * from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
-$result = mysql_query($query);
-$num_rows = mysql_num_rows($result);
-while($row = mysql_fetch_assoc($result))
-{
+$result = $conn->query($query);
+$num_rows = $result->num_rows;
+while($row = mysqli_fetch_assoc($result)) {
     $lc22=0;
     while($lc22 < count($ucolumns)) {
         $ucolumns[$lc22]["visible"] = $row["Column" . $ucolumns[$lc22]["id"] . "_Visible"];
@@ -449,8 +447,7 @@ if($pend == 0 || $pend > count($studies))
 	$pend = count($studies);
 }
 
-while($lc1 < $pend)
-{
+while($lc1 < $pend) {
 	$temperror=0;
 	$temperror=$studies[$lc1]["rerror"] + $studies[$lc1]["perror"] + $studies[$lc1]["serror"];
 	echo '<tr>';
@@ -475,21 +472,16 @@ echo '<button type="submit" name="submit">Query</button>';
 echo '<br><br>';
 $start_page=$_GET["p"]-3;
 $end_page=$_GET["p"]+3;
-if($count_rows > $_SESSION['page_size'] && $_SESSION['page_size'] != 0)
-{
+if($count_rows > $_SESSION['page_size'] && $_SESSION['page_size'] != 0) {
 	$count_pages = floor($count_rows/$_SESSION['page_size']);
 	$lc1=0;
 	echo '<a href="/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . $lc1 . '">First</a> ';
-	if ($_GET["p"] > 0)
-	{
+	if ($_GET["p"] > 0) {
 		echo '<a href="/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . ($_GET["p"]-1) . '"> << </a> ';
 	}
-	while($lc1 <= $count_pages)
-	{
-		if($lc1 >= $start_page && $lc1 <= $end_page)
-		{
-			if($lc1 == $_GET["p"])
-			{
+	while($lc1 <= $count_pages)	{
+		if($lc1 >= $start_page && $lc1 <= $end_page) {
+			if($lc1 == $_GET["p"]) {
 				echo " <b>" . ($lc1+1) . "</b> " ;
 			} else {
 				echo '<a href="/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . $lc1 . '">' . ($lc1+1) . '</a> ';
@@ -497,8 +489,7 @@ if($count_rows > $_SESSION['page_size'] && $_SESSION['page_size'] != 0)
 		}
 		$lc1++;
 	}
-	if ($_GET["p"] < $count_pages)
-	{
+	if ($_GET["p"] < $count_pages) {
 		echo '<a href="/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . ($_GET["p"]+1) . '"> >> </a> ';
 	}
 	echo '<a href="/primal/index.php?c=' . $_GET["c"] . '&o=' . $_GET["o"] . '&p=' . ($total_pages) . '">Last</a> ';
@@ -515,31 +506,26 @@ function Show_Headers($Column_Number, $ucolumns, $sort_column, $intSortOrder) {
 switch ($Column_Number) {
 case 1:
 	if($ucolumns[0]["visible"] == 0) {
-		if ($sort_column == 0 && $intSortOrder == 0)
-		{
+		if ($sort_column == 0 && $intSortOrder == 0) {
 			echo '<th><a href="/primal/index.php?c=0&o=1&p=' . $_GET["p"] . '">Start Receive</a><br/>';
-			if(isset($_SESSION['input_startdt']))
-			{
+			if(isset($_SESSION['input_startdt'])) {
 				echo '<input type="date" name="input_startdt" value="' . $_SESSION['input_startdt'] . '"/></br>';
 			} else {
 				echo '<input type="date" name="input_startdt" /></br>';
 			}
-			if(isset($_SESSION['input_enddt']))
-			{
+			if(isset($_SESSION['input_enddt'])) {
 				echo '<input type="date" name="input_enddt" value="' . $_SESSION['input_enddt'] . '"/></br>';
 			} else {
 				echo '<input type="date" name="input_enddt" /></br>';
 			}
 		} else {
 			echo '<th><a href="/primal/index.php?c=0&o=0&p=' . $_GET["p"] . '">Start Receive</a><br/>';
-			if(isset($_SESSION['input_startdt']))
-			{
+			if(isset($_SESSION['input_startdt'])) {
 				echo '<input type="date" name="input_startdt" value="' . $_SESSION['input_startdt'] . '"/></br>';
 			} else {
 				echo '<input type="date" name="input_startdt" /></br>';
 			}
-			if(isset($_SESSION['input_enddt']))
-			{
+			if(isset($_SESSION['input_enddt'])) {
 				echo '<input type="date" name="input_enddt" value="' . $_SESSION['input_enddt'] . '"/></br>';
 			} else {
 				echo '<input type="date" name="input_enddt" /></br>';
@@ -549,19 +535,16 @@ case 1:
 break;
 case 2:
 	if($ucolumns[1]["visible"] == 0) {
-		if ($sort_column == 1 && $intSortOrder == 0)
-		{
+		if ($sort_column == 1 && $intSortOrder == 0) {
 			echo '<th><a href="/primal/index.php?c=1&o=1&p=' . $_GET["p"] . '">Patient Name</a><br/>';
-			if(isset($_SESSION['input_pname']))
-			{
+			if(isset($_SESSION['input_pname']))	{
 				echo '<input type="text" name="input_pname" value="' . $_SESSION['input_pname'] . '"/></th>';
 			} else {
 				echo '<input type="text" name="input_pname" /></th>';
 			}
 		} else {
 			echo '<th><a href="/primal/index.php?c=1&o=0&p=' . $_GET["p"] . '">Patient Name</a><br/>';
-			if(isset($_SESSION['input_pname']))
-			{
+			if(isset($_SESSION['input_pname']))	{
 				echo '<input type="text" name="input_pname" value="' . $_SESSION['input_pname'] . '"/></th>';
 			} else {
 				echo '<input type="text" name="input_pname" /></th>';
@@ -571,8 +554,7 @@ case 2:
 break;
 case 3:
 	if($ucolumns[2]["visible"] == 0) {
-		if ($sort_column == 2 && $intSortOrder == 0)
-		{
+		if ($sort_column == 2 && $intSortOrder == 0) {
 			echo '<th><a href="/primal/index.php?c=2&o=1&p=' . $_GET["p"] . '">Patient ID</a></br>';
 			if(isset($_SESSION['input_pid'])) {
 				echo '<input type="text" name="input_pid" />' . $_SESSION["input_pid"] . '</th>';
@@ -591,19 +573,16 @@ case 3:
 break;
 case 4:
 	if($ucolumns[3]["visible"] == 0) {
-		if ($sort_column == 3 && $intSortOrder == 0)
-		{
+		if ($sort_column == 3 && $intSortOrder == 0) {
 			echo '<th><a href="/primal/index.php?c=3&o=1&p=' . $_GET["p"] . '">Accession #</a></br>';
-			if(isset($_SESSION['input_accn']))
-			{
+			if(isset($_SESSION['input_accn'])) {
 				echo '<input type="text" name="input_accn" value="' . $_SESSION['input_accn'] . '"/></th>';
 			} else {
 				echo '<input type="text" name="input_accn" /></th>';
 			}
 		} else {
 			echo '<th><a href="/primal/index.php?c=3&o=0&p=' . $_GET["p"] . '">Accession #</a></br>';
-			if(isset($_SESSION['input_accn']))
-			{
+			if(isset($_SESSION['input_accn'])) {
 				echo '<input type="text" name="input_accn" value="' . $_SESSION['input_accn'] . '"/></th>';
 			} else {
 				echo '<input type="text" name="input_accn" /></th>';
@@ -613,8 +592,7 @@ case 4:
 break;
 case 5:
 	if($ucolumns[4]["visible"] == 0) {
-		if ($sort_column == 4 && $intSortOrder == 0)
-		{
+		if ($sort_column == 4 && $intSortOrder == 0) {
 			echo '<th><a href="/primal/index.php?c=4&o=1&p=' . $_GET["p"] . '">DOB</a></th>';
 		} else {
 			echo '<th><a href="/primal/index.php?c=4&o=0&p=' . $_GET["p"] . '">DOB</a></th>';
@@ -623,8 +601,7 @@ case 5:
 break;
 case 6:
 	if($ucolumns[5]["visible"] == 0) {
-		if ($sort_column == 5 && $intSortOrder == 0)
-		{
+		if ($sort_column == 5 && $intSortOrder == 0) {
 			echo '<th><a href="/primal/index.php?c=5&o=1&p=' . $_GET["p"] . '">MOD</a></th>';
 		} else {
 			echo '<th><a href="/primal/index.php?c=5&o=0&p=' . $_GET["p"] . '">MOD</a></th>';
@@ -633,8 +610,7 @@ case 6:
 break;
 case 7:
 	if($ucolumns[6]["visible"] == 0) {
-		if ($sort_column == 6 && $intSortOrder == 0)
-		{
+		if ($sort_column == 6 && $intSortOrder == 0) {
 			echo '<th><a href="/primal/index.php?c=6&o=1&p=' . $_GET["p"] . '">Study Date</a></th>';
 		} else {
 			echo '<th><a href="/primal/index.php?c=6&o=0&p=' . $_GET["p"] . '">Study Date</a></th>';
@@ -643,8 +619,7 @@ case 7:
 break;
 case 8:
 	if($ucolumns[7]["visible"] == 0) {
-		if ($sort_column == 7 && $intSortOrder == 0)
-		{
+		if ($sort_column == 7 && $intSortOrder == 0) {
 			echo '<th><a href="/primal/index.php?c=7&o=1&p=' . $_GET["p"] . '">End Receive</a></th>';
 		} else {
 			echo '<th><a href="/primal/index.php?c=7&o=0&p=' . $_GET["p"] . '">End Receive</a></th>';
@@ -727,8 +702,7 @@ $temperror=$studies[$lc1]["serror"]+$studies[$lc1]["rerror"];
 switch ($Column_Number) {
 case 1:
 	if($ucolumns[0]["visible"] == 0) {
-		if($studies[$lc1]["rerror"] != 0)
-		{
+		if($studies[$lc1]["rerror"] != 0) {
 			echo '<td bgcolor="#FF0000"><font color="#FFFFFF">' . $studies[$lc1]["tstartrec"] . '</td>';
 		} else {
 			echo '<td>' . $studies[$lc1]["tstartrec"] . '</td>';
@@ -767,8 +741,7 @@ case 7:
 break;
 case 8:
 	if($ucolumns[7]["visible"] == 0) {
-		if($studies[$lc1]["rerror"] != 0)
-		{
+		if($studies[$lc1]["rerror"] != 0) {
 			echo '<td bgcolor="#FF0000">' . $studies[$lc1]["tendrec"] . '</td>';
 		} else {
 			echo '<td>' . $studies[$lc1]["tendrec"] . '</td>';
@@ -777,8 +750,7 @@ case 8:
 break;
 case 9:
 	if($ucolumns[8]["visible"] == 0) {
-		if($studies[$lc1]["rerror"] != 0)
-        {
+		if($studies[$lc1]["rerror"] != 0) {
 			echo '<td bgcolor="#FF0000">' . $studies[$lc1]["rec_images"] . '</td>';
 		} else {
 			echo '<td>' . $studies[$lc1]["rec_images"] . '</td>';
@@ -787,8 +759,7 @@ case 9:
 break;
 case 10:
 	if($ucolumns[9]["visible"] == 0) {
-		if($studies[$lc1]["perror"] != 0)
-		{
+		if($studies[$lc1]["perror"] != 0) {
 			echo '<td bgcolor="#FF0000"><font color="#FFFFFF">' . $studies[$lc1]["tstartproc"] . '</td>';
 		} else {
 			echo '<td>' . $studies[$lc1]["tstartproc"] . '</td>';
@@ -797,8 +768,7 @@ case 10:
 break;
 case 11:
 	if($ucolumns[10]["visible"] == 0) {
-		if($studies[$lc1]["perror"] != 0)
-		{
+		if($studies[$lc1]["perror"] != 0) {
 			echo '<td bgcolor="#FF0000"><font color="#FFFFFF">' . $studies[$lc1]["tendproc"] . '</td>';
 		} else {
 			echo '<td>' . $studies[$lc1]["tendproc"] . '</td>';
@@ -807,8 +777,7 @@ case 11:
 break;
 case 12:
 	if($ucolumns[11]["visible"] == 0) {
-		if($studies[$lc1]["serror"] != 0)
-		{
+		if($studies[$lc1]["serror"] != 0) {
 			echo '<td bgcolor="#FF0000"><font color="#FFFFFF">' . $studies[$lc1]["tdest"] . '</td>';
 		} else {
 			echo '<td>' . $studies[$lc1]["tdest"] . '</td>';
@@ -817,8 +786,7 @@ case 12:
 break;
 case 13:
 	if($ucolumns[12]["visible"] == 0) {
-		if($studies[$lc1]["serror"] != 0)
-		{
+		if($studies[$lc1]["serror"] != 0) {
 			echo '<td bgcolor="#FF0000"><font color="#FFFFFF">' . $studies[$lc1]["tstartsend"] . '</td>';
 		} else {
 			echo '<td>' . $studies[$lc1]["tstartsend"] . '</td>';
@@ -827,8 +795,7 @@ case 13:
 break;
 case 14:
 	if($ucolumns[13]["visible"] == 0) {
-		if($studies[$lc1]["serror"] != 0)
-		{
+		if($studies[$lc1]["serror"] != 0) {
 			echo '<td bgcolor="#FF0000"><font color="#FFFFFF">' . $studies[$lc1]["tendsend"] . '</td>';
 		} else {
 			echo '<td>' . $studies[$lc1]["tendsend"] . '</td>';
@@ -837,8 +804,7 @@ case 14:
 break;
 case 15:
 	if($ucolumns[14]["visible"] == 0) {
-		if($studies[$lc1]["serror"] != 0)
-		{
+		if($studies[$lc1]["serror"] != 0) {
 			echo '<td bgcolor="#FF0000"><font color="#FFFFFF">' . $studies[$lc1]["timages"] . '</td>';
 		} else {
 			echo '<td>' . $studies[$lc1]["timages"] . '</td>';
@@ -852,8 +818,7 @@ case 16:
 break;
 case 17:
 	if($ucolumns[16]["visible"] == 0) {
-		if($studies[$lc1]["rerror"] != 0)
-		{
+		if($studies[$lc1]["rerror"] != 0) {
 			echo '<td bgcolor="#FF0000"><font color="#FFFFFF">' . $studies[$lc1]["senderAET"] . '</td>';
 		} else {
 			echo '<td>' . $studies[$lc1]["senderAET"] . '</td>';

@@ -16,8 +16,8 @@ function Display_Header2()
 	echo '<H2>' . gethostname() . '</H2>';
 	echo '<div id="logout">' . $_SESSION['login_username'] . '<br><a href="/primal/logout.php">Logout</a>';
 	$query="SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'primalarc';";
-	$result=mysql_query($query);
-	$num_rows = mysql_num_rows($result);
+	$result=$conn->query($query);
+	$num_rows = $result->num_rows;
 	if($_SERVER['PHP_SELF'] != "/primal/index.php")
 	{
 		echo '<br><a href="/primal/options.php">Options</a>';
@@ -56,9 +56,8 @@ function Display_Footer()
 {
 	echo "<br>";
 	$query="select * from monitor";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result))
-	{
+	$result = $conn->query($query);
+	while($row = mysqli_fetch_assoc($result)) {
 		if($row['status'] == "1") {
 			echo '<span class="recup">' . $row['SCP'] . '</span>';
 		} else {
@@ -86,9 +85,8 @@ function Error_Message($ERR_NUM)
    echo "</SCRIPT>";
 }
 
-function run_query($query)
-{
-    $result = mysql_query($query);
+function run_query($query) {
+    $result = $conn->query($query);
     if (!$result) {
         echo 'Could not run query: ' . $query . "<br />" . mysql_error();
         exit;
@@ -249,8 +247,7 @@ if ($sort_column == 0 && $sort_order == 0)
 function Check_Input($sort_column, $sort_order, $tempvar, $tempvar2)
 {
 	$query="select a.puid, a.pname, a.pid, a.pdob, a.pmod, a.sdatetime, r.tstartrec, r.tendrec, r.rec_images, r.rerror, r.senderAET, p.tstartproc, p.tendproc, p.perror, s.tdest, s.tstartsend, s.tendsend, s.timages, s.serror, t.AccessionNum, t.StudyDate, t.StudyModType from patient as a left join receive as r on a.puid = r.puid left join process as p on a.puid = p.puid left join send as s on a.puid = s.puid left join study as t on a.puid = t.puid";
-	if(isset($_POST['reset']))
-	{
+	if(isset($_POST['reset'])) {
 		$query = $query . " limit 100;";
 		unset($_POST['input_startdt']);
 		unset($_POST['input_enddt']);
@@ -263,8 +260,7 @@ function Check_Input($sort_column, $sort_order, $tempvar, $tempvar2)
 		unset($_SESSION['input_accn']);
 		return $query;
 	}
-	if ($_POST['input_startdt'] != "*" && $_POST['input_startdt'] != NULL)
-	{
+	if ($_POST['input_startdt'] != "*" && $_POST['input_startdt'] != NULL) {
 		//have to validate the date format
 		//Must be YYYY-MM-DD HH:MM:SS
 		$query = $query . " where r.tstartrec between '" . $_POST['input_startdt'] . "' and '" . $_POST['input_enddt'] . "' ";
@@ -272,8 +268,7 @@ function Check_Input($sort_column, $sort_order, $tempvar, $tempvar2)
 		$_SESSION['input_enddt']=$_POST['input_enddt'];
 		$bAdded = TRUE;
 	}
-	if ($_POST['input_pname'] != "*" && $_POST['input_pname'] != NULL)
-	{
+	if ($_POST['input_pname'] != "*" && $_POST['input_pname'] != NULL) {
 		if($bAdded === TRUE)
 		{
 			$query = $query . " and";
@@ -282,20 +277,16 @@ function Check_Input($sort_column, $sort_order, $tempvar, $tempvar2)
 		$_SESSION['input_pname']=$_POST['input_pname'];
 		$bAdded = TRUE;
 	}
-	if ($_POST['input_pid'] != "*" && $_POST['input_pid'] != NULL)
-	{
-		if($bAdded === TRUE)
-		{
+	if ($_POST['input_pid'] != "*" && $_POST['input_pid'] != NULL) {
+		if($bAdded === TRUE) {
 			$query = $query . " and";
 		}
 		$query = $query . " where a.pid like '%" . $_POST['input_pid'] . "%'";
 		$_SESSION['input_pid']=$_POST['input_pid'];
 		$bAdded = TRUE;
 	}
-	if ($_POST['input_accn'] != "*" && $_POST['input_accn'] != NULL)
-	{
-		if($bAdded === TRUE)
-		{
+	if ($_POST['input_accn'] != "*" && $_POST['input_accn'] != NULL) {
+		if($bAdded === TRUE) {
 			$query = $query . " and";
 		}
 		$query = $query . " where t.AccessionNum like '%" . $_POST['input_accn'] . "%'";

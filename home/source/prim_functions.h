@@ -140,6 +140,7 @@ struct PatientData {
     std::string callingAETitle;
     std::string lastStudyInstanceUID;
     std::size_t intMoved=0, intLastMoved=0;
+    std::string strRequestedProcedureID;
 } pData;
 
 std::string strHostname;
@@ -608,11 +609,15 @@ std::string fDcmDump(std::string strTemp) {
     return strReturn;
 }
 
-std::string fGetTagValue(std::string strTagID, std::string strDcmDump, std::size_t intType){
+std::string fGetTagValue(std::string strTagID, std::string strDcmDump, std::size_t intType, std::size_t intOrder){
     std::size_t intFound, intEOL, intBracket, intBracketClose;
     std::string strReturn, strTemp, strTagType;
 
-    intFound = strDcmDump.find(strTagID);
+    if(intOrder == 1) {
+        intFound = strDcmDump.find_last_of(strTagID);
+    } else {
+        intFound = strDcmDump.find(strTagID);
+    }
     if(intFound != std::string::npos) {
         intEOL = strDcmDump.find("\n", intFound);
         strTemp = strDcmDump.substr(intFound, intEOL-intFound);

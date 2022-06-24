@@ -1,6 +1,6 @@
 #!/bin/bash
-#Version 5
-#2021-07-09
+#Version 6
+#2021-08-06
 # License GPLv3
 
 CURDIR=`pwd`
@@ -494,11 +494,20 @@ then
 	then
 		echo "PRIMAL backup file not found.  Exiting..."
 		exit 1
+	fi
+	echo "Creating backup without schema..."
+	mysqldump --no-create-info --skip-triggers --no-create-db --compact -u primal -pprimal primal > ./primal_backup_noschema.sql
+	if [ ! -e "./primal_backup_noschema.sql" ]
+	then
+		echo "PRIMAL no schema backup file not found.  Exiting..."
+		exit 1
 	else
 		echo "Dropping database..."
 		echo "drop database primal;"|mysql -u root
 		echo "Importing database design..."
 		mysql -u root < home/dicom/install/install.sql
+		echo "Restoring backup..."
+		mysql -u root primal < ./primal_backup_noschema.sql
 	fi
 else
 	echo "Importing database design..."

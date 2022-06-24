@@ -25,30 +25,23 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
         $_SESSION['perror'] = 1;
     } else {
 		$query = "SELECT * from user WHERE loginid = '" . $_SESSION['loginid'] . "'";
-		$result = run_query($query);
+		$result = $conn->query($query);
 		$num_rows = mysql_num_rows($result);
-		if ($num_rows <= 0)
-		{
+		if ($num_rows <= 0) {
 			$_SESSION['perror'] = 2;
 		}
-
-		if ($num_rows >= 2)
-		{
+		if ($num_rows >= 2) {
 			$_SESSION['perror'] = 3;
 		}
 		$row = mysql_fetch_assoc($result);
 	}
-	if($_SESSION['callerid']!= "/primal/update_user.php")
-	{
-		if ($row['password'] != $curpasswd)
-		{
+	if($_SESSION['callerid']!= "/primal/update_user.php") {
+		if ($row['password'] != $curpasswd) {
 			$_SESSION['perror'] = 4;
 		}
 	}
-    if ($_SESSION['perror'] == 0)
-    {
-        if ($row['active'] == -1)
-        {
+    if ($_SESSION['perror'] == 0) {
+        if ($row['active'] == -1) {
             $isactive = 1;
         } else {
             $isactive = $row['active'];
@@ -56,15 +49,13 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
         $query = "UPDATE user " .
                  "SET password = '" . $newpasswd . "', " .
                  "active = '" . $isactive . "' ";
-		if ($_SESSION['callerid']== "/primal/update_user.php")
-		{
+		if ($_SESSION['callerid']== "/primal/update_user.php") {
 			$query = $query . "WHERE loginid = '" . $_SESSION['orig_loginid'] . "'";
 		} else {
 			$query = $query . "WHERE loginid = '" . $_SESSION['loginid'] . "'";
 		}
-        $result = run_query($query);
-		if($_SESSION['callerid']== "/primal/update_user.php")
-		{
+        $result = $conn->query($query);
+		if($_SESSION['callerid']== "/primal/update_user.php") {
 			header ("location: setup.php");
 		} elseif ($_SESSION['callerid']== "/primal/index.php") {
 			header ("location: index.php");
@@ -137,4 +128,3 @@ echo '</BODY>';
 echo '</HTML>';
 $_SESSION['perror'] = 0;
 ?>
-

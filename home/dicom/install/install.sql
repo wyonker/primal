@@ -58,6 +58,7 @@ create table study   (DicomCasesID int(10) UNIQUE not null AUTO_INCREMENT,
 					  sClientID varchar(16),
 					  sClientName varchar(256),
 					  sCaseID varchar(16) DEFAULT "0",
+					  sRequestedProcedureID varchar(66),
 					  primary key (puid, SIUID));
 create table series  (SIUID varchar(68) not null,
                       SERIUID varchar(68),
@@ -282,6 +283,7 @@ CREATE TABLE studies (
 CREATE TABLE dcb (
 	transid int(10) NOT NULL AUTO_INCREMENT PRIMARY KEY,
 	caseid varchar(32) NOT NULL,
+	dicomid varchar(32) NOT NULL,
 	source varchar(255) NOT NULL,
 	INDEX caseid (caseid)
 );

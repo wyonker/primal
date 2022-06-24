@@ -20,67 +20,57 @@ if (isset($_SESSION['obj']) || isset($_SESSION['obj1']))
 }
 
 $query="SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'primalarc';";
-$result=mysql_query($query);
+$result=$conn->query($query);
 $has_migration = mysql_num_rows($result);
 $_SESSION['callerid']=$_SERVER['PHP_SELF'];
 if($_SERVER['REQUEST_METHOD'] == 'POST')
 {
-	if(isset($_POST['cancel']))
-	{
+	if(isset($_POST['cancel']))	{
 		header("Location: http://" . $_SERVER['HTTP_HOST'] . "/primal/setup.php");
 		//http_redirect('http://' . $_SERVER['HTTP_HOST'] . '/setup.php', true, HTTP_REDIRECT_PERM);
 	}
-	if(isset($_POST['reset']))
-	{
+	if(isset($_POST['reset'])) {
 		unset($_POST['add_loginid']);
 		unset($_POST['add_login_sec_level']);
 		unset($_POST["add_user_name"]);
 	}
-	if (!ctype_alnum($_POST['add_loginid']))
-	{
+	if (!ctype_alnum($_POST['add_loginid'])) {
 		$_SESSION['add_error'] .= "Error:  Login ID must contain only alpha/numeric characters.  Please try again...<br>";
 	} elseif(strlen($_POST['add_loginid']) > 63) {
 		$_SESSION['add_error'] .= "Error:  Login Id can not be longer than 63 characters.  Please try again...<br>";
 	} else {
 		$query="select count(*) as total from user where loginid = '" . $_POST['add_loginid'] . "';";
-		$result=mysql_query($query);
-		if ($result['total'] > 0 )
-		{
+		$result=$conn->query($query);
+		if ($result['total'] > 0 ) {
 			$_SESSION['add_error'] = "Error:  Username exists.  Please try again...<br>";
 		}
 	}
-	if ($_POST['add_login_sec_level'] < 1 || $_POST['add_login_sec_level'] > 254 || !is_numeric($_POST['add_login_sec_level']))
-	{
+	if ($_POST['add_login_sec_level'] < 1 || $_POST['add_login_sec_level'] > 254 || !is_numeric($_POST['add_login_sec_level'])) {
 		if($_POST['add_login_sec_level'] > 254 && $_POST['add_loginid'] != 'primal')
 			$_SESSION['add_error'] .= "Error:  Secuirty Level must be a number from 1 - 254.  Please try again...<br>";
 	} elseif ($_POST['add_login_sec_level'] > $_SESSION['login_sec_level']) {
 		$_SESSION['add_error'] .= "Error:  Cannot grant a user more permissions than yourself.  Please try again...<br>";
 	}
-	if(!isset($_GET["e"]))
-	{
+	if(!isset($_GET["e"])) {
 		$query = "select * from user where loginid = '" . trim($_GET["e"]) . "';";
-		$result = mysql_query($query);
+		$result = $conn->query($query);
 	    $num_rows = mysql_num_rows($result);
-		if($num_rows > 0)
-		{
+		if($num_rows > 0) {
 			$_SESSION['add_error'] .= "Error:  User Name exists.  Please try again...<br>";
 		}
 	}
 	$aValid = array('-', '_', ' ', '.'); 
-	if (!isset($_POST["add_user_name"]) || !ctype_alnum(str_replace($aValid, 'A', $_POST['add_user_name'])))
-	{
+	if (!isset($_POST["add_user_name"]) || !ctype_alnum(str_replace($aValid, 'A', $_POST['add_user_name']))) {
 		$_SESSION['add_error'] .= "Error:  User Name can not be blank and must contain only alpha/number charctersi (including -, _, ., and space.   Please try again...<br>";
 	} elseif (strlen($_POST["add_user_name"]) > 127) {
 		$_SESSION['add_error'] .= "Error:  User name can not be longer than 127 characters.  Please try again...<br>";
 	}
-	if(!isset($_POST['add_page_size']))
-	{
+	if(!isset($_POST['add_page_size']))	{
 		$_POST['add_page_size'] = 0;
 	} elseif(!ctype_digit($_POST['add_page_size']) || $_POST['add_page_size'] < 0 || $_POST['add_page_size'] > 1000) {
 		$_SESSION['add_error'] .= "Error:  Page_Size must be a number from 0 to 1000<br>";
 	}
-    if($has_migration > 0)
-    {
+    if($has_migration > 0) {
         if(isset($_POST['access_migration'])) {
             $_POST['access_migration'] = 1;
         } else {
@@ -112,10 +102,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
             $_POST['access_audit'] = 0;
         }
 	}
-	if(!isset($_SESSION['add_error']))
-	{
-		if(isset($_POST["update"]))
-		{
+	if(!isset($_SESSION['add_error'])) {
+		if(isset($_POST["update"])) {
 			if($has_migration > 0) {
 				$sec_bit = $_POST['access_migration'] . $_POST['add_send_legacy'] . $_POST['add_send_smn02'] . $_POST['add_send_anywhere'] . $_POST['add_send_impax'] . $_POST['access_audit'];
 			} else {
@@ -135,13 +123,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
 			$query .= " where loginid = '" . $_SESSION['orig_loginid'] . "';";
 			echo $query . "<br>";
 		}
-		$result = mysql_query($query);
+		$result = $conn->query($query);
 		unset($_SESSION['orig_loginid']);
-		if(!$result)
-		{
-			echo 'Query = ' . $query . '<br>';
-			echo mysql_errno() . ": " . mysql_error(). "<br>";
-		}
 		header("Location: http://" . $_SERVER['HTTP_HOST'] . "/primal/setup.php");
 	} else {
 		echo $_SESSION['add_error'] . '<br>';
@@ -171,16 +154,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
         }
     }
 	$query = "select * from user where loginid = '" . trim($_GET["e"]) . "';";
-	$result = mysql_query($query);
-	$num_rows = mysql_num_rows($result);
-	if($num_rows > 1)
-	{
+	$result = $conn->query($query);
+	$num_rows = $result->num_rows;
+	if($num_rows > 1) {
 		$_SESSION['add_error'] .= "Error:  Multiple results found for selected user.  Please contact your administrator...<br>";
 	} elseif($num_rows < 1) {
 		$_SESSION['add_error'] .= "Error:  Username not found.  Please try again.  If this error persists, please contact your administrator.<br>";
 	}
-	if(!isset($_SESSION['add_error']))
-	{
+	if(!isset($_SESSION['add_error'])) {
 		$row = mysql_fetch_assoc($result);
 		$_POST['add_loginid'] = $row['loginid'];
 		$_SESSION['orig_loginid'] = $row['loginid'];
@@ -214,20 +195,20 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
 		if (isset($_GET["h"])) {
 			#If c and h are set, then we want to hide (or unhide) a column.
 			$query="update user_columns set column" . $_GET["c"] . "_Visible = '" . $_GET["h"] . "' where user_id = '" . $_GET["e"] . "';";
-			$result = mysql_query($query);
+			$result = $conn->query($query);
 		} elseif (isset($_GET["o"])) {
 			$query = "select count(*) from page_columns;";
-			$result = mysql_query($query);
-			while ($row = mysql_fetch_assoc($result)) {
+			$result = $conn->query($query);
+			while ($row = mysqli_fetch_assoc($result)) {
 				$num_columns = $row ['count(*)'];
 			}
 			$query="select Column" . $_GET["c"] . "_Order from user_columns where user_id = '" . $_GET["e"] . "';";
-			$result = mysql_query($query);
+			$result = $conn->query($query);
 			if (!$result) {
 				echo "query = " . $query . "<br>";
 				die('Invalid query: ' . mysql_error());
 			}
-			while ($row = mysql_fetch_assoc($result)) {
+			while ($row = mysqli_fetch_assoc($result)) {
 				$curpos = $row['Column' . $_GET["c"] . "_Order"];
 			}
 			$is_error = 0;
@@ -244,8 +225,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
 				#Search the database for any column that reports to be in the same position as where we want to move to.
 				while($lc5 < $num_columns) {
 					$query="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_GET["e"] . "';";
-					$result = mysql_query($query);
-					while ($row = mysql_fetch_assoc($result)) {
+					$result = $conn->query($query);
+					while ($row = mysqli_fetch_assoc($result)) {
 						if($row['Column' . $lc5 . "_Order"] == $newpos) {
 							#We _shouldn't_ have multiple columns reporting the same position.  But let's increment just to be sure.
 							$intFound++;
@@ -258,9 +239,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
 				if($intFound == 1 || $intFound == 0) {
 					#We only found one guy at this position (expected result).  Swap the found guy and the guy we want to move's positions.
 					$query1="update user_columns set column" . $intFoundID . "_Order = '" . $curpos . "' where user_id = '" . $_GET["e"] . "';";
-					$result1 = mysql_query($query1);
+					$result1 = $conn->query($query1);
 					$query1="update user_columns set column" . $_GET["c"] . "_Order = '" . $newpos . "' where user_id = '" . $_GET["e"] . "';";
-					$result1 = mysql_query($query1);
+					$result1 = $conn->query($query1);
 				} else {
 					#Uh oh found more than one guy at that position.
 					#Fist let's deal with the case where we don't find anyone at the address we want to use
@@ -269,7 +250,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
 						while($lc5 < $num_columns) {
 							#Query the database and put each result in it's position in an array
 							$query="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_GET["e"] . "';";
-							$result = mysql_query($query);
+							$result = $conn->query($query);
 							#Increment the positions so we can see who gets hit more than once
 							$positions[$row['Column' . $lc5 . "_Order"]]++;
 							$lc5++;
@@ -290,10 +271,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
 						unset($intPOS);
 						while($lc5 < $num_columns) {
 							$query="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_GET["e"] . "';";
-							$result = mysql_query($query);
+							$result = $conn->query($query);
 							if(! is_numeric($row['Column' . $lc5 . "_Order"]) || $row['Column' . $lc5 . "_Order"] > $num_columns || $row['Column' . $lc5 . "_Order"] < 1) {
 								$query1="update user_columns set column" . $intFoundID . "_Order = '" . $lc5 . "' where user_id = '" . $_GET["e"] . "';";
-								$result1 = mysql_query($query1);
+								$result1 = $conn->query($query1);
 								$is_resolved=1;
 							}
 							$lc5++;
@@ -306,8 +287,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
 						$intFound=0;
 						while($lc5 < $num_columns) {
 							$query="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_GET["e"] . "';";
-							$result = mysql_query($query);
-							while ($row = mysql_fetch_assoc($result)) {
+							$result = $conn->query($query);
+							while ($row = mysqli_fetch_assoc($result)) {
 								if($row['Column' . $lc5 . "_Order"] == $newpos) {
 									$intFound++;
 									$intFoundID=$lc5;
@@ -331,9 +312,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
 #Need to pull column information from the database
 $lc1=0;
 $query="select * from page_columns;";
-$result = mysql_query($query);
-while($row = mysql_fetch_assoc($result))
-{
+$result = $conn->query($query);
+while($row = mysqli_fetch_assoc($result)) {
 	$ucolumns[$lc1]["id"] = $row["id"];
 	$ucolumns[$lc1]["name"] = $row["name"];
 	$ucolumns[$lc1]["dorder"] = $row["dorder"];
@@ -346,22 +326,21 @@ while($row = mysql_fetch_assoc($result))
 #Now that we have all the page columns, let's retrieve the user's settings for them
 $lc2=0;
 $query="select * from user_columns where user_id = '" . $_GET["e"] . "';";
-$result = mysql_query($query);
-$num_rows = mysql_num_rows($result);
+$result = $conn->query($query);
+$num_rows = $result->num_rows;
 #If we didn't get any results, we need to add this user to the user_columns table.
 #This will set default values for all columns.
 if ($num_rows < 1) {
 	$query="insert into user_columns (user_id) values ('" . $_GET["e"] . "');";
-	$result2 = mysql_query($query);
+	$result2 = $conn->query($query);
 }
 
 #Now that the user is added, let's start over and query again so that we can get the default values	
 $query="select * from user_columns where user_id = '" . $_GET["e"] . "';";
-$result = mysql_query($query);
-$num_rows = mysql_num_rows($result);
+$result = $conn->query($query);
+$num_rows = $result->num_rows;
 
-while($row = mysql_fetch_assoc($result))
-{
+while($row = mysqli_fetch_assoc($result)) {
 	$lc2=0;
 	while($lc2 < count($ucolumns)) {
 		$ucolumns[$lc2]["visible"] = $row["Column" . $ucolumns[$lc2]["id"] . "_Visible"];

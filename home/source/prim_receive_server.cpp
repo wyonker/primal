@@ -370,20 +370,21 @@ std::size_t fStartReceive(std::string strMessage) {
             strLogMessage = "Getting tags from " + entry.path().string();
             fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
             strRawDCMdump=fDcmDump(entry.path().string());
-            pData2.strPName=fGetTagValue("0010,0010", strRawDCMdump, 0);
-            pData2.strMRN=fGetTagValue("0010,0020", strRawDCMdump, 0);
-            pData2.strDOB=fGetTagValue("0010,0030", strRawDCMdump, 0);
-            strSerIUID=fGetTagValue("0020,000e", strRawDCMdump, 0);
-            strSerDesc=fGetTagValue("0008,103e", strRawDCMdump, 0);
-            strModality=fGetTagValue("0008,0060", strRawDCMdump, 0);
-            strSopIUID=fGetTagValue("0008,0018", strRawDCMdump, 0);
-            pData2.strSIUID=fGetTagValue("0020,000d", strRawDCMdump, 0);
-            pData2.strStudyDate=fGetTagValue("0008,0020", strRawDCMdump, 0);
-            pData2.strStudyTime=fGetTagValue("0008,0030", strRawDCMdump, 0);
+            pData2.strPName=fGetTagValue("0010,0010", strRawDCMdump, 0, 0);
+            pData2.strMRN=fGetTagValue("0010,0020", strRawDCMdump, 0, 0);
+            pData2.strDOB=fGetTagValue("0010,0030", strRawDCMdump, 0, 0);
+            strSerIUID=fGetTagValue("0020,000e", strRawDCMdump, 0, 0);
+            strSerDesc=fGetTagValue("0008,103e", strRawDCMdump, 0, 0);
+            strModality=fGetTagValue("0008,0060", strRawDCMdump, 0, 0);
+            strSopIUID=fGetTagValue("0008,0018", strRawDCMdump, 0, 0);
+            pData2.strSIUID=fGetTagValue("0020,000d", strRawDCMdump, 0, 0);
+            pData2.strStudyDate=fGetTagValue("0008,0020", strRawDCMdump, 0, 0);
+            pData2.strStudyTime=fGetTagValue("0008,0030", strRawDCMdump, 0, 0);
             strStudyDateTime = pData2.strStudyDate + " " + pData2.strStudyTime;
-            pData2.strACCN=fGetTagValue("0008,0050", strRawDCMdump, 0);
-            pData2.strStudyDesc=fGetTagValue("0008,1030", strRawDCMdump, 0);
-            pData2.strPatientComments=fGetTagValue("0010,4000", strRawDCMdump, 0);
+            pData2.strACCN=fGetTagValue("0008,0050", strRawDCMdump, 0, 0);
+            pData2.strStudyDesc=fGetTagValue("0008,1030", strRawDCMdump, 0, 0);
+            pData2.strPatientComments=fGetTagValue("0010,4000", strRawDCMdump, 0, 0);
+            pData2.strRequestedProcedureID=fGetTagValue("0040,1001", strRawDCMdump, 0, 1);
             //Create databse entries to show something is coming in.
             if(intImgNum == 1) {
                 strLogMessage = "Updating DB entries for " + strPrimalID + ".";
@@ -456,12 +457,12 @@ std::size_t fStartReceive(std::string strMessage) {
                     strQuery+=", StudyDate='" + strStudyDateTime + "', AccessionNum='" + pData2.strACCN + "'";
                     strQuery+=", sServerName='" + strHostname + "', StudyDesc='" + pData2.strStudyDesc + "'";
                     strQuery+=", sClientID='" + strClientID2 + "', sClientName='" + strClientName + "'";
-                    strQuery+=", sCaseID = '" + strPrefetchNode + "';";
+                    strQuery+=", sRequestedProcedureID='" + pData2.strRequestedProcedureID + "', sCaseID = '" + strPrefetchNode + "';";
                 } else {
                     strQuery="insert into study set puid='" + strPrimalID + "', SIUID='" + pData2.strSIUID + "'";
                     strQuery+=", StudyDate='" + strStudyDateTime + "', AccessionNum='" + pData2.strACCN + "'";
                     strQuery+=", sServerName='" + strHostname + "', StudyDesc='" + pData2.strStudyDesc + "'";
-                    strQuery+=", sClientID='" + strClientID2 + "', sClientName='" + strClientName + "';";
+                    strQuery+=", sClientID='" + strClientID2 + ", sRequestedProcedureID='" + pData2.strRequestedProcedureID + "', sClientName='" + strClientName + "';";
                 }
                 mysql_query(mconnect, strQuery.c_str());
                 if(*mysql_error(mconnect)) {

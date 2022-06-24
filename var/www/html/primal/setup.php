@@ -59,11 +59,10 @@ if ($_GET['e'] == 1)
 	fclose($myfile);
 } else {
 	$query = "SELECT * from user";
-	$result = run_query($query);
-	$num_rows = mysql_num_rows($result);
+	$result = $conn->query($query);
+	$num_rows = $result->num_rows;
 	$lc1=0;
-	while($row = mysql_fetch_assoc($result))
-	{
+	while($row = mysqli_fetch_assoc($result)) {
 		$users[$lc1]['loginid'] = $row['loginid'];
 		$users[$lc1]['login_sec_level'] = $row['login_sec_level'];
 		$users[$lc1]['username'] = $row['username'];
@@ -84,10 +83,8 @@ if ($_GET['e'] == 1)
 	echo '<th>Page Size</th>';
 	echo '</th>';
 	$lc1=0;
-	foreach($users as $u)
-	{
-		if($users[$lc1]['login_sec_level'] <= $_SESSION['login_sec_level'])
-		{
+	foreach($users as $u) {
+		if($users[$lc1]['login_sec_level'] <= $_SESSION['login_sec_level']) {
 			echo '<tr>';
 			echo '<td><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/update_user.php?e=' . $users[$lc1]['loginid'] . '">' . $users[$lc1]['loginid'] . '</a></td>';
 			echo '<td>' . $users[$lc1]['login_sec_level'] . '</td>';

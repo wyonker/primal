@@ -1,21 +1,19 @@
 <?php
 	//License GPLv3
-	//Version 1.00.03
-	//2021-08-06
+	//Version 1.00.04
+	//2021-08-11
 	session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
     header( "Cache-Control: no-cache, must-revalidate" );
 	header( "Pragma: no-cache" );
 
-if ($_SESSION['active'] != '1')
-{
+if ($_SESSION['active'] != '1') {
     header("Location: login.php");
     exit();
 }
 
-if (isset($_SESSION['obj']) || isset($_SESSION['obj1']))
-{
+if (isset($_SESSION['obj']) || isset($_SESSION['obj1'])) {
     unset($_SESSION['obj']);
     unset($_SESSION['obj1']);
 }
@@ -39,7 +37,7 @@ if($ISERROR == 0) {
 if(! isset($_SESSION['HAVECONFIG'])) {
 	if($ISERROR == 0) {
 		$query="select * from patient where puid = '" . $_GET['p'] . "';";
-		$result = mysql_query($query);
+		$result = $conn->query($query);
 		while($row = mysql_fetch_assoc($result)) {
 			$_SESSION['strPNAME']=$row['pname'];
 			$_SESSION['strPID']=$row['pid'];
@@ -47,21 +45,21 @@ if(! isset($_SESSION['HAVECONFIG'])) {
 			$_SESSION['strSDATE']=$row['sdatetime'];
 		}
 		$query="select * from receive where puid = '" . $_GET['p'] . "' limit 1;";
-		$result = mysql_query($query);
+		$result = $conn->query($query);
 		while($row = mysql_fetch_assoc($result)) {
 			$_SESSION['strStartRcv']=$row['tstartrec'];
 			$_SESSION['strEndRcv']=$row['tendrec'];
 			$_SESSION['strNumImg']=$row['rec_images'];
 		}
 		$query="select * from process where puid = '" . $_GET['p'] . "' limit 1;";
-		$result = mysql_query($query);
+		$result = $conn->query($query);
 		while($row = mysql_fetch_assoc($result)) {
 			$_SESSION['strStartProc']=$row['tstartproc'];
 			$_SESSION['strEndRcv']=$row['tendproc'];
 			$_SESSION['strProcError']=$row['perror'];
 		}
 		$query="select * from study where puid = '" . $_GET['p'] . "' limit 1;";
-		$result = mysql_query($query);
+		$result = $conn->query($query);
 		while($row = mysql_fetch_assoc($result)) {
 			$_SESSION['strStudyDesc']=$row['StudyDesc'];
 			$_SESSION['strSIUID']=$row['SIUID'];
@@ -71,7 +69,7 @@ if(! isset($_SESSION['HAVECONFIG'])) {
 	}
 
 	$query="select ilocation from image where puid = '" . $_GET['p'] . "' limit 1;";
-	$result = mysql_query($query);
+	$result = $conn->query($query);
 	while($row = mysql_fetch_assoc($result)) {
 		$_SESSION["ilocation"] = $row['ilocation'];
 	}
@@ -157,6 +155,11 @@ if(! isset($_SESSION['HAVECONFIG'])) {
 						if ($intPOS2 !== FALSE) {
 							$_SESSION['PRILL']=substr($strLINE, $intPOS2+1);
 						}
+					} elseif (stripos($strLINE, "PRIOUT") !== FALSE) {
+						$intPOS2=strpos($strLINE, "=");
+						if ($intPOS2 !== FALSE) {
+							$_SESSION['PRIOUT']=substr($strLINE, $intPOS2+1);
+						}
 					}
 				}
 			}
@@ -168,6 +171,22 @@ if(! isset($_SESSION['HAVECONFIG'])) {
 
 if($ISERROR != 1) {
 	if($_SERVER['REQUEST_METHOD'] == 'POST') {
+		if (isset($_POST['resend'])) {
+			$strQuery = 'delete from send where puid = "' . $_GET['p'] . '" limit 10;';
+			$result = $conn->query($strQuery);
+			$strQuery="select ilocation from image where puid = '" . $_GET['p'] . "' limit 1;";
+			$result = $conn->query($strQuery);
+			while($row = mysql_fetch_assoc($result)) {
+				$_SESSION["ilocation"] = $row['ilocation'];
+			}
+			if(file_exists($_SESSION["ilocation"])) {
+				$intPos = strrpos($_SESSION["ilocation"], "/");
+				$strFullPath = substr($_SESSION["ilocation"], 0, $intPos - 1);
+				$strCMD = "mv -f " . $strFullPath . " " . $_SESSION['PRIOUT'] . "/";
+				exec($strCMD, $return, $retval);
+				header('Location: index.php');
+			}
+		}
 		$intLC1=sizeof($_SESSION['PRIDESTHIP']);
 		$_SESSION['PRIDESTAEC'][$intLC1] = $_POST['AEC'];
 		$_SESSION['PRIDESTHIP'][$intLC1] = $_POST['HIP'];
@@ -259,7 +278,7 @@ while($row = mysql_fetch_assoc($result)) {
 		$SERIUID[$intPOS]['SERIUID']=$row['SERIUID'];
 		$SERIUID[$intPOS]['numimg']=1;
 		$query="select * from series where puid = '" . $_GET['p'] . "' and SERIUID = '" . $row['SERIUID'] . "';";
-		$result2 = mysql_query($query);
+		$result2 = $conn->query($query);
 		while($row = mysql_fetch_assoc($result2)) {
 			$SERIUID[$intPOS]['SeriesDesc']=$row['SeriesDesc'];
 		}
@@ -268,7 +287,7 @@ while($row = mysql_fetch_assoc($result)) {
 		$SERIUID[$intPOS]['SERIUID']=$row['SERIUID'];
 		$SERIUID[$intPOS]['numimg']=1;
 		$query="select * from series where puid = '" . $_GET['p'] . "' and SERIUID = '" . $row['SERIUID'] . "';";
-		$result2 = mysql_query($query);
+		$result2 = $conn->query($query);
 		while($row = mysql_fetch_assoc($result2)) {
 			$SERIUID[$intPOS]['SeriesDesc']=$row['SeriesDesc'];
 		}
@@ -306,7 +325,7 @@ while($intLC1 < sizeof($SERIUID)) {
 	if(isset($_GET['e'])) {
 		if($_GET['e'] == $SERIUID[$intLC1]['SERIUID']) {
 			$query="select * from image where puid = '" . $_GET['p'] . "' and SERIUID = '" . $_GET['e'] . "';";
-			$result3 = mysql_query($query);
+			$result3 = $conn->query($query);
 			$intLC2=1;
 			while($row = mysql_fetch_assoc($result3)) {
 				if($_GET['v'] == $row['SOPIUID'] || $_GET['z'] == $row['SOPIUID']) {
@@ -378,7 +397,7 @@ if($ISERROR == 1) {
 } elseif(isset($_GET['v'])) {
 	$strOutput='<div style="float:left; margin-left: 10px; border-style: solid; border-width: 3px;" id="divright">';
 	$query="select * from image where puid = '" . $_GET['p'] . "' and SOPIUID = '" . $_GET['v'] . "' limit 1;";
-	$result = mysql_query($query);
+	$result = $conn->query($query);
 	while($row = mysql_fetch_assoc($result)) {
 		exec("/home/dicom/bin/dcmdump " . $row['ilocation'] . "/" . $row['ifilename'] . " 2>&1", $return, $retval);
 		$intLC3=0;
@@ -397,7 +416,7 @@ if($ISERROR == 1) {
 } elseif(isset($_GET['z'])) {
 	$strOutput='<div style="float:left; margin-left: 10px;" id="divright">';
 	$query="select * from image where puid = '" . $_GET['p'] . "' and SOPIUID = '" . $_GET['z'] . "' limit 1;";
-	$result = mysql_query($query);
+	$result = $conn->query($query);
 	$strOutput.='<table style="width: 100%"><tr><th>Series Description</th><th>Image number</th></tr>';
 	$strOutput.='<tr><td>' . $SERIUID[$intSel]['SeriesDesc'] . "</td><td>";
 	if($intNumInSer > 1) {
@@ -446,13 +465,7 @@ if($ISERROR == 1) {
 			}
 			$intLC2++;
 		}
-		if(! isset($_GET['d0'])) {
-			$strURL.='">Dont Send</a></td>';
-		} elseif($_GET['d' . $intLC1] == 0) {
-			$strURL.='">Send</a></td>';
-		} else {
-			$strURL.='">Dont Send</a></td>';
-		}
+		echo '<td><button type="submit" name="Requeue">Requeue</button></td></tr>';
 		echo $strURL . "</tr>";
 		$intLC1++;
 	}
@@ -460,7 +473,7 @@ if($ISERROR == 1) {
 	echo '<td><input type="text" name="HIP" />' . '</td>';
 	echo '<td><input type="text" name="PORT" />' . '</td>';
 	echo '<td><input type="text" name="CDCR" />' . '</td>';
-	echo '<td><button type="submit" name="Add">Add</button></td></tr>';
+	echo '<td><button type="submit" name="Send">Send</button></td></tr>';
 	echo "</table><br>";
 	echo '</form>';
 if(isset($_GET['d0'])) {
