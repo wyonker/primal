@@ -1,0 +1,175 @@
+#logout {
+	position: absolute;
+	text-align: right;
+	margin: 10px 10px 10px 10px;
+	right: 0px;
+	width: 100px;
+	top: 0px;
+	z-index: 1;
+}
+
+.error {
+	color: #CC0C0C; /*Deep Red*/
+	font-style: italic;
+}
+
+th a {
+	color: #fff;
+	font-size: 12px;
+	text-decoration: none;
+}
+
+td a {
+	color: #000000;
+	font-size: 12px;
+	text-decoration: none;
+}
+
+a {
+	color: #000000;
+}
+
+a:active {
+	color: #E67B02;
+}
+
+h1 {
+	text-shadow: 4px 2px 2px rgba(150, 150, 150, 0.83)
+}
+
+td {
+	padding: 0px 4px 0px 4px;
+	border: #ffffff 1px solid;
+	vertical-align: middle;
+	white-space: nowrap;
+}
+
+/* Fix for table border left/right extra white*/
+
+th:first-child,
+td:first-child {
+	border-left: none;
+}
+th:last-child,
+td:last-child {
+	border-right: none;
+}
+
+th {
+	color: #ffffff;
+	text-align: center;
+	font-size: 12px;
+	text-shadow: -1px -1px 0 rgba(0,0,0,0.3);
+	background-color: #333;
+	padding-left: 2px;
+	padding-right: 2px;
+	border-top: none;
+
+}
+
+tr {
+	text-align: center;
+	background: #eee;
+	border-bottom: 1px solid #ffffff;
+	font-size: 12px;
+	background: #F5F1E4;
+}
+
+/*Change tr based on hover, needs to find another solution for compatibility*/
+table {
+	padding: 0;
+	border-spacing: 0;
+	margin-left:auto;
+	margin-right:auto;
+	border: #ffffff 0px solid;
+	border-collapse: collapse;
+}
+
+body {
+	background-color: #638067;
+	font-family: Verdana, "Helvetica", sans-serif;
+	font-size: 12px;
+}
+.recdw {
+    background: #ff0000;
+    border-radius: 3px;
+    font-family: Arial;
+    color: #ffffff;
+    font-size: 15px;
+    background: #d11b1b;
+    padding: 10px 10px 10px 10px;
+    text-decoration: none;
+    text-align: center;
+    margin-right: 3px;
+    margin-bottom: 5px;
+    border: solid #000000 1px;
+    display:inline-block;
+}
+.recup {
+    background: #0e801b;
+    border-radius: 3px;
+    font-family: Arial;
+    color: #ffffff;
+    font-size: 15px;
+    background: #0e801b;
+    padding: 10px 10px 10px 10px;
+    margin-right: 3px;
+    margin-bottom: 5px;
+    border: solid #000000 1px;
+    text-decoration: none;
+    text-align: center;
+    display:inline-block;
+}
+
+/* Popup container */
+.popup {
+	position: relative;
+	display: inline-block;
+	cursor: pointer;
+  }
+  
+  /* The actual popup (appears on top) */
+  .popup .popuptext {
+	visibility: hidden;
+	width: 160px;
+	background-color: #555;
+	color: #fff;
+	text-align: center;
+	border-radius: 6px;
+	padding: 8px 0;
+	position: absolute;
+	z-index: 1;
+	bottom: 125%;
+	left: 50%;
+	margin-left: -80px;
+  }
+  
+  /* Popup arrow */
+  .popup .popuptext::after {
+	content: "";
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	margin-left: -5px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: #555 transparent transparent transparent;
+  }
+  
+  /* Toggle this class when clicking on the popup container (hide and show the popup) */
+  .popup .show {
+	visibility: visible;
+	-webkit-animation: fadeIn 1s;
+	animation: fadeIn 1s
+  }
+  
+  /* Add animation (fade in the popup) */
+  @-webkit-keyframes fadeIn {
+	from {opacity: 0;}
+	to {opacity: 1;}
+  }
+  
+  @keyframes fadeIn {
+	from {opacity: 0;}
+	to {opacity:1 ;}
+  }
