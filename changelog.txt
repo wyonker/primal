@@ -1,0 +1,20 @@
+20220715
+* Everything
+
+This is a major update.  I have probably broken the install on CentOS/RHEL 7
+in an effort to update for RHEL 8.  I still need to test on Alma Linux 9 as
+that will be my CentOS replacement platform.
+
+Most everything works now excep the -ac option in the storescp.  The
+tcpwrapper lib has gone away and the DCMTK team has opted to use the
+hosts.deny file instead.
+
+20191203
+* storescp.cc
+  will now record the calling as well as the called AET in the database
+* install.sql
+  Added callingAET to receive table
+* list.php
+  Added this file to the API directory.  Will list studies received according to filter.
+* functions.php
+  Added Sanatize_Input

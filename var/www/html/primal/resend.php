@@ -38,29 +38,28 @@ if(! isset($_SESSION['HAVECONFIG'])) {
 	if($ISERROR == 0) {
 		$query="select * from patient where puid = '" . $_GET['p'] . "';";
 		$result = $conn->query($query);
-		while($row = mysql_fetch_assoc($result)) {
+		while($row = mysqli_fetch_assoc($result)) {
 			$_SESSION['strPNAME']=$row['pname'];
 			$_SESSION['strPID']=$row['pid'];
 			$_SESSION['strPDOB']=$row['pdob'];
-			$_SESSION['strSDATE']=$row['sdatetime'];
 		}
 		$query="select * from receive where puid = '" . $_GET['p'] . "' limit 1;";
 		$result = $conn->query($query);
-		while($row = mysql_fetch_assoc($result)) {
+		while($row = mysqli_fetch_assoc($result)) {
 			$_SESSION['strStartRcv']=$row['tstartrec'];
 			$_SESSION['strEndRcv']=$row['tendrec'];
 			$_SESSION['strNumImg']=$row['rec_images'];
 		}
 		$query="select * from process where puid = '" . $_GET['p'] . "' limit 1;";
 		$result = $conn->query($query);
-		while($row = mysql_fetch_assoc($result)) {
+		while($row = mysqli_fetch_assoc($result)) {
 			$_SESSION['strStartProc']=$row['tstartproc'];
-			$_SESSION['strEndRcv']=$row['tendproc'];
+			$_SESSION['strEndProc']=$row['tendproc'];
 			$_SESSION['strProcError']=$row['perror'];
 		}
 		$query="select * from study where puid = '" . $_GET['p'] . "' limit 1;";
 		$result = $conn->query($query);
-		while($row = mysql_fetch_assoc($result)) {
+		while($row = mysqli_fetch_assoc($result)) {
 			$_SESSION['strStudyDesc']=$row['StudyDesc'];
 			$_SESSION['strSIUID']=$row['SIUID'];
 			$_SESSION['strACCN']=$row['AccessionNum'];
@@ -70,7 +69,7 @@ if(! isset($_SESSION['HAVECONFIG'])) {
 
 	$query="select ilocation from image where puid = '" . $_GET['p'] . "' limit 1;";
 	$result = $conn->query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	while($row = mysqli_fetch_assoc($result)) {
 		$_SESSION["ilocation"] = $row['ilocation'];
 	}
 	if ($_SESSION["ilocation"] == NULL || $_SESSION["ilocation"] == "") {
@@ -176,7 +175,7 @@ if($ISERROR != 1) {
 			$result = $conn->query($strQuery);
 			$strQuery="select ilocation from image where puid = '" . $_GET['p'] . "' limit 1;";
 			$result = $conn->query($strQuery);
-			while($row = mysql_fetch_assoc($result)) {
+			while($row = mysqli_fetch_assoc($result)) {
 				$_SESSION["ilocation"] = $row['ilocation'];
 			}
 			if(file_exists($_SESSION["ilocation"])) {
@@ -270,25 +269,20 @@ if(file_exists($_SESSION["ilocation"] . "/package.conf")) {
 echo '</table><br>';
 
 $query="select * from image where puid = '" . $_GET['p'] . "';";
-$result = mysql_query($query);
-while($row = mysql_fetch_assoc($result)) {
+$result = $conn->query($query);
+if(! isset($SERIUID)) {
+	$SERIUID = [];
+}
+$intPOS=0;
+while($row = mysqli_fetch_assoc($result)) {
 	//if(in_array_r($row['SERIUID'], $SERIUID) === FALSE || !isset($SERIUID)) {
-	if(! isset($SERIUID)) {
-		$intPOS=0;
-		$SERIUID[$intPOS]['SERIUID']=$row['SERIUID'];
-		$SERIUID[$intPOS]['numimg']=1;
-		$query="select * from series where puid = '" . $_GET['p'] . "' and SERIUID = '" . $row['SERIUID'] . "';";
-		$result2 = $conn->query($query);
-		while($row = mysql_fetch_assoc($result2)) {
-			$SERIUID[$intPOS]['SeriesDesc']=$row['SeriesDesc'];
-		}
-	} elseif(in_array_r($row['SERIUID'], $SERIUID) === FALSE) {
+	if(in_array_r($row['SERIUID'], $SERIUID) === FALSE) {
 		$intPOS=sizeof($SERIUID);
 		$SERIUID[$intPOS]['SERIUID']=$row['SERIUID'];
 		$SERIUID[$intPOS]['numimg']=1;
 		$query="select * from series where puid = '" . $_GET['p'] . "' and SERIUID = '" . $row['SERIUID'] . "';";
 		$result2 = $conn->query($query);
-		while($row = mysql_fetch_assoc($result2)) {
+		while($row = mysqli_fetch_assoc($result2)) {
 			$SERIUID[$intPOS]['SeriesDesc']=$row['SeriesDesc'];
 		}
 	} else {
@@ -327,7 +321,7 @@ while($intLC1 < sizeof($SERIUID)) {
 			$query="select * from image where puid = '" . $_GET['p'] . "' and SERIUID = '" . $_GET['e'] . "';";
 			$result3 = $conn->query($query);
 			$intLC2=1;
-			while($row = mysql_fetch_assoc($result3)) {
+			while($row = mysqli_fetch_assoc($result3)) {
 				if($_GET['v'] == $row['SOPIUID'] || $_GET['z'] == $row['SOPIUID']) {
 					echo '<tr style="background-color:#886A08;">';
 					$strPreviousSOPIUID=$strTEMPPreviousSOPIUID;
@@ -398,7 +392,7 @@ if($ISERROR == 1) {
 	$strOutput='<div style="float:left; margin-left: 10px; border-style: solid; border-width: 3px;" id="divright">';
 	$query="select * from image where puid = '" . $_GET['p'] . "' and SOPIUID = '" . $_GET['v'] . "' limit 1;";
 	$result = $conn->query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	while($row = mysqli_fetch_assoc($result)) {
 		exec("/home/dicom/bin/dcmdump " . $row['ilocation'] . "/" . $row['ifilename'] . " 2>&1", $return, $retval);
 		$intLC3=0;
 		$strOutput.='<table style="width: 100%"><tr><th>Series Description</th><th>Image number</th></tr>';
@@ -429,7 +423,7 @@ if($ISERROR == 1) {
 		$strOutput.='&e=' . $_GET["e"] . '&z=' . $strNextSOPIUID . '">></a> ';
 	}
 	$strOutput.="</td></tr></table>";
-	while($row = mysql_fetch_assoc($result)) {
+	while($row = mysqli_fetch_assoc($result)) {
 		exec("/usr/local/bin/dcmj2pnm +oj " . $row['ilocation'] . "/" . $row['ifilename'] . " /var/www/html/primal/tmp/" . $row['ifilename'] . ".jpg 2>&1", $return, $retval);
 		$strOutput.='<img src="/primal/tmp/' . $row['ifilename'] . '.jpg" alt="Image" width="600">';
 		$strOutput.="<br>";
@@ -439,12 +433,16 @@ if($ISERROR == 1) {
 	$intLC1=0;
 	echo '<form action="resend.php?p=' . $_GET['p'] . '" method="post">';
 	echo '<table border="1">';
-	echo "<tr><th>Destination AET</th><th>Destination</th><th>Port</th><th>Compress</th><th>Send?</th></tr>";
+	echo "<tr><th>Destination AET</th><th>Destination</th><th>Port</th><th>Compress</th><th>Action</th></tr>";
 	while (isset($_SESSION['PRIDESTHIP'][$intLC1])) {
-		echo "<tr><td>" . $_SESSION['PRIDESTAEC'][$intLC1] . "</td><td>" . $_SESSION['PRIDESTHIP'][$intLC1];
-		echo "</td><td>" . $_SESSION['PRIDESTPORT'][$intLC1] . "</td><td>" . $_SESSION['PRIDESTCDCR'][$intLC1] . "</td><td>";
-		$strURL='<a href="/primal/resend.php?p=' . $_GET["p"];
-		if(! isset($_GET['d0'])) {
+		echo "<tr>";
+		eco "<td>" . $_SESSION['PRIDESTAEC'][$intLC1] . "</td>";
+		echo "<td>" . $_SESSION['PRIDESTHIP'][$intLC1] . "</td>";
+		echo "<td>" . $_SESSION['PRIDESTPORT'][$intLC1] . "</td>";
+		echo "<td>" . $_SESSION['PRIDESTCDCR'][$intLC1] . "</td>";
+		echo "<td>" . '<a href="/primal/resend.php?p=' . $_GET["p"] . "&d=" . $intLC1 . 'class="button" >Requeue</a></td>';
+/*		if(! isset($_GET['d0'])) {
+			//Nothing to do here.
 		} elseif($_GET['d0'] == "a") {
 			$_GET['d' . $intLC1]=1;
 		}
@@ -466,7 +464,8 @@ if($ISERROR == 1) {
 			$intLC2++;
 		}
 		echo '<td><button type="submit" name="Requeue">Requeue</button></td></tr>';
-		echo $strURL . "</tr>";
+*/
+	echo $strURL . "</tr>";
 		$intLC1++;
 	}
 	echo '<tr><td><input type="text" name="AEC" />' . '</td>';

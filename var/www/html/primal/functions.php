@@ -1,25 +1,24 @@
 <?php
 	// License GPLv3
-	//Version 1.00.07
-	//2021-08-03
-	function Display_Header()
-{
+	//Version 1.00.10
+	//2022-07-13
+
+function Display_Header() {
 	header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
 	header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
 	header( "Cache-Control: no-cache, must-revalidate" );
 	header( "Pragma: no-cache" );
 }
 
-function Display_Header2()
-{
+function Display_Header2() {
+	global $conn;
 	echo '<H1>PRIMAL Web Interface</H1>';
 	echo '<H2>' . gethostname() . '</H2>';
 	echo '<div id="logout">' . $_SESSION['login_username'] . '<br><a href="/primal/logout.php">Logout</a>';
 	$query="SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'primalarc';";
 	$result=$conn->query($query);
 	$num_rows = $result->num_rows;
-	if($_SERVER['PHP_SELF'] != "/primal/index.php")
-	{
+	if($_SERVER['PHP_SELF'] != "/primal/index.php")	{
 		echo '<br><a href="/primal/options.php">Options</a>';
 		if($num_rows > 0 && substr($_SESSION['login_sec_bit'], 0, 1) == 1)
 		{
@@ -52,9 +51,9 @@ function Display_Servers() {
 	echo '</div>';
 }
 
-function Display_Footer()
-{
+function Display_Footer() {
 	echo "<br>";
+	global $conn;
 	$query="select * from monitor";
 	$result = $conn->query($query);
 	while($row = mysqli_fetch_assoc($result)) {
@@ -66,14 +65,27 @@ function Display_Footer()
 	}
 	echo "<br>";
 	if (! isset($SESSION['versionnum'])) {
-		$SESSION['versionnum'] = file_get_contents('/etc/primal/primal.version');
+		$fpVersionFile = fopen('/etc/primal/primal.version', 'r');
+		$strLine = fgets($fpVersionFile, 4096);
+		$pos = strpos($strLine, "version");
+		if($pos !== false) {
+			$SESSION['versionnum'] = substr($strLine, $pos + 1);
+		}
+		$pos = strpos($strLine, "date");
+		if($pos !== false) {
+			$SESSION['versiondate'] = substr($strLine, $pos + 1);
+		}
+		fclose($fpVersionFile);
+		if (! isset($SESSION['versionnum'])) {
+			$SESSION['versionnum'] = file_get_contents('/etc/primal/primal.version');
+			$SESSION['versionndate'] = "2022-01-01";
+		}
 	}
 	echo "Version: " . $SESSION['versionnum'] . "<br>";
-	echo "Date: 2015-08-26<br>";
+	echo "Date: " . $SESSION['versiondate'] . "<br>";
 }
 
-function Error_Message($ERR_NUM)
-{
+function Error_Message($ERR_NUM) {
    //echo "Error Number: $ERR_NUM<BR>";
 	echo "<SCRIPT LANGUAGE=\"javascript1.2\">";
 	echo 'function poponload()';
@@ -94,8 +106,7 @@ function run_query($query) {
     return $result;
 }
 
-function write_to_log($message1)
-{
+function write_to_log($message1) {
     //Need to write the log file here.
     $the_date = date("Ymd");
     $to_write = "Date/Time: " . date("Ymd:His") . " Username: <b>" . $_SESSION['login_username'] . "</b> " . $temp_stuff . " " . $message1 . "<br /><br />";
@@ -111,10 +122,8 @@ function write_to_log($message1)
     }
 }
 
-function Sort_Data($studies, $sort_column, $sort_order)
-{
-if ($sort_column == 0 && $sort_order == 0)
-	{
+function Sort_Data($studies, $sort_column, $sort_order) {
+if ($sort_column == 0 && $sort_order == 0) {
 		$price = array();
 		foreach ($studies as $key => $row)
 		{
@@ -244,8 +253,7 @@ if ($sort_column == 0 && $sort_order == 0)
 	return $studies;
 }
 
-function Check_Input($sort_column, $sort_order, $tempvar, $tempvar2)
-{
+function Check_Input($sort_column, $sort_order, $tempvar, $tempvar2) {
 	$query="select a.puid, a.pname, a.pid, a.pdob, a.pmod, a.sdatetime, r.tstartrec, r.tendrec, r.rec_images, r.rerror, r.senderAET, p.tstartproc, p.tendproc, p.perror, s.tdest, s.tstartsend, s.tendsend, s.timages, s.serror, t.AccessionNum, t.StudyDate, t.StudyModType from patient as a left join receive as r on a.puid = r.puid left join process as p on a.puid = p.puid left join send as s on a.puid = s.puid left join study as t on a.puid = t.puid";
 	if(isset($_POST['reset'])) {
 		$query = $query . " limit 100;";

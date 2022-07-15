@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.30.02
+# Version 3.30.03
 # Build 8
-# 2021-07-20
+# 2022-07-13
 # License GPLv3
 
 re='^[0-9]+$'
@@ -52,7 +52,7 @@ do
 	then
 		if [ "$PRIRECTYPE" == "DICOM" ]
 		then
-        	/home/dicom/bin/storescp --fork -ac +cl $PRICL -aet $PRIAET -tos $PRIRECTO -ll $PRILL -od $PRIIF -ss $1 -xf /home/dicom/bin/storescp.cfg Default -fe ".dcm" -xcr "/usr/local/bin/mq send /prim_receive \"#p 1 #a #c\"" $PRIPORT >> $PRILOGDIR/$PRILFIN 2>&1 &
+        	/home/dicom/bin/storescp --fork +cl $PRICL -aet $PRIAET -tos $PRIRECTO -ll $PRILL -od $PRIIF -ss $1 -xf /home/dicom/bin/storescp.cfg Default -fe ".dcm" -xcr "/usr/local/bin/mq send /prim_receive \"#p 1 #a #c\"" $PRIPORT >> $PRILOGDIR/$PRILFIN 2>&1 &
 		elif [ "$PRIRECTYPE" == "TAR" ]
 		then
 			/usr/local/bin/prim_store_server -ss $1 &

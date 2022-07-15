@@ -1,6 +1,6 @@
 #!/bin/bash
-#Version 6
-#2021-08-06
+#Version 8
+#2022-07-06
 # License GPLv3
 
 CURDIR=`pwd`
@@ -15,8 +15,8 @@ then
 fi
 
 echo "Checking SELinux status"
-	ISENABLED=`getenforce`
-	if [ "ISENABLED" != "Disabled" ]
+	ISENABLED=`/usr/sbin/getenforce 2>&1`
+	if [ "$ISENABLED" != "Disabled" ]
 	then
 		echo "SELinux is enabled.  Disabling..."
 		setenforce 0
@@ -24,7 +24,7 @@ echo "Checking SELinux status"
 		echo "SELinux is dsiabled.  Good."
 	fi
 	ISENABLED=`cat /etc/selinux/config|grep "^SELINUX="|cut -d "=" -f2|tr '[:upper:]' '[:lower:]'`
-	if [ "ISENABLED" != "disabled" ]
+	if [ "$ISENABLED" != "disabled" ]
 	then
 		echo "SELinux is not disabled in the configuration file.  Disabling..."
 		cd /etc/selinux; sed -i 's/=enforcing/=disabled/g' config; cd $CURDIR
@@ -33,25 +33,51 @@ echo "Checking SELinux status"
 	fi
 	sleep 1
 
+ISRHEL8=`grep -c "Red Hat Enterprise Linux release 8" /etc/redhat-release`
 echo "Installing any packages that are missing."
-	./install_packages.bash
-	yum update -y --skip-broken
-	sleep 1
-
-find / -iname "libssh2_config.h" -type f -exec cp {}  /usr/include/ \;
-
-echo "Enabling devtoolset-8"
-	source scl_source enable devtoolset-8
-
-echo "Setting devtooset-8 as the default"
-	ISTHERE=`grep -c "source scl_source enable devtoolset-8" /root/.bashrc`
-	if [ $ISTHERE -lt 1 ]
+	if [ $ISRHEL8 -eq 0 ]
 	then
-		echo "source scl_source enable devtoolset-8" >> /root/.bashrc
+		./install_packages.bash
 	else
-		echo "devtoolset-8 is already the default."
+		./install_packages_rhel8.bash
 	fi
 	sleep 1
+
+find / -iname "libssh.h" -type f -exec cp {}  /usr/include/ \;
+
+if [ $ISRHEL8 -eq 0 ]
+then
+	echo "Enabling devtoolset-8"
+		source scl_source enable devtoolset-8
+
+	echo "Setting devtooset-8 as the default"
+		ISTHERE=`grep -c "source scl_source enable devtoolset-8" /root/.bashrc`
+		if [ $ISTHERE -lt 1 ]
+		then
+			echo "source scl_source enable devtoolset-8" >> /root/.bashrc
+		else
+			echo "devtoolset-8 is already the default."
+		fi
+		sleep 1
+fi
+
+echo "Finding g++"
+GPATH="0"
+LIST=`find / -name "g++" -type f`
+for i in $LIST
+do
+	THISVERSION=`$i -v 2>&1|tail -1|cut -d " " -f3|cut -d '.' -f1`
+	if [ $THISVERSION -ge 9 ]
+	then
+		GPATH=$i
+		echo "Using $i"
+	fi
+done
+if [ "$GPATH" == "0" ]
+then
+	echo "ERROR:  No g++ found that is version 8 or higher.  Exiting..."
+	exit 1
+fi
 
 echo "Installing pstreams library."
 	git clone git://git.code.sf.net/p/pstreams/code pstreams
@@ -311,7 +337,7 @@ echo "Compiling PRIMAL services for this platform"
 	then
 		rm -f prim_store_server
 	fi
-	./ohif.bash
+	./build_primal_processes.bash "$GPATH"
 	systemctl stop prim_receive_server
 	systemctl stop prim_send_server
 	systemctl stop prim_store_server
@@ -319,6 +345,7 @@ echo "Compiling PRIMAL services for this platform"
 	systemctl stop prim_qr_server
 	mv -f prim_receive_server /usr/local/bin/
 	mv -f prim_send_server /usr/local/bin/
+	mv -f prim_send_worker /usr/local/bin/
 	mv -f prim_process_server /usr/local/bin/
 	mv -f prim_qr_server /usr/local/bin/
 	mv -f prim_store_server /usr/local/bin/
@@ -550,22 +577,6 @@ fi
 
 rm /home/dicom/bin/*.cfg
 cp dcmtk-3.6.5/dcmnet/etc/*.cfg /home/dicom/bin/
-
-if [ -e "/home/dicom/bin/rec_check" ]
-then
-	rm /home/dicom/bin/rec_check
-fi
-echo "Building the receiver check app"
-cd home/source; ./compile.bash
-cd $CURDIR
-
-if [ -e "home/source/rec_check" ]
-then
-	mv home/source/rec_check /home/dicom/bin/
-else
-	echo "Error:  rec_check is not found.  Exiting..."
-	exit 1
-fi
 
 ISINPATH=`cat /root/.bashrc|grep /home/dicom/bin|wc -l`
 if [ $ISINPATH -lt 1 ]

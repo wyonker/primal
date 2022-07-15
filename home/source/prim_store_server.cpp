@@ -28,11 +28,12 @@
 #include <sstream>
 #include <filesystem>
 #include <pstreams/pstream.h>
-#include <mysql/my_global.h>
+//#include <mysql/my_global.h>
 #include <mysql/mysql.h>
 #include <thread>
 #include <chrono>
 #include <future>
+#include <math.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,7 +158,7 @@ std::string fCreateCase(std::string strPrimalID, std::string strTemp) {
                     strJson = "[{\"dicom_cases\":{\"dicom_cases_id\":\"" + strPrimalID;
                     strJson.append("\",\"remote_dicom_cases_id\":\"0\",\"cases_id\":null,\"initial_cases_id\":null");
                     strJson.append(",\"status\":\"Receiving\",\"remote_case_status\":\"Processing\",\"status_problem\":\"None\",\"remote_title\":\"");
-                    strTemp2=fGetTagValue("0002,0016", strTemp, 0);
+                    strTemp2=fGetTagValue("0002,0016", strTemp, 0, 0);
                     strJson.append(strTemp2);
                     strJson.append("\",\"local_title\":\"");
                     
@@ -166,28 +167,28 @@ std::string fCreateCase(std::string strPrimalID, std::string strTemp) {
                     strJson.append("  \"studies\": [\n");
                     strJson.append("    {\n");
                         strJson.append("      \"studyInstanceUid\": \"");
-                        strTemp2=fGetTagValue("0020,000d", strTemp, 0);
+                        strTemp2=fGetTagValue("0020,000d", strTemp, 0, 0);
                         strJson.append(strTemp2 + "\",\n");
                         strJson.append("      \"studyDescription\": \"");
-                        strTemp2=fGetTagValue("0008,1030", strTemp, 0);
+                        strTemp2=fGetTagValue("0008,1030", strTemp, 0, 0);
                         strJson.append(strTemp2 + "\",\n");
                         strJson.append("      \"studyDate\": \"");
-                        strTemp2=fGetTagValue("0008,0020", strTemp, 0);
+                        strTemp2=fGetTagValue("0008,0020", strTemp, 0, 0);
                         strJson.append(strTemp2 + "\",\n");
                         strJson.append("      \"studyTime\": \"");
-                        strTemp2=fGetTagValue("0008,0030", strTemp, 0);
+                        strTemp2=fGetTagValue("0008,0030", strTemp, 0, 0);
                         strJson.append(strTemp2 + "\",\n");
                         strJson.append("      \"patientName\": \"");
-                        strTemp2=fGetTagValue("0010,0010", strTemp, 0);
+                        strTemp2=fGetTagValue("0010,0010", strTemp, 0, 0);
                         strJson.append(strTemp2 + "\",\n");
                         strJson.append("      \"patientBirthDate\": \"");
-                        strTemp2=fGetTagValue("0010,0030", strTemp, 0);
+                        strTemp2=fGetTagValue("0010,0030", strTemp, 0, 0);
                         strJson.append(strTemp2 + "\",\n");
                         strJson.append("      \"patientId\": \"");
-                        strTemp2=fGetTagValue("0010,0020", strTemp, 0);
+                        strTemp2=fGetTagValue("0010,0020", strTemp, 0, 0);
                         strJson.append(strTemp2 + "\",\n");
                         strJson.append("      \"patientSex\": \"");
-                        strTemp2=fGetTagValue("0010,0040", strTemp, 0);
+                        strTemp2=fGetTagValue("0010,0040", strTemp, 0, 0);
                         strJson.append(strTemp2 + "\",\n");
                         strJson.append("      \"seriesList\": [\n");
                         strJson.append("        {\n");
@@ -475,20 +476,20 @@ std::size_t fProcFile(std::string strTemp, std::string strRecNum) {
             intLC++;
             //std::cout << "Found a DICOM file: " << strFilename << std::endl;
             strRawDCMdump=fDcmDump(strTemp2);
-            strPName=fGetTagValue("0010,0010", strRawDCMdump, 0);
-            strMRN=fGetTagValue("0010,0020", strRawDCMdump, 0);
-            strDOB=fGetTagValue("0010,0030", strRawDCMdump, 0);
-            strSerIUID=fGetTagValue("0020,000e", strRawDCMdump, 0);
-            strSerDesc=fGetTagValue("0008,103e", strRawDCMdump, 0);
-            strModality=fGetTagValue("0008,0060", strRawDCMdump, 0);
-            strSopIUID=fGetTagValue("0008,0018", strRawDCMdump, 0);
-            strSIUID=fGetTagValue("0020,000d", strRawDCMdump, 0);
-            strStudyDate=fGetTagValue("0008,0020", strRawDCMdump, 0);
-            strStudyTime=fGetTagValue("0008,0030", strRawDCMdump, 0);
+            strPName=fGetTagValue("0010,0010", strRawDCMdump, 0, 0);
+            strMRN=fGetTagValue("0010,0020", strRawDCMdump, 0, 0);
+            strDOB=fGetTagValue("0010,0030", strRawDCMdump, 0, 0);
+            strSerIUID=fGetTagValue("0020,000e", strRawDCMdump, 0, 0);
+            strSerDesc=fGetTagValue("0008,103e", strRawDCMdump, 0, 0);
+            strModality=fGetTagValue("0008,0060", strRawDCMdump, 0, 0);
+            strSopIUID=fGetTagValue("0008,0018", strRawDCMdump, 0, 0);
+            strSIUID=fGetTagValue("0020,000d", strRawDCMdump, 0, 0);
+            strStudyDate=fGetTagValue("0008,0020", strRawDCMdump, 0, 0);
+            strStudyTime=fGetTagValue("0008,0030", strRawDCMdump, 0, 0);
             strStudyDateTime = strStudyDate + " " + strStudyTime;
-            strACCN=fGetTagValue("0008,0050", strRawDCMdump, 0);
-            strStudyDesc=fGetTagValue("0008,1030", strRawDCMdump, 0);
-            strPatientComments=fGetTagValue("0010,4000", strRawDCMdump, 0);
+            strACCN=fGetTagValue("0008,0050", strRawDCMdump, 0, 0);
+            strStudyDesc=fGetTagValue("0008,1030", strRawDCMdump, 0, 0);
+            strPatientComments=fGetTagValue("0010,4000", strRawDCMdump, 0, 0);
             //Create databse entries to show something is coming in.
             if(intLC == 1) {
                 strLogMessage = strPrimalID + " STOR " + "Updating DB entries for " + strPrimalID + ".";

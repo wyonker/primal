@@ -28,11 +28,12 @@
 #include <sstream>
 #include <filesystem>
 #include <pstreams/pstream.h>
-#include <mysql/my_global.h>
+//#include <mysql/my_global.h>
 #include <mysql/mysql.h>
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include <math.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -867,8 +868,8 @@ void fQueueMonitor() {
             continue;
         }
         result = mysql_store_result(mconnect);
-        if(result) {
-            result = mysql_store_result(mconnect_local);
+        //if(result) {
+        //    result = mysql_store_result(mconnect_local);
         strQuery="select senderAET from receive where puid='" + strPrimalID + "'";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
@@ -883,7 +884,7 @@ void fQueueMonitor() {
             intNumRows = mysql_num_rows(result);
             if(intNumRows < 1) {
                 mysql_free_result(result);
-                strQuery = "insert into receive(puid, senderAET, callingAET) values(\"" + strPrimalID + "\", \"" + strCalledAETitle + "\", \"" + strCallingAETitle + "\");";
+                strQuery = "insert into receive(puid, rservername, tstartrec, senderAET, callingAET) values('" + strPrimalID + "', '" + strHostname + "', '" + GetDate() + "', '" + strCalledAETitle + "', '" + strCallingAETitle + "');";
                 mysql_query(mconnect, strQuery.c_str());
                 if(*mysql_error(mconnect)) {
                     strLogMessage="SQL Error: ";

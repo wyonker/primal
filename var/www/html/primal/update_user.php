@@ -21,10 +21,9 @@ if (isset($_SESSION['obj']) || isset($_SESSION['obj1']))
 
 $query="SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'primalarc';";
 $result=$conn->query($query);
-$has_migration = mysql_num_rows($result);
+$has_migration = $result->num_rows;
 $_SESSION['callerid']=$_SERVER['PHP_SELF'];
-if($_SERVER['REQUEST_METHOD'] == 'POST')
-{
+if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	if(isset($_POST['cancel']))	{
 		header("Location: http://" . $_SERVER['HTTP_HOST'] . "/primal/setup.php");
 		//http_redirect('http://' . $_SERVER['HTTP_HOST'] . '/setup.php', true, HTTP_REDIRECT_PERM);
@@ -38,26 +37,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
 		$_SESSION['add_error'] .= "Error:  Login ID must contain only alpha/numeric characters.  Please try again...<br>";
 	} elseif(strlen($_POST['add_loginid']) > 63) {
 		$_SESSION['add_error'] .= "Error:  Login Id can not be longer than 63 characters.  Please try again...<br>";
-	} else {
-		$query="select count(*) as total from user where loginid = '" . $_POST['add_loginid'] . "';";
-		$result=$conn->query($query);
-		if ($result['total'] > 0 ) {
-			$_SESSION['add_error'] = "Error:  Username exists.  Please try again...<br>";
-		}
 	}
 	if ($_POST['add_login_sec_level'] < 1 || $_POST['add_login_sec_level'] > 254 || !is_numeric($_POST['add_login_sec_level'])) {
 		if($_POST['add_login_sec_level'] > 254 && $_POST['add_loginid'] != 'primal')
 			$_SESSION['add_error'] .= "Error:  Secuirty Level must be a number from 1 - 254.  Please try again...<br>";
 	} elseif ($_POST['add_login_sec_level'] > $_SESSION['login_sec_level']) {
 		$_SESSION['add_error'] .= "Error:  Cannot grant a user more permissions than yourself.  Please try again...<br>";
-	}
-	if(!isset($_GET["e"])) {
-		$query = "select * from user where loginid = '" . trim($_GET["e"]) . "';";
-		$result = $conn->query($query);
-	    $num_rows = mysql_num_rows($result);
-		if($num_rows > 0) {
-			$_SESSION['add_error'] .= "Error:  User Name exists.  Please try again...<br>";
-		}
 	}
 	$aValid = array('-', '_', ' ', '.'); 
 	if (!isset($_POST["add_user_name"]) || !ctype_alnum(str_replace($aValid, 'A', $_POST['add_user_name']))) {
@@ -162,7 +147,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
 		$_SESSION['add_error'] .= "Error:  Username not found.  Please try again.  If this error persists, please contact your administrator.<br>";
 	}
 	if(!isset($_SESSION['add_error'])) {
-		$row = mysql_fetch_assoc($result);
+		$row = mysqli_fetch_assoc($result);
 		$_POST['add_loginid'] = $row['loginid'];
 		$_SESSION['orig_loginid'] = $row['loginid'];
 		$_POST['add_login_sec_level'] = $row['login_sec_level'];

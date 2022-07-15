@@ -151,11 +151,11 @@ if (!isset($_GET["o"])) {
 //echo "Time Index before select count: " . xdebug_time_index() . "<br>";
 
 //$query="select a.puid, a.pname, a.pid, a.pdob, a.pmod, a.sdatetime, r.tstartrec, r.tendrec, r.rec_images, r.rerror, r.senderAET, p.tstartproc, p.tendproc, p.perror, s.tdest, s.tstartsend, s.tendsend, s.timages, s.serror, t.AccessionNum, t.StudyDate from patient as a left join receive as r on a.puid = r.puid left join process as p on a.puid = p.puid left join send as s on a.puid = s.puid left join study as t on a.puid = t.puid";
-$query="select count(*) as total from send;";
+$strQuery="select count(*) as total from send;";
 //$result = mysql_query($query);
 $result=$conn->query($strQuery);
 $qdata=mysqli_fetch_assoc($result);
-$num_rows = $qdata['total'];;
+$num_rows = $qdata['total'];
 $total_pages = floor($num_rows/$_SESSION['page_size']);
 //echo "num_rows = " . $num_rows . " : total_pages = " . $total_pages . "<br>";
 if(!isset($_GET["c"]) || $_GET["c"] == 0) {

@@ -28,13 +28,14 @@
 #include <sstream>
 #include <filesystem>
 #include <pstreams/pstream.h>
-#include <mysql/my_global.h>
+//#include <mysql/my_global.h>
 #include <mysql/mysql.h>
 #include <thread>
 #include <chrono>
 #include <future>
 #include <exception>
 #include <mutex>
+#include <math.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -456,7 +457,7 @@ std::size_t fCFind(std::string strFullPath, std::size_t intMsgType) {
                             strLogMessage = "C-Find started for " + entry.path().string();
                             fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFQR"]);
                             strDCMdump=fDcmDump(entry.path().string());
-                            strSIUID=fGetTagValue("0020,000d", strDCMdump, 0);
+                            strSIUID=fGetTagValue("0020,000d", strDCMdump, 0, 0);
                             //strLogMessage="strDCMdump = " + strDCMdump;
                             //fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFQR"]);
                             //std::cout << strLogMessage << std::endl;
@@ -466,7 +467,7 @@ std::size_t fCFind(std::string strFullPath, std::size_t intMsgType) {
                             while(intDone2 == 0) {
                                 iprimConf = conf1.primConf.find(strRecNum + "_PRIQRTAG" + to_string(intLC) + ":" + to_string(intLC2));
                                 if(iprimConf != conf1.primConf.end()) {
-                                    strTagVal=fGetTagValue(conf1.primConf[strRecNum + "_PRIQRTAG" + to_string(intLC) + ":" + to_string(intLC2)], strDCMdump, 1);
+                                    strTagVal=fGetTagValue(conf1.primConf[strRecNum + "_PRIQRTAG" + to_string(intLC) + ":" + to_string(intLC2)], strDCMdump, 1, 0);
                                     strTemp3=conf1.primConf[strRecNum + "_PRIQRTAG" + to_string(intLC) + ":" + to_string(intLC2)];
                                     if(strTemp3.compare("0010,0020")==0 && intMsgType==2) {
                                         if(fs::exists("/usr/local/scripts/mrn_swap2.bash")) {
@@ -1409,7 +1410,7 @@ void fCheckStartup() {
 
 int main() {
     std::string strLogMessage, strRecNum, strMessage;
-    std::size_t intMaxThreads, intNumThreads, intFoundThread;
+    //std::size_t intMaxThreads, intNumThreads, intFoundThread;
     std::vector<std::thread> vecThreads;
     std::map<std::string, std::string>::iterator iprimConf;
 
@@ -1422,7 +1423,7 @@ int main() {
         exit(-1);
     }
     
-    intMaxThreads = std::thread::hardware_concurrency();
+    //intMaxThreads = std::thread::hardware_concurrency();
     strLogMessage = "Starting prim_qr_server version 1.00.15";
     fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFQR"]);
     //iprimConf = conf1.primConf.find(strRecNum + "_PRILFQR");

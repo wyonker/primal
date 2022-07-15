@@ -23,7 +23,7 @@
         $_SESSION['active'] = 0;
         $_SESSION['login_username'] = $name_entered;
     } else {
-		$row = mysql_fetch_assoc($result);
+		$row = mysqli_fetch_assoc($result);
 		if ($row['password'] == $password_entered) {
 			$_SESSION['loginid'] = $row['loginid'];
 			$_SESSION['login_sec_level'] = $row['login_sec_level'];

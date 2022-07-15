@@ -27,13 +27,14 @@
 #include <sstream>
 #include <filesystem>
 #include <pstreams/pstream.h>
-#include <mysql/my_global.h>
+//#include <mysql/my_global.h>
 #include <mysql/mysql.h>
 #include <thread>
 #include <future>
 #include <chrono>
 #include <mutex>
 #include <dirent.h>
+#include <math.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,8 +42,8 @@
 #include <errno.h>
 #include <mqueue.h>
 #include <csignal>
-#include "libssh2_config.h"
-#include <libssh2.h>
+//#include "libssh2_config.h"
+#include <libssh.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
@@ -129,6 +130,73 @@ std::string Get_Date_Time() {
     return(strTime);
 }
 
+int verify_knownhost(ssh_session session) {
+  int state, hlen;
+  unsigned char *hash = NULL;
+  char *hexa;
+  char buf[10];
+
+  state = ssh_is_server_known(session);
+  hlen = ssh_get_pubkey_hash(session, &hash);
+  if (hlen < 0)
+    return -1;
+
+  switch (state) {
+    case SSH_SERVER_KNOWN_OK:
+      break; /* ok */
+
+    case SSH_SERVER_KNOWN_CHANGED:
+      fprintf(stderr, "Host key for server changed: it is now:\n");
+      ssh_print_hexa("Public key hash", hash, hlen);
+      fprintf(stderr, "For security reasons, connection will be stopped\n");
+      free(hash);
+      return -1;
+
+    case SSH_SERVER_FOUND_OTHER:
+      fprintf(stderr, "The host key for this server was not found but an other"
+        "type of key exists.\n");
+      fprintf(stderr, "An attacker might change the default server key to"
+        "confuse your client into thinking the key does not exist\n");
+      free(hash);
+      return -1;
+
+    case SSH_SERVER_FILE_NOT_FOUND:
+      fprintf(stderr, "Could not find known host file.\n");
+      fprintf(stderr, "If you accept the host key here, the file will be"
+       "automatically created.\n");
+      /* fallback to SSH_SERVER_NOT_KNOWN behavior */
+
+    case SSH_SERVER_NOT_KNOWN:
+      hexa = ssh_get_hexa(hash, hlen);
+      fprintf(stderr,"The server is unknown. Do you trust the host key?\n");
+      fprintf(stderr, "Public key hash: %s\n", hexa);
+      free(hexa);
+      if (fgets(buf, sizeof(buf), stdin) == NULL) {
+        free(hash);
+        return -1;
+      }
+      if (strncasecmp(buf, "yes", 3) != 0) {
+        free(hash);
+        return -1;
+      }
+      if (ssh_write_knownhost(session) < 0) {
+        fprintf(stderr, "Error %s\n", strerror(errno));
+        free(hash);
+        return -1;
+      }
+      break;
+
+    case SSH_SERVER_ERROR:
+      fprintf(stderr, "Error %s", ssh_get_error(session));
+      free(hash);
+      return -1;
+  }
+
+  free(hash);
+  return 0;
+}
+
+/*
 static int waitsocket(int socket_fd, LIBSSH2_SESSION *session) {
     struct timeval timeout;
     int rc;
@@ -144,7 +212,7 @@ static int waitsocket(int socket_fd, LIBSSH2_SESSION *session) {
  
     FD_SET(socket_fd, &fd);
  
-    /* now make sure we wait in the correct direction */ 
+    // now make sure we wait in the correct direction
     dir = libssh2_session_block_directions(session);
 
  
@@ -158,20 +226,20 @@ static int waitsocket(int socket_fd, LIBSSH2_SESSION *session) {
  
     return rc;
 }
+*/
 
 void fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC, std::string strAET, std::string strPackFileName) {
     std::string strDateTime, strHost, strQuery, strHostName, strFullPath, strTemp, strSendType, strCmd, strReturn, strClientID;
     std::string strLine, strDate, strAEC, strFileName, strOldFileName, strReadLine, strPasswd, strDestHIP, strDestPort, strDestUser;
     std::string strDestPath, strClientAET, strClientName, strLogMessage, strCmd2, strLine2;
     std::size_t intNumFiles = 0, intLC2, intFound, intFound2, intPos, intImgRec, nread, intLC3, intError=0, intAETMapped=0;
-    int sock, rc, auth_pw = 1;
+    int sock, rc, rc2, auth_pw = 1, intPort, verbosity = SSH_LOG_PROTOCOL;
     std::map<std::string, std::string>::iterator iprimConf;
     char cHostName[1024], mem[1024], *ptr;
+    ssh_scp scp;
     MYSQL *mconnect_local;
     MYSQL_ROW row;
 
-    LIBSSH2_SESSION *session = NULL;
-    LIBSSH2_CHANNEL *channel;
     //const char *fingerprint;
     struct sockaddr_in sin;
     struct stat fileinfo;
@@ -345,9 +413,28 @@ void fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC,
                 fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
             }
 
-            rc = libssh2_init(0);
-            if(rc != 0) {
-                strLogMessage=" SEND " + strPrimID + " libssh2 initialization failed " + to_string(rc);
+            ssh_session my_ssh_session;
+            my_ssh_session = ssh_new();
+            if(my_ssh_session == NULL) {
+                strLogMessage=" SEND " + strPrimID + " libssh initialization failed " + to_string(rc);
+                fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
+                intError=1;
+            }
+            sin.sin_port = htons(stoi(strDestPort));
+            intPort = stoi(strDestPort);
+            ssh_options_set(my_ssh_session, SSH_OPTIONS_HOST, strDestHIP.c_str());
+            ssh_options_set(my_ssh_session, SSH_OPTIONS_PORT, &intPort);
+            ssh_options_set(my_ssh_session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+            rc = ssh_connect(my_ssh_session);
+            if(rc != SSH_OK) {
+                strLogMessage=" SEND " + strPrimID + " Connection to host failed: " + to_string(rc);
+                fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
+                intError=1;
+            }
+            if (verify_knownhost(my_ssh_session) < 0) {
+                ssh_disconnect(my_ssh_session);
+                ssh_free(my_ssh_session);
+                strLogMessage=" SEND " + strPrimID + " SSH host key not known: " + to_string(rc);
                 fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
                 intError=1;
             }
@@ -356,102 +443,54 @@ void fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC,
             fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
             local = fopen(strFullPath.c_str(), "rb");
             if(!local) {
-                strLogMessage=" SEND " + strPrimID + " SCP Can't open local file " + strFullPath;
+                ssh_disconnect(my_ssh_session);
+                ssh_free(my_ssh_session);
+                strLogMessage=" SEND " + strPrimID + " SSH Can't open local file ";
+                fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
+                intError=1;
+            }
+            rc = ssh_userauth_password(my_ssh_session, strDestUser.c_str(), strPasswd.c_str());
+            if (rc != SSH_AUTH_SUCCESS) {
+                ssh_disconnect(my_ssh_session);
+                ssh_free(my_ssh_session);
+                strLogMessage=" SEND " + strPrimID + " SSH Failed to authenticate:  Bad username or password ";
+                fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
+                intError=1;
+            }
+            scp = ssh_scp_new (my_ssh_session, SSH_SCP_WRITE, strDestPath.c_str());
+            if (scp == NULL) {
+                ssh_disconnect(my_ssh_session);
+                ssh_free(my_ssh_session);
+                strLogMessage=" SEND " + strPrimID + " Error allocating scp session " +  ssh_get_error(my_ssh_session);
                 fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
                 intError=1;
             }
             stat(strFullPath.c_str(), &fileinfo);
-            sock = socket(AF_INET, SOCK_STREAM, 0);
-            if(-1 == sock) {
-                strLogMessage=" SEND " + strPrimID + " failed to create socket!";
-                fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
-                intError=1;
-            }
-            sin.sin_family = AF_INET;
-            sin.sin_port = htons(stoi(strDestPort));
-            sin.sin_addr.s_addr = inet_addr(strDestHIP.c_str());
-            if(connect(sock, (struct sockaddr*)(&sin), sizeof(struct sockaddr_in)) != 0) {
-                strLogMessage=" SEND " + strPrimID + " SCP ERROR:  Failed to connect!";
-                fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
-                intError=1;
-            }
-            session = libssh2_session_init();
-            if(!session) {
-                strLogMessage=" SEND " + strPrimID + " SCP ERROR:  Couldn't initiate SSH session.";
-                fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
-                intError=1;
-            }
-            rc = libssh2_session_handshake(session, sock);
-            if(rc) {
-                strLogMessage=" SEND " + strPrimID + " SCP ERROR:  Failure establishing SSH session: " + to_string(rc);
-                fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
-                intError=1;
-            }
-            if(auth_pw) {
-                /* We could authenticate via password */ 
-                if(libssh2_userauth_password(session, strDestUser.c_str(), strPasswd.c_str())) {
-                    strLogMessage=" SEND " + strPrimID + " Authentication by password failed for user " + strDestUser + " with pass " + strPasswd + ".";
-                    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
-                    intError=1;
+            do {
+                nread = fread(mem, 1, sizeof(mem), local);
+                if(nread <= 0) {
+                    //std::cout << "Reached end of file for " << strFullPath << std::endl;
+                    // end of file
+                    break;
                 }
-            } else {
-                /* Or by public key */ 
-                #define HOME_DIR "/home/username/"
-                if(libssh2_userauth_publickey_fromfile(session, strDestUser.c_str(), HOME_DIR ".ssh/id_rsa.pub", HOME_DIR ".ssh/id_rsa", strPasswd.c_str())) {
-                    strLogMessage=" SEND " + strPrimID + " Authentication by public key failed";
-                    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
-                    intError=1;
-                }
-            }
-            channel = libssh2_scp_send64(session, strDestPath.c_str(), fileinfo.st_mode & 0777, (unsigned long)fileinfo.st_size, 1505225516l, 1505225516l);
-            if(!channel) {
-                char *errmsg;
-                int errlen;
-                int err = libssh2_session_last_error(session, &errmsg, &errlen, 0);
-                strLogMessage=" SEND " + strPrimID + " Unable to open a session.  Error#" + to_string(err);
-                fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
-                intError=1;
-            }
-            if(intError == 0) {
-                //fprintf(stderr, "SCP session waiting to send file\n");
+                ptr = mem;
+
                 do {
-                    nread = fread(mem, 1, sizeof(mem), local);
-                    if(nread <= 0) {
-                        //std::cout << "Reached end of file for " << strFullPath << std::endl;
-                        /* end of file */ 
+                    // write the same data over and over, until error or completion
+                    rc2 = ssh_scp_push_file(scp, ptr, nread, S_IRUSR |  S_IWUSR);
+
+                    if(rc2 < 0) {
+                        fprintf(stderr, "ERROR %d\n", rc2);
                         break;
+                    } else {
+                        // rc indicates how many bytes were written this time
+                        ptr += rc2;
+                        nread -= rc2;
                     }
-                    ptr = mem;
-
-                    do {
-                        /* write the same data over and over, until error or completion */ 
-                        rc = libssh2_channel_write(channel, ptr, nread);
-
-                        if(rc < 0) {
-                            fprintf(stderr, "ERROR %d\n", rc);
-                            break;
-                        } else {
-                            /* rc indicates how many bytes were written this time */ 
-                            ptr += rc;
-                            nread -= rc;
-                        }
-                    } while(nread);
-                } while(1);
- 
-                libssh2_channel_send_eof(channel);
-                libssh2_channel_wait_eof(channel);
-                libssh2_channel_wait_closed(channel);
-            }
-            libssh2_channel_free(channel);
-            channel = NULL;
-            while((channel = libssh2_channel_open_session(session)) == NULL && libssh2_session_last_error(session, NULL, NULL, 0) == LIBSSH2_ERROR_EAGAIN) {
-                waitsocket(sock, session);
-            }
-            if(channel == NULL) {
-                strLogMessage=" SEND " + strPrimID + " Error???";
-                fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
-                intError=1;
-            }
+                } while(nread);
+            } while(1);
+            ssh_disconnect(my_ssh_session);
+            ssh_free(my_ssh_session);
             if(intError == 0) {
                 iprimConf = conf1.primConf.find(strRecNum + "_PRIDESTPATH" + to_string(intLC));
                 if(iprimConf != conf1.primConf.end()) {
@@ -464,24 +503,16 @@ void fSendStudy(std::string strPrimID, std::string strRecNum, std::size_t intLC,
                 strCmd+=strDestPath;
                 strLogMessage = strPrimID + " " + strProcChainType + " Executing " + strCmd;
                 fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
-                while((rc = libssh2_channel_exec(channel, strCmd.c_str())) == LIBSSH2_ERROR_EAGAIN) { 
-                    waitsocket(sock, session);
-                }
                 if(rc != 0) {
                     strLogMessage=" SEND " + strPrimID + " Error??????";
                     fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
                     intError=1;
                 }
             }
-            if(session) {
-                libssh2_session_disconnect(session, "Normal Shutdown");
-                libssh2_session_free(session);
-            }
             close(sock);
             if(local)
                 fclose(local);
             //fprintf(stderr, "all done\n");
-            libssh2_exit();
             strLogMessage=strPrimID + " SEND Finish SCP send to " + strDestHIP + " on port " + strDestPort;
             fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
             strDate = GetDate();
@@ -881,8 +912,8 @@ std::size_t fUpdateLocation(std::string strPrimalID, std::string strPriOut, std:
                     strLogMessage=strPrimalID + " SEND  Adding image location for " + strFileName + ".";
                     fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFOUT"]);
                     strDCMdump=fDcmDump(strFullFilePath);
-                    strSopIUID=fGetTagValue("0008,0018", strDCMdump, 0);
-                    serSerIUID=fGetTagValue("0020,000e", strDCMdump, 0);
+                    strSopIUID=fGetTagValue("0008,0018", strDCMdump, 0, 0);
+                    serSerIUID=fGetTagValue("0020,000e", strDCMdump, 0, 0);
                     GetDate();
                     strQuery = "insert into image set ilocation='" + strPriOut + "/" + strPrimalID + "', puid='" + strPrimalID;
                     strQuery += "', SOPIUID='" + strSopIUID + "', SERIUID='" + serSerIUID + "', iservername='" + strHostname;

@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS primal;
 CREATE DATABASE IF NOT EXISTS primal;
 use primal;
 create table patient (puid varchar(24) not null primary key, 
@@ -82,8 +83,8 @@ create table monitor (SCP varchar(4) not null primary key,
 					  begin_state datetime not null,
 					  ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
 create table locker  (pproc varchar(128) not null primary key,
-					  ptimestamp varchar(128) not null,
-					  puser varchar(128) not null,
+					  ptimestamp datetime,
+					  puser varchar(128) not null default 'none',
 					  plock int(2));
 create table QR      (prefetch_results_id int(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
                       puid varchar(24) not null,
@@ -186,105 +187,3 @@ insert into locker (pproc, plock) values ('config_edit', '0');
 create index image_puid_indx on image(puid);
 create index series_modality on series(Modality);
 
-CREATE DATABASE IF NOT EXISTS primal_index;
-use primal_index;
-create table study (study_id int(10) UNSIGNED UNIQUE not null AUTO_INCREMENT, 
-	pname varchar(38) not null, 
-    pid varchar(38) not null,
-    dob date,
-	sex varchar(6),
-	clientid varchar(16),
-  	SIUID varchar(68) not null,
-    StudyDesc varchar(256),
-	StudyNumImg int(8),
-	AccessionNum varchar(32),
-	StudyDate datetime,
-	StudyModType varchar(16),
-	CaseID varchar(16),
-	dirfullpath varchar(256),
-	INDEX pname (pname),
-	INDEX pid (pid),
-	INDEX dirfullpath (dirfullpath),
-	INDEX SIUID (SIUID));
-create table folder (folder_id int(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
-	parentid int not null,
-	dirfullpath varchar(256),
-	pname varchar(38) not null, 
-    pid varchar(38) not null,
-    dob date,
-	sex varchar(6),
-	clientid varchar(16),
-  	SIUID varchar(68) not null,
-    StudyDesc varchar(256),
-	StudyNumImg int(8),
-	AccessionNum varchar(32),
-	StudyDate datetime,
-	StudyModType varchar(16),
-	CaseID varchar(16),
-	has_unique_info BOOLEAN,
-	INDEX dirfullpath (dirfullpath),
-	INDEX SIUID (SIUID));
-create table instance (instance_id int(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
-	parentid int(10) not null,
-	folderid int(10) not null,
-	SOPIUID varchar(68) not null,
-	dirfullpath varchar(256) not null,
-	image_mod varchar(8) not null,
-	has_unique_info BOOLEAN,
-	INDEX dirfullpath (dirfullpath),
-	INDEX SOPIUID (SOPIUID),
-	INDEX folderid (folderid));
-grant all privileges on primal_index.* to 'primal_index'@'%' identified by 'ThisGuy1!' with grant option;
-
-CREATE DATABASE IF NOT EXISTS primal_gw;
-use primal_gw;
-create table dicom_cases (case_id int(10) UNSIGNED UNIQUE not null AUTO_INCREMENT, 
-	initial_cases_id int(10) unsigned);
-grant all privileges on primal_gw.* to 'primal'@'localhost' identified by 'ThisGuy1!' with grant option;
-
-CREATE DATABASE IF NOT EXISTS primal_order;
-use primal_order;
-create table orders (order_id int(10) UNSIGNED UNIQUE not null AUTO_INCREMENT, 
-	order_number varchar(16) not null,
-	order_date datetime,
-	received_date datetime,
-	procss_date datetime,
-	client_id varchar(8),
-	complete boolean
-	);
-create table priors (prior_id int(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
-	order_id int(10) not null,
-	SIUID varchar(68) not null,
-	dirfullpath varchar(256) not null
-	);
-create table study_description (studydesc_id int(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
-	study_description varchar(256) not null,
-	modality varchar(8) not null,
-	client_id varchar(8) not null
-	);
-grant all privileges on primal_order.* to 'primal'@'localhost' identified by 'ThisGuy1!' with grant option;
-
-CREATE DATABASE IF NOT EXISTS aidoc;
-use aidoc;
-DROP TABLE IF EXISTS studies;
-CREATE TABLE studies (
-   eventID int(11) NOT NULL AUTO_INCREMENT,
-   event_date datetime DEFAULT NULL,
-   source_gateway varchar(32) DEFAULT NULL,
-   clientID int(11) DEFAULT NULL,
-   SIUID varchar(128) DEFAULT NULL,
-   DCBserver varchar(32) DEFAULT NULL,
-   AccessionNum varchar(32) DEFAULT NULL,
-   caseid varchar(32) DEFAULT NULL,
-   Complete tinyint(1) DEFAULT '0',
-   dicom_cases_id int(10) DEFAULT '0',
-  PRIMARY KEY (`eventID`)
-) ENGINE=InnoDB AUTO_INCREMENT=63296 DEFAULT CHARSET=latin1;
-CREATE TABLE dcb (
-	transid int(10) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-	caseid varchar(32) NOT NULL,
-	dicomid varchar(32) NOT NULL,
-	source varchar(255) NOT NULL,
-	INDEX caseid (caseid)
-);
-grant all privileges on aidoc.* to 'primal'@'localhost' identified by 'primal' with grant option;

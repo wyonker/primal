@@ -694,7 +694,7 @@ std::size_t fProcessRule (std::string strFullPath, std::string strCond1, std::st
             strDCMdump=fDcmDump(strPathandName);
             if(strOpt1 == "run" && strProcChainType == "PRIMRCPROC") {
                 //Only process run, sed and mod operators in the processing program.
-                strTagVal = fGetTagValue(strCond1, strDCMdump, 1);
+                strTagVal = fGetTagValue(strCond1, strDCMdump, 1, 0);
                 strCMD = "/usr/local/scripts/" + strCond2 + " \"" + strTagVal + "\"" + " \"" + strPathandName + "\"";
                 //std::cout << "Run comand = " << strCMD << std::endl;
                 strReturn = exec(strCMD.c_str());

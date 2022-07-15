@@ -28,13 +28,14 @@
 #include <sstream>
 #include <filesystem>
 #include <pstreams/pstream.h>
-#include <mysql/my_global.h>
+//#include <mysql/my_global.h>
 #include <mysql/mysql.h>
 #include <thread>
 #include <chrono>
 #include <future>
 #include <exception>
 #include <mutex>
+#include <math.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -501,7 +502,7 @@ void fCreateJson(std::string strFullPath, std::size_t intMsgType) {
                 //strClientID = strTemp3.substr(0, intFound);
                 strClientAET = fGetCallingAET(strPrimalID);
                 strClientName = fGetClientName(strPrimalID);
-                strSIUID=fGetTagValue("0020,000d", strTemp, 0);
+                strSIUID=fGetTagValue("0020,000d", strTemp, 0, 0);
                 if(strPrefetchNode.compare("1")==0) {
                     mtx.lock();
                     strQuery="select study.sCaseID from QR join study on QR.puid=study.puid where QR.SIUID='" + strSIUID + "' and QR.qrstatus='Requested';";
@@ -615,20 +616,20 @@ void fCreateJson(std::string strFullPath, std::size_t intMsgType) {
                 strJson += "{";
                 strJson += "\\\"patient_level_id\\\":\\\"" + strPrimalIDInt + "\\\",";
                 strJson += "\\\"dicom_cases_id\\\":\\\"" + strPrimalIDInt + "\\\",";
-                strTemp2=fGetTagValue("0010,0010", strTemp, 0);
+                strTemp2=fGetTagValue("0010,0010", strTemp, 0, 0);
                 strJson += "\\\"patient_name\\\":\\\"" + strTemp2 + "\\\",";
-                strTemp2=fGetTagValue("0010,0020", strTemp, 0);
+                strTemp2=fGetTagValue("0010,0020", strTemp, 0, 0);
                 strJson += "\\\"patient_id\\\":\\\"" + strTemp2 + "\\\",";
                 strJson += "\\\"alt_patient_id\\\":null,";
-                strTemp2=fGetTagValue("0010,0030", strTemp, 0);
+                strTemp2=fGetTagValue("0010,0030", strTemp, 0, 0);
                 strJson += "\\\"patient_birth_date\\\":\\\"" + strTemp2 + "\\\",";
-                strTemp2=fGetTagValue("0010,0032", strTemp, 0);
+                strTemp2=fGetTagValue("0010,0032", strTemp, 0, 0);
                 strJson += "\\\"patient_birth_time\\\":\\\"" + strTemp2 + "\\\",";
-                strTemp2=fGetTagValue("0010,0040", strTemp, 0);
+                strTemp2=fGetTagValue("0010,0040", strTemp, 0, 0);
                 strJson += "\\\"patient_sex\\\":\\\"" + strTemp2 + "\\\",";
                 strJson += "\\\"patient_age\\\":null,";
                 strJson += "\\\"patient_size\\\":null,";
-                strTemp2=fGetTagValue("0010,1030", strTemp, 0);
+                strTemp2=fGetTagValue("0010,1030", strTemp, 0, 0);
                 //strJson += "\\\"patient_weight\\\":" + strTemp2 + ",";
                 strJson += "\\\"patient_weight\\\":0,";
                 strJson += "\\\"medical_record_locator\\\":null,";
@@ -645,39 +646,39 @@ void fCreateJson(std::string strFullPath, std::size_t intMsgType) {
                 strJson += "\\\"study_level_id\\\":\\\"" + strPrimalIDInt + "\\\",";
                 strJson += "\\\"dicom_cases_id\\\":\\\"" + strPrimalIDInt + "\\\",";
                 strJson += "\\\"patient_level_id\\\":\\\"" + strPrimalIDInt + "\\\",";
-                strTemp2=fGetTagValue("0008,0020", strTemp, 0);
+                strTemp2=fGetTagValue("0008,0020", strTemp, 0, 0);
                 strJson += "\\\"study_date\\\":\\\"" + strTemp2 + "\\\",";
-                strTemp2=fGetTagValue("0008,0030", strTemp, 0);
+                strTemp2=fGetTagValue("0008,0030", strTemp, 0, 0);
                 strJson += "\\\"study_time\\\":\\\"" + strTemp2 + "\\\",";
-                strTemp2=fGetTagValue("0008,0050", strTemp, 0);
+                strTemp2=fGetTagValue("0008,0050", strTemp, 0, 0);
                 strJson += "\\\"accession_number\\\":\\\"" + strTemp2 + "\\\",";
                 strJson += "\\\"study_id\\\":\\\"0\\\",";
                 strJson += "\\\"study_instance_uid\\\":\\\"" + strSIUID + "\\\",";
-                strTemp2=fGetTagValue("0008,0090", strTemp, 0);
+                strTemp2=fGetTagValue("0008,0090", strTemp, 0, 0);
                 strJson += "\\\"referring_physician\\\":\\\"" + strTemp2 + "\\\",";
-                strTemp2=fGetTagValue("0008,1010", strTemp, 0);
+                strTemp2=fGetTagValue("0008,1010", strTemp, 0, 0);
                 strJson += "\\\"station_name\\\":\\\"" + strTemp2 + "\\\",";
                 strJson += "\\\"perf_phy_name\\\":null,";
                 strJson += "\\\"name_phy_read_stdy\\\":null,";
-                strTemp2=fGetTagValue("0008,1030", strTemp, 0);
+                strTemp2=fGetTagValue("0008,1030", strTemp, 0, 0);
                 strJson += "\\\"study_description\\\":\\\"" + strTemp2 + "\\\",";
                 strJson += "\\\"study_comments\\\":null,";
                 strJson += "\\\"requested_procedure_des\\\":null,";
                 strJson += "\\\"admit_diag_des\\\":null,";
-                strTemp2=fGetTagValue("0008,0080", strTemp, 0);
+                strTemp2=fGetTagValue("0008,0080", strTemp, 0, 0);
                 strJson += "\\\"institution_name\\\":\\\"" + strTemp2 + "\\\",";
                 strJson += "\\\"performed_station\\\":null,";
                 strJson += "\\\"requested_priority\\\":null,";
                 strJson += "\\\"performed_type_description\\\":null,";
                 strJson += "\\\"recognition_code\\\":null,";
                 strJson += "\\\"date_created\\\":\\\"" + strDate + "\\\",";
-                strTemp2=fGetTagValue("0040,0254", strTemp, 0);
+                strTemp2=fGetTagValue("0040,0254", strTemp, 0, 0);
                 strJson += "\\\"performed_step_description\\\":null";
                 strJson += "}},";
                 strJson += "\\\"series_level\\\":{";
             }
             //First let's see if the series for this instances has already been seen
-            strSerIUID = fGetTagValue("0020,000e", strTemp, 0);
+            strSerIUID = fGetTagValue("0020,000e", strTemp, 0, 0);
             std::map<std::string, std::string>::const_iterator got = mapSeriesJson.find (strSerIUID);
             if (got == mapSeriesJson.end()) {
                 //Not found.  Need to add.
@@ -686,21 +687,21 @@ void fCreateJson(std::string strFullPath, std::size_t intMsgType) {
                 strSerTemp += "\\\"series_level_id\\\":\\\"" + to_string(intPrimalIDInt) + "\\\",";
                 strSerTemp += "\\\"dicom_cases_id\\\":\\\"" + strPrimalIDInt + "\\\",";
                 strSerTemp += "\\\"study_level_id\\\":\\\"" + strPrimalIDInt + "\\\",";
-                strTemp2=fGetTagValue("0008,0021", strTemp, 0);
+                strTemp2=fGetTagValue("0008,0021", strTemp, 0, 0);
                 strSerTemp += "\\\"series_date\\\":\\\"" + strTemp2 + "\\\",";
-                strTemp2=fGetTagValue("0008,0031", strTemp, 0);
+                strTemp2=fGetTagValue("0008,0031", strTemp, 0, 0);
                 strSerTemp += "\\\"series_time\\\":\\\"" + strTemp2 + "\\\",";
-                strTemp2=fGetTagValue("0008,0060", strTemp, 0);
+                strTemp2=fGetTagValue("0008,0060", strTemp, 0, 0);
                 strSerTemp += "\\\"modality\\\":\\\"" + strTemp2 + "\\\",";
                 strSerTemp += "\\\"conversion_type\\\":\\\"WSD\\\",";
-                strTemp2=fGetTagValue("0020,0011", strTemp, 0);
+                strTemp2=fGetTagValue("0020,0011", strTemp, 0, 0);
                 strSerTemp += "\\\"series_number\\\":\\\"" + strTemp2 + "\\\",";
-                strTemp2=fGetTagValue("0020,000e", strTemp, 0);
+                strTemp2=fGetTagValue("0020,000e", strTemp, 0, 0);
                 strSerTemp += "\\\"series_instance_uid\\\":\\\"" + strTemp2 + "\\\",";
                 strSerTemp += "\\\"protocol_name\\\":null,";
-                strTemp2=fGetTagValue("0008,103e", strTemp, 0);
+                strTemp2=fGetTagValue("0008,103e", strTemp, 0, 0);
                 strSerTemp += "\\\"series_description\\\":\\\"" + strTemp2 + "\\\",";
-                strTemp2=fGetTagValue("0018,0015", strTemp, 0);
+                strTemp2=fGetTagValue("0018,0015", strTemp, 0, 0);
                 strSerTemp += "\\\"body_part_examined\\\":\\\"" + strTemp2 + "\\\",";
                 strSerTemp += "\\\"view_position\\\":null,";
                 strSerTemp += "\\\"comments\\\":null,";
