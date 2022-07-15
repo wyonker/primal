@@ -1,13 +1,13 @@
 Installation:
 
-This installation script has been designed for CentOS 7.  It used to run on Fedora but not anymore.
+This installation script has been updated for RHEL 8.  I tried to maintain CentOS 7 compatability but I'm not all that sure how successful that was.
 
 Hardware Requirements:
 4 CPU cores
 8GB RAM
 30GB hard disk
 
-* Install CentOS 7
+* Install RHEL 8
 * Select web server
 * Log in as root
 * vim /etc/hostname
@@ -18,7 +18,7 @@ Hardware Requirements:
      able to resolve and reach each node on port 80 and 443
   Reusing hostnames may cause issues.
 * Download the latest PRIMAL package to /tmp
-* cd /tmp
+* cd /opt
 * mkdir primal
 * mv primal*.tar.xz primal/
 * cd primal
@@ -28,7 +28,7 @@ Hardware Requirements:
      This configuration should start 2 receivers.  Each with very different
      setups.  Configuration options are well documented in the file. 
 * cd /home/dicom
-* ./startup.bash start ALL
+* sudo ./startup.bash start ALL
 
 That should be all that is required to recieve, modify and send DICOM files.
 
