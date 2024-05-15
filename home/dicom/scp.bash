@@ -44,7 +44,7 @@ do
 	if [ "$PRIRECTYPE" == "DICOM" ]
 	then
 		ISSCPRUNNING=`ps -ef|grep storescp|grep -e "-ss $1"|grep -v grep|wc -l`
-	elif [ "$PRIRECTYPE" == "TAR" ]
+	elif [ "$PRIRECTYPE" == "FTP" ]
 	then
 		ISSCPRUNNING=`ps -ef|grep prim_store_server|grep -e "-ss $1"|grep -v grep|wc -l`
 	fi
@@ -52,8 +52,8 @@ do
 	then
 		if [ "$PRIRECTYPE" == "DICOM" ]
 		then
-        	/home/dicom/bin/storescp --fork +cl $PRICL -aet $PRIAET -tos $PRIRECTO -ll $PRILL -od $PRIIF -ss $1 -xf /home/dicom/bin/storescp.cfg Default -fe ".dcm" -xcr "/usr/local/bin/mq send /prim_receive \"#p 1 #a #c\"" $PRIPORT >> $PRILOGDIR/$PRILFIN 2>&1 &
-		elif [ "$PRIRECTYPE" == "TAR" ]
+        	/home/dicom/bin/storescp --fork +cl $PRICL -aet $PRIAET -tos $PRIRECTO -ll $PRILL -od $PRIIF -ss $1 -xf /home/dicom/bin/storescp.cfg Default -fe ".dcm" -xcr "/usr/local/bin/mq -n send /prim_receive \"#p 1 #a #c\"" $PRIPORT >> $PRILOGDIR/$PRILFIN 2>&1 &
+		elif [ "$PRIRECTYPE" == "FTP" ]
 		then
 			/usr/local/bin/prim_store_server -ss $1 &
 		fi

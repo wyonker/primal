@@ -87,7 +87,7 @@ then
 fi
 
 PRIRECTYPE=`echo "$STRTEMP"|grep PRIRECTYPE|tr -s " "|cut -d "#" -f1|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
-if [ "$PRIRECTYPE" != "DICOM"  ] && [ "$PRIRECTYPE" != "TAR" ]
+if [ "$PRIRECTYPE" != "DICOM"  ] && [ "$PRIRECTYPE" != "FTP" ]
 then
     PRIRECTYPE="DICOM"
 fi
