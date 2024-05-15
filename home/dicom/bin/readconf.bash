@@ -89,6 +89,8 @@ fi
 PRIRECTYPE=`echo "$STRTEMP"|grep PRIRECTYPE|tr -s " "|cut -d "#" -f1|cut -d "=" -f2|tr "\t" " "|cut -d " " -f1`
 if [ "$PRIRECTYPE" != "DICOM"  ] && [ "$PRIRECTYPE" != "FTP" ]
 then
+    echo "Warn:  The reciever type must be DICOM or FTP.  Warn for receiver #$1.  Set to DICOM."
+    logger -t primal "Warn:  The reciever type must be DICOM or FTP.  Warn for receiver #$1.  Set to DICOM."
     PRIRECTYPE="DICOM"
 fi
 
