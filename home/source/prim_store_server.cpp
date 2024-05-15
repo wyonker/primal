@@ -442,7 +442,8 @@ std::size_t fProcFile(std::string strTemp, std::string strRecNum) {
         return 1;
     }
     //Need to create a unique primalID
-    strPrimalID=strRecNum + "_" + fMakePUID() + rand() % 100;
+    strPrimalID=strRecNum + "_" + fMakePUID();
+    strPrimalID+=to_string(rand() % 100);
 
     //All files belonging to the same study must start with the same prefix <num_filename>
     //Get prefix.
