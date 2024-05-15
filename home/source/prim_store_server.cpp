@@ -365,7 +365,7 @@ void fGetCaseID(std::string strFullPath, std::string strPrimalID, std::string st
     return;
 }
 
-std::size_t fProcFile(std::string strTemp, std::string strRecNum) {
+std::size_t fProcFile2(std::string strTemp, std::string strRecNum) {
     std::size_t intDBEntries, intPos, intLC2, intFound, intNumRows, intReturn;
     std::string strTemp2, strCMD, strCmd, strLogMessage, strFilename, strPrimalID, strRawDCMdump, strPName, strMRN, strReturn;
     std::string strDOB, strSerIUID, strSerDesc, strModality, strSopIUID, strSIUID, strStudyDate, strACCN, strStudyDesc;
@@ -402,69 +402,66 @@ std::size_t fProcFile(std::string strTemp, std::string strRecNum) {
         return 1;
     }
 
-    intPos = strTemp.find_last_of("/");
-    strFilename=strTemp.substr(intPos+1);
-    intPos=strFilename.find_last_of(".");
-    if(intPos != std::string::npos) {
-        strTemp2=strFilename.substr(intPos);
-    }
-    //Need to set the receiver number
-    intPos=strFilename.find_first_of("_");
-    /*
-    if(intPos != std::string::npos && intPos < strFilename.length()) {
-        strTemp3=strFilename;
-        strTemp3.erase(0,intPos);
-        strTemp3 = strRecNum + strTemp3;
-    } else {
-        strTemp3 = strRecNum + "_" + strFilename;
-    }
-    */
-    strTemp3 = strRecNum + "_" + fMakePUID() + ".tar";
-    strLogMessage = " STOR Renaming " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strFilename + " to " + strTemp3;
-    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
-    std::cout << strLogMessage << std::endl;
-    fs::rename(conf1.primConf[strRecNum + "_PRIIF"] + "/" + strFilename, conf1.primConf[strRecNum + "_PRIIF"] + "/" + strTemp3);
-    strFilename = strTemp3;
-    intPos = strFilename.find(".");
-    if(intPos != std::string::npos) {
-        strPrimalID=strFilename.substr(0, intPos);
-    } else {
-        strPrimalID = strFilename;
-    }
-    std::cout << "Processing PrimalID = " << strPrimalID << std::endl;
-    fs::create_directory(conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID);
-    fs::rename(conf1.primConf[strRecNum + "_PRIIF"] + "/" + strFilename, conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/" + strFilename);
-    strCMD = "(cd " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/ && tar -xf " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/" + strFilename + ")";
-    system(strCMD.c_str());
-    intLC2=0;
-    intFound=0;
-    while (intLC2 < 15 && intFound != 1) {
-        if(!fs::exists(conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/_DICOM.tar.gz")) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        } else {
-            strCMD = "(cd " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/ && tar -xf " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/_DICOM.tar.gz)";
-            system(strCMD.c_str());
-            intFound = 1;
-        }
-        intLC2++;
-    }
-    if(intFound != 1) {
-        strLogMessage = " STOR WARN  Archive " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/_DICOM.tar.gz" + " does not exist.";
-        fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
-    }
-    //Find all .dcm files and move them to the parent directory
-    strCMD = "find " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + " -iname \"*.dcm\" -exec mv {} " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/ \\;";
-    system(strCMD.c_str());
-    strCMD = "ls -1 " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/*.dcm|wc -l";
-    strReturn = exec(strCMD.c_str());
-    sstream.clear();
-    sstream.str(strReturn);
-    sstream >> intReturn;
-    if(intReturn < 1) {
-        strLogMessage = " STOR ERROR  " + strPrimalID + " File does not contain any .dcm files.  Exiting...";
-        fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+}
+
+std::size_t fProcFile(std::string strTemp, std::string strRecNum) {
+    std::size_t intDBEntries, intPos, intLC2, intFound, intNumRows, intReturn;
+    std::string strTemp2, strCMD, strCmd, strLogMessage, strFilename, strPrimalID, strRawDCMdump, strPName, strMRN, strReturn;
+    std::string strDOB, strSerIUID, strSerDesc, strModality, strSopIUID, strSIUID, strStudyDate, strACCN, strStudyDesc;
+    std::string strPatientComments, strTemp3, strQuery, strDBReturn, strStartRec, strResult, strStudyTime, strStudyDateTime;
+    std::string strPrefix;
+    int intLC, intTemp, intRAND;
+    std::stringstream sstream("1");
+
+    mysql_thread_init();
+    MYSQL_ROW row;
+    MYSQL_RES *result;
+    std::map<std::string, std::string>::iterator iprimConf;
+    std::vector<std::thread> vecThreads;
+
+    time_t t2 = time(0);   // get time now
+    struct tm * now2 = localtime( & t2 );
+
+    MYSQL *mconnect2;
+    mconnect2=mysql_init(NULL);
+    mysql_options(mconnect2,MYSQL_OPT_RECONNECT,"1");
+    //mysqlpp::Connection conn(false);
+    if (!mconnect2) {
+        cout << "MySQL Initilization failed";
         return 1;
     }
+    mconnect2=mysql_real_connect(mconnect2, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
+    if (!mconnect2) {
+        cout<<"connection failed\n";
+        return 1;
+    }
+    if(!fs::exists(strTemp)) {
+        strLogMessage = " STOR WARN:  Directory" + strTemp + " does not exist.  Skipping...";
+        fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+        std::cout << strLogMessage << std::endl;
+        return 1;
+    }
+    //Need to create a unique primalID
+    strPrimalID=strRecNum + "_" + fMakePUID() + rand() % 100;
+
+    //All files belonging to the same study must start with the same prefix <num_filename>
+    //Get prefix.
+    intPos = strTemp.find_last_of("/");
+    strFilename=strTemp.substr(intPos+1);
+    intPos=strFilename.find_first_of("_");
+    if(intPos != std::string::npos) {
+        strPrefix=strFilename.substr(0, intPos);
+    }
+    //Need to wait 60 seconds to be sure all files are in the directory.
+    std::this_thread::sleep_for(std::chrono::seconds(60));
+    strLogMessage = " STOR Moving " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrefix + "* to " + strPrefix + ".";
+    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+    fs::create_directory(conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID);
+    fs::rename(conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrefix + "*", conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/");
+    strLogMessage = "STOR Processing PrimalID = " + strPrimalID + " with prefix = " + strPrefix;
+    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+    strCMD = "(cd " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/ && tar -xf " + conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/" + ")";
+    system(strCMD.c_str());
 
     intLC=0;
     for (const auto & entry2 : fs::directory_iterator(conf1.primConf[strRecNum + "_PRIIF"] + "/" + strPrimalID + "/")) {
