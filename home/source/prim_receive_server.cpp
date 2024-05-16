@@ -788,7 +788,7 @@ void fLaunchChild() {
         std::stringstream sstream(strReturn);
         sstream >> intReturn;
         if(intFound == 0) {
-            if(conf1.primConf[to_string(intLC) + "_PRIRECTYPE"] != "TAR") {
+            if(conf1.primConf[to_string(intLC) + "_PRIRECTYPE"] != "FTP") {
                 strLogMessage = "RECV Launching directory monitor for receiver # " + to_string(intLC);
                 fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
                 strCMD = "/usr/local/bin/prim_receive_server " + to_string(intLC) + " &";
@@ -836,6 +836,7 @@ void fQueueMonitor() {
     std::stringstream sstream("1");
     
     std::cout << "Starting queue monitor" << std::endl;
+    WriteLog("Starting queue monitor", conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
     while(true) {
         strMessage=fGetMessage("/prim_receive");
         //vMessage[0] = Full path to dicom files
@@ -902,22 +903,6 @@ void fQueueMonitor() {
     return;
 }
 
-void fMonitorQueue() {
-    std::string strCMD, strReturn;
-    std::size_t intReturn;
-
-    while(1) {
-        strCMD = "ps -ef|grep \"prim_receive_server QUEUE\"|grep -v grep|wc -l";
-        strReturn = exec(strCMD.c_str());
-        std::stringstream sstream(strReturn);
-        sstream >> intReturn;
-        if(intReturn < 1) {
-            strCMD = "/usr/local/bin/prim_receive_server QUEUE &";
-            strReturn = exec(strCMD.c_str());
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-}
 
 int main(int argc, char** argv) {
     std::string strARG, strRecNum, strLogMessage;
@@ -948,7 +933,6 @@ int main(int argc, char** argv) {
         strLogMessage=" RECV Launching children... ";
         fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
         fLaunchChild();
-        fMonitorQueue();
     } else if(argc == 2) {
         strARG = argv[1];
         if(strARG == "QUEUE") {
