@@ -836,7 +836,7 @@ void fQueueMonitor() {
     std::stringstream sstream("1");
     
     std::cout << "Starting queue monitor" << std::endl;
-    WriteLog("Starting queue monitor", conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+    fWriteLog("Starting queue monitor", conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
     while(true) {
         strMessage=fGetMessage("/prim_receive");
         //vMessage[0] = Full path to dicom files
