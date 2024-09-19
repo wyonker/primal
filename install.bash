@@ -1,5 +1,5 @@
 #!/bin/bash
-#Version 9
+#Version 10
 #2024-09-19
 # License GPLv3
 
@@ -263,15 +263,44 @@ echo "Copying PRIMAL software to /home"
 	#cp -pr home/build/share/* /home/dicom/share/
 	chown apache.apache -R /home/dicom
 	chmod 777 -R /home/dicom
-	mkdir /home/dicom/logs
-	mkdir /home/dicom/inbound
-	mkdir /home/dicom/processing
-	mkdir /home/dicom/outbound
-	mkdir /home/dicom/sent
-	mkdir /home/dicom/hold
-	mkdir /home/dicom/error
+	if [ ! -e "/home/dicom/logs" ]
+	then
+		mkdir /home/dicom/logs
+		chown apache.apache -R /home/dicom/logs
+	fi
+	if [ ! -e "/home/dicom/inbound" ]
+	then
+		mkdir /home/dicom/inbound
+		chown apache.apache -R /home/dicom/inbound
+	fi
+	if [ ! -e "/home/dicom/processing" ]
+	then
+		mkdir /home/dicom/processing
+		chown apache.apache -R /home/dicom/processing
+	fi
+	if [ ! -e "/home/dicom/outbound" ]
+	then
+		mkdir /home/dicom/outbound
+		chown apache.apache -R /home/dicom/outbound
+	fi
+	if [ ! -e "/home/dicom/sent" ]
+	then
+		mkdir /home/dicom/sent
+		chown apache.apache -R /home/dicom/sent
+	fi
+	if [ ! -e "/home/dicom/hold" ]
+	then
+		mkdir /home/dicom/hold
+		chown apache.apache -R /home/dicom/hold
+	fi
+	if [ ! -e "/home/dicom/error" ]
+	then
+		mkdir /home/dicom/error
+		chown apache.apache -R /home/dicom/error
+	fi
 	mkdir -p /home/dicom/share/dcmtk
 	cp -pvr home/build/share/dcmtk/* /home/dicom/share/dcmtk/
+	mkdir -p /usr/local/share/dcmtk
 	cp -pvr /home/dicom/share/dcmtk/dicom.dic /usr/local/share/dcmtk/dicom.dic
 
 echo "Copying dcm4che to /home"
