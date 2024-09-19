@@ -1,5 +1,8 @@
 <?php
 	//License GPLv3
+    //Version 1.10.00
+    //2024-09-19
+    //Written by Will Yonker
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -26,24 +29,26 @@ echo <<<EOT
          <input type="text" name="username"></td></tr>
          <tr><td>Password:</td><td>
          <input type="password" name="password"></td></tr>
+         <tr><td>AD Auth?</td>
+         <td><input type="checkbox" id="cbLDAP" name="cbLDAP"></td></tr>
       </table> <br>
       <input type="submit" value="Submit">
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
       <input type="reset" value="Clear" /><br><br>
       <br>
 EOT;
-if ($_SESSION['retry'] == 1)
-{
-    $err_msg = "Error:  Invalid username or password entered!";
-} elseif ($_SESSION['retry'] == 2) {
-    $err_msg = "Error:  Invalid username or password entered!";
-} elseif ($_SESSION['retry'] == 3) {
-    $err_msg = "Error:  Database inconsistancy!  Please contact your administrator.";
-} elseif ($_SESSION['retry'] == 4) {
-    $err_msg = "Error:  Invalid username or password entered!";
+if(isset($_SESSION['retry'])) {
+    if ($_SESSION['retry'] == 1) {
+        $err_msg = "Error:  Invalid username or password entered!";
+    } elseif ($_SESSION['retry'] == 2) {
+        $err_msg = "Error:  Invalid username or password entered!";
+    } elseif ($_SESSION['retry'] == 3) {
+        $err_msg = "Error:  Database inconsistancy!  Please contact your administrator.";
+    } elseif ($_SESSION['retry'] == 4) {
+        $err_msg = "Error:  Invalid username or password entered!";
+    }
+    echo '<div style="color:#FF0000;"><blink>' . $err_msg . "</blink></div><br>";
 }
-
-echo '<div style="color:#FF0000;"><blink>' . $err_msg . "</blink></div><br>";
 
 echo '   </form>';
 Display_Footer();
