@@ -1,6 +1,6 @@
 #!/bin/bash
-#Version 8
-#2022-07-06
+#Version 9
+#2024-09-19
 # License GPLv3
 
 CURDIR=`pwd`
@@ -67,7 +67,7 @@ LIST=`find / -name "g++" -type f`
 for i in $LIST
 do
 	THISVERSION=`$i -v 2>&1|tail -1|cut -d " " -f3|cut -d '.' -f1`
-	if [ $THISVERSION -ge 9 ]
+	if [ $THISVERSION -ge 8 ]
 	then
 		GPATH=$i
 		echo "Using $i"
@@ -259,8 +259,8 @@ echo "Copying PRIMAL software to /home"
 	cp -p home/dicom/*.bash /home/dicom/
 	rm -f /home/dicom/bin/*
 	cp -p home/dicom/bin/* /home/dicom/bin/
-	rm -f /home/dicom/share/*
-	cp -pr home/dicom/share/* /home/dicom/share/
+	#rm -fr /home/dicom/share/dcmtk
+	#cp -pr home/build/share/* /home/dicom/share/
 	chown apache.apache -R /home/dicom
 	chmod 777 -R /home/dicom
 	mkdir /home/dicom/logs
@@ -271,7 +271,8 @@ echo "Copying PRIMAL software to /home"
 	mkdir /home/dicom/hold
 	mkdir /home/dicom/error
 	mkdir -p /home/dicom/share/dcmtk
-	cp /usr/local/share/dcmtk/dicom.dic /home/dicom/share/dcmtk/dicom.dic
+	cp -pvr home/build/share/dcmtk/* /home/dicom/share/dcmtk/
+	cp -pvr /home/dicom/share/dcmtk/dicom.dic /usr/local/share/dcmtk/dicom.dic
 
 echo "Copying dcm4che to /home"
 	if [ ! -e "/home/dcm4che" ]
