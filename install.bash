@@ -1,6 +1,7 @@
 #!/bin/bash
-#Version 11
-#2024-09-19
+#Version 12
+#2024-09-20
+# Author:  Will Yonker
 # License GPLv3
 
 CURDIR=`pwd`
