@@ -1,5 +1,5 @@
 #!/bin/bash
-#Version 10
+#Version 11
 #2024-09-19
 # License GPLv3
 
@@ -42,8 +42,11 @@ echo "Installing any packages that are missing."
 		./install_packages_rhel8.bash
 	fi
 	sleep 1
-
-find / -iname "libssh.h" -type f -exec cp {}  /usr/include/ \;
+if [ ! -e "/usr/include/libssh.h" ]
+then
+	echo "/usr/linclude/libssh.h not found where we need it.  Copying..."
+	find / -iname "libssh.h" -type f -exec cp {}  /usr/include/ \;
+fi
 
 if [ $ISRHEL8 -eq 0 ]
 then
@@ -317,7 +320,7 @@ echo "Installing web componet"
 		mkdir /var/www/html/primal
 		chown apache.apache /var/www/html/primal
 	fi
-	rm -f /var/www/html/primal/*
+	rm -fr /var/www/html/primal/*
 	cp -p var/www/html/primal/* /var/www/html/primal/
 	if [ ! -e "/var/www/html/primal/tmp" ]
 	then
@@ -332,17 +335,28 @@ rm -f home/build/dcmnet/apps/storescu
 echo "Compiling DCMTK for this platform."
 if [ -e "dcmtk-3.6.5.tar.gz" ]
 then
-	echo "DCMTK v3.6.5 found.  Installing..."
-	tar -xf dcmtk-3.6.5.tar.gz
-	if [ -e dcmtk-3.6.5-build ]
+	echo "DCMTK v3.6.5 found.  Do you wish to use this version?."
+	read USER_INPUT
+	USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
+	if [ "$USER_INPUT" == "yes" ]
 	then
-		rm -fr dcmtk-3.6.5-build
+		tar -xf dcmtk-3.6.5.tar.gz
+		if [ -e dcmtk-3.6.5-build ]
+		then
+			rm -fr dcmtk-3.6.5-build
+		fi
+		mkdir dcmtk-3.6.5-build
+		cd dcmtk-3.6.5-build
+		cmake -DCMTK_CXX11_FLAGS:STRING=-std=c++17 -DCMTK_ENABLE_STL:STRING=ON -DCMTK_ENABLE_CXX11:STRING=INFERRED -DCMTK_ENABLE_PRIVATE_TAGS:STRING=ON ../dcmtk-3.6.5
+		make -j4 install
+		cd $CURDIR
+	else
+		echo "Please download the DCMTK and make sure it's in the path.  Press any key to continue..."
+		read USER_INPUT
 	fi
-	mkdir dcmtk-3.6.5-build
-	cd dcmtk-3.6.5-build
-	cmake -DCMTK_CXX11_FLAGS:STRING=-std=c++17 -DCMTK_ENABLE_STL:STRING=ON -DCMTK_ENABLE_CXX11:STRING=INFERRED -DCMTK_ENABLE_PRIVATE_TAGS:STRING=ON ../dcmtk-3.6.5
-    make -j4 install
-	cd $CURDIR
+else
+		echo "Please download the DCMTK and make sure it's in the path.  Press any key to continue..."
+		read USER_INPUT
 fi
 
 echo "Compiling PRIMAL services for this platform"
