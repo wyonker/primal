@@ -1,6 +1,6 @@
 #!/bin/bash
-#Version 12
-#2024-09-20
+#Version 13
+#2024-09-23
 # Author:  Will Yonker
 # License GPLv3
 
@@ -34,35 +34,66 @@ echo "Checking SELinux status"
 	fi
 	sleep 1
 
-ISRHEL8=`grep -c "Red Hat Enterprise Linux release 8" /etc/redhat-release`
+OSVER=0
+TEMPOSVER=`grep -c "CentOS Linux release 7" /etc/redhat-release`
+if [ $TEMPOSVER -gt 0 ]
+then
+	echo "CentOS 7 found."
+	OSVER=1
+fi
+TEMPOSVER=`grep -c "Red Hat Enterprise Linux release 7" /etc/redhat-release`
+if [ $TEMPOSVER -gt 0 ]
+then
+	echo "RHEL 7 found."
+	OSVER=1
+fi
+TEMPOSVER=`grep -c "Red Hat Enterprise Linux release 8" /etc/redhat-release`
+if [ $TEMPOSVER -gt 0 ]
+then
+	echo "RHEL 8 found."
+	OSVER=2
+fi
+TEMPOSVER=`grep -c "AlmaLinux release 9" /etc/redhat-release`
+if [ $TEMPOSVER -gt 0 ]
+then
+	echo "AlmaLinux 9 found."
+	OSVER=2
+fi
+sleep 3
+if [ $OSVER -lt 1 ]
+then
+	echo "This script is for CentOS 7, RHEL 7, AlmaLinux 9, or RHEL 8.  Exiting..."
+	exit 1
+fi
+
 echo "Installing any packages that are missing."
-	if [ $ISRHEL8 -eq 0 ]
-	then
-		./install_packages.bash
-	else
-		./install_packages_rhel8.bash
-	fi
-	sleep 1
+if [ $OSVER -eq 1 ]
+then
+	./install_packages.bash
+else
+	./install_packages_rhel8.bash
+fi
+sleep 1
 if [ ! -e "/usr/include/libssh.h" ]
 then
 	echo "/usr/linclude/libssh.h not found where we need it.  Copying..."
 	find / -iname "libssh.h" -type f -exec cp {}  /usr/include/ \;
 fi
 
-if [ $ISRHEL8 -eq 0 ]
+if [ $OSVER -eq 1 ]
 then
 	echo "Enabling devtoolset-8"
-		source scl_source enable devtoolset-8
+	source scl_source enable devtoolset-8
 
 	echo "Setting devtooset-8 as the default"
-		ISTHERE=`grep -c "source scl_source enable devtoolset-8" /root/.bashrc`
-		if [ $ISTHERE -lt 1 ]
-		then
-			echo "source scl_source enable devtoolset-8" >> /root/.bashrc
-		else
-			echo "devtoolset-8 is already the default."
-		fi
-		sleep 1
+	ISTHERE=`grep -c "source scl_source enable devtoolset-8" /root/.bashrc`
+	if [ $ISTHERE -lt 1 ]
+	then
+		echo "source scl_source enable devtoolset-8" >> /root/.bashrc
+	else
+		echo "devtoolset-8 is already the default."
+	fi
+	sleep 1
 fi
 
 echo "Finding g++"
