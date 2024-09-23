@@ -16,6 +16,8 @@
 	$password_entered = base64_encode($_POST['password']);
 	$password_ldap = $_POST['password'];
 	if(isset($_POST['cbLDAP'])) {
+        echo "Getting here...<br>";
+        exit ();
         $host = 'dc3ad01';
         $domain = 'advancedrad.com';
         $basedn = 'DC=advancedrad,DC=com';
@@ -81,7 +83,7 @@
         }
         ldap_unbind($ad);
 	} else {
-	    $strQuery = "SELECT * FROM users WHERE userid = '" . $name_entered . "'";
+	    $strQuery = "SELECT * FROM user WHERE loginid = '" . $name_entered . "'";
 	    $result = $conn->query($strQuery);
 	    $num_rows = $result->num_rows;
 	    if ($num_rows <= 0) {
