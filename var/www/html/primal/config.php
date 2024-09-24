@@ -5,15 +5,15 @@
 //License GPLv3
 //Written by Will Yonker
     $DBHost = "localhost";
-    $DBUser = "primal";
-    $DBPass = "primal";
-    $DBName = "primal";
-    $LDAPHost = "dc3ad01";
-    $LDAPDomain = "advancedrad.com";
-    $LDAPBaseDN = "DC=advancedrad,DC=com";
+    $DBUser = "test";
+    $DBPass = "test";
+    $DBName = "test";
+    $LDAPHost = "test";
+    $LDAPDomain = "test.com";
+    $LDAPBaseDN = "DC=test,DC=com";
     $LDAPGroup = "End Users";
-    $LDAPDN = "starsadmin.com";
-    $LDAPShortName = "ARS";
+    $LDAPDN = "test.com";
+    $LDAPShortName = "test";
     //$conn = mysql_connect($DBHost, $DBUser, $DBPass) or die
     //                     ('Error connecting to mysql');
     //mysql_select_db($DBName);
