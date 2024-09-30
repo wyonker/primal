@@ -626,7 +626,7 @@ if [ -e "dcmtk-3.6.5-build/bin/storescp" ]
 then
 	cp dcmtk-3.6.5-build/bin/storescp /home/dicom/bin/
 else
-	echo "Error:  storescp is not found.  Exiting..."
+	echo "Error:  storescp is not found but was detected.  Exiting..."
 	exit 1
 fi
 
@@ -662,15 +662,22 @@ then
 	export PATH=/home/dicom/bin:$PATH
 fi
 
-echo "Modifying Apache config files"
-	echo '<Directory "/home/dicom">' >> /etc/httpd/conf/httpd.conf
-	echo '    AllowOverride None' >> /etc/httpd/conf/httpd.conf
-	echo '    Options None' >> /etc/httpd/conf/httpd.conf
-	echo '    Require all granted' >> /etc/httpd/conf/httpd.conf
-	echo '</Directory>' >> /etc/httpd/conf/httpd.conf
-	echo '<Directory "/etc/primal">' >> /etc/httpd/conf/httpd.conf
-	echo '    Require all granted' >> /etc/httpd/conf/httpd.conf
-	echo '</Directory>' >> /etc/httpd/conf/httpd.conf
+echo "Check if Apache config files are modified"
+	ISMODIFIED=`grep -c "/home/dicom" /etc/httpd/conf/httpd.conf`
+	if [ $ISMODIFIED -lt 1 ]
+	then
+		echo "Adding /home/dicom to Apache configuration file"
+		echo '<Directory "/home/dicom">' >> /etc/httpd/conf/httpd.conf
+		echo '    AllowOverride None' >> /etc/httpd/conf/httpd.conf
+		echo '    Options None' >> /etc/httpd/conf/httpd.conf
+		echo '    Require all granted' >> /etc/httpd/conf/httpd.conf
+		echo '</Directory>' >> /etc/httpd/conf/httpd.conf
+		echo '<Directory "/etc/primal">' >> /etc/httpd/conf/httpd.conf
+		echo '    Require all granted' >> /etc/httpd/conf/httpd.conf
+		echo '</Directory>' >> /etc/httpd/conf/httpd.conf
+	else
+		echo "Good, /home/dicom is in the Apache configuration file."
+	fi
 
 echo "Checking if apache is in the sudoers file"
 	ISINSUDOERS=`cat /etc/sudoers|grep -e apache -e startup.bash|wc -l`
@@ -700,16 +707,60 @@ echo "Restarting Apache"
 	systemctl enable httpd.service
 	systemctl restart httpd.service
 
-echo "Addind POSIX command line queue manager mq"
-	THISPATH=`pwd`
-	cd home/source
-	git clone https://github.com/goeb/mq.git >/dev/null 2>&1
-	cd mq
-	./bootstrap >/dev/null 2>&1
-	./configure >/dev/null 2>&1
-	make all >/dev/null 2>&1
-	make install >/dev/null 2>&1
-	cd $THISPATH
+echo "Checking if mq is installed"
+	ISINSTALLED=`which mq 2>/dev/null|wc -l`
+	if [ $ISINSTALLED -lt 1 ]
+	then
+		echo "Addind POSIX command line queue manager mq"
+		THISPATH=`pwd`
+		cd home/source
+		git clone https://github.com/goeb/mq.git >/dev/null 2>&1
+		cd mq
+		./bootstrap >/dev/null 2>&1
+		./configure >/dev/null 2>&1
+		make all >/dev/null 2>&1
+		make install >/dev/null 2>&1
+		cd $THISPATH
+	else 
+		echo "Good, mq is installed."
+	fi
+
+echo "Setting up DB access for background process"
+	ISCLEAN=0
+	LC=0
+	while [ $ISCLEAN -lt 1 ] && [ $LC -lt 3 ]
+	do
+		clear
+		echo "Please enter the username for DB access"
+		read USER_INPUT
+		ISCLEAN=`echo "$USER_INPUT"|grep -c -E "^[a-zA-Z0-9]+$"`
+		if [ $ISCLEAN -lt 1 ]
+		then
+			echo "Error:  Username can only be alpha or numeric characters."
+			sleep 3
+		fi
+		LC=$((LC+1))
+	done
+
+	ISCLEAN=0
+	LC=0
+	while [ $ISCLEAN -lt 1 ] && [ $LC -lt 3 ]
+	do
+		clear
+		echo "Please enter the password for DB access"
+		read USER_INPUT2
+		ISCLEAN=`echo "$USER_INPUT2"|grep -c -E "^[a-zA-Z0-9]+$"`
+		if [ $ISCLEAN -lt 1 ]
+		then
+			echo "Error:  Password can only be alpha or numeric characters."
+			sleep 3
+		fi
+		LC=$((LC+1))
+	done
+
+	echo "grant all privileges on primal.* to '$USER_INPUT'@'localhost' identified by '$USER_INPUT2' with grant option;"|mysql -u root
+	sed -i "s/DBUSER.*/DBUSER=$USER_INPUT/g" /etc/primal/primal.conf
+	sed -i "s/DBPASS.*/DBPASS=$USER_INPUT2/g" /etc/primal/primal.conf
 
 if [ $ISNEW -eq 2 ]
 then
