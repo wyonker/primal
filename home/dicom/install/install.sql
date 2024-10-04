@@ -115,9 +115,14 @@ create table Prefetch (prefetch_id int(10) UNSIGNED UNIQUE not null AUTO_INCREME
 					  qraec varchar(32),
 					  qrport smallint(5) UNSIGNED,
 					  qrip varchar(32));
-create table page_columns	(id int(4) not null primary key,
-							 name varchar(32) not null,
-							 dorder int(4) not null);
+create table conf (conf_id int(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
+				      conf_name varchar(64) not null,
+					  conf_type varchar(32) not null default 'dicom',
+				      active int(1) not null default 1,
+ 				      primary key (conf_id));
+create table page_columns (id int(4) not null primary key,
+					  name varchar(32) not null,
+					  dorder int(4) not null);
 create table user_columns	(user_id varchar(32) not null primary key,
 							Column1_Visible BOOLEAN not null default FALSE,
 							Column1_Order tinyint(4) not null default 1,
