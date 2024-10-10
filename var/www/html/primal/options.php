@@ -32,9 +32,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         unset($_POST["add_user_name"]);
         unset($_POST["add_page_size"]);
         unset($_POST["add_refresh_dekay"]);
-        $query = "SELECT * from user where loginid = '" . $_SESSION['loginid'] . "';";
-        $result = $conn->query($query);
-        $num_rows = $result->num_rows;
+        $strQuery = "SELECT * from user where loginid = '" . $_SESSION['loginid'] . "';";
+        $result = mysqli_query($conn, $strQuery);
+        $num_rows = mysqli_num_rows($result);
         while($row = mysqli_fetch_assoc($result)) {
             $_POST['add_user_name'] = $row['username'];
             $_POST['add_page_size'] = $row['page_size'];
@@ -75,9 +75,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             unset($_POST['add_refresh_dekay']);
         }
         //header("Location: http://" . $_SERVER['HTTP_HOST'] . "/setup.php");
-        $query = "SELECT * from user where loginid = '" . $_SESSION['loginid'] . "';";
-        $result = $conn->query($query);
-        $num_rows = $result->num_rows;
+        $strQuery = "SELECT * from user where loginid = '" . $_SESSION['loginid'] . "';";
+        $result = mysqli_query($conn, $strQuery);
+        $num_rows = mysqli_num_rows($result);
         while($row = mysqli_fetch_assoc($result)) {
             $_POST['add_user_name'] = $row['username'];
             $_POST['add_page_size'] = $row['page_size'];
@@ -92,21 +92,21 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_GET["c"])) {
         if (isset($_GET["h"])) {
             #If c and h are set, then we want to hide (or unhide) a column.
-            $query="update user_columns set column" . $_GET["c"] . "_Visible = '" . $_GET["h"] . "' where user_id = '" . $_SESSION['loginid'] . "';";
-            $result = $conn->query($query);
+            $strQuery="update user_columns set column" . $_GET["c"] . "_Visible = '" . $_GET["h"] . "' where user_id = '" . $_SESSION['loginid'] . "';";
+            $result = mysqli_query($conn, $strQuery);
         } elseif (isset($_GET["o"])) {
-            $query = "select count(*) from page_columns;";
-            $result = $conn->query($query);
+            $strQuery = "select count(*) from page_columns;";
+            $result = mysqli_query($conn, $strQuery);
             while ($row = mysqli_fetch_assoc($result)) {
                 $num_columns = $row ['count(*)'];
             }
-            $query="select Column" . $_GET["c"] . "_Order from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
-            $result = $conn->query($query);
+            $strQuery="select Column" . $_GET["c"] . "_Order from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
+            $result = mysqli_query($conn, $strQuery);
             if (!$result) {
-                echo "query = " . $query . "<br>";
+                echo "query = " . $strQuery . "<br>";
                 die('Invalid query: ' . mysql_error());
             }
-            while ($row = mysql_fetch_assoc($result)) {
+            while ($row = mysqli_fetch_assoc($result)) {
                 $curpos = $row['Column' . $_GET["c"] . "_Order"];
             }
             $is_error = 0;
@@ -122,9 +122,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $intFound=0;
                 #Search the database for any column that reports to be in the same position as where we want to move to.
                 while($lc5 < $num_columns) {
-                    $query="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
-                    $result = $conn->query($query);
-                    while ($row = mysql_fetch_assoc($result)) {
+                    $strQuery="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
+                    $result = mysqli_query($conn, $strQuery);
+                    while ($row = mysqli_fetch_assoc($result)) {
                         if($row['Column' . $lc5 . "_Order"] == $newpos) {
                             #We _shouldn't_ have multiple columns reporting the same position.  But let's increment just to be sure.
                             $intFound++;
@@ -136,10 +136,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
                 if($intFound == 1 || $intFound == 0) {
                     #We only found one guy at this position (expected result).  Swap the found guy and the guy we want to move's positions.
-                    $query1="update user_columns set column" . $intFoundID . "_Order = '" . $curpos . "' where user_id = '" . $_SESSION['loginid'] . "';";
-                    $result1 = $conn->query($query1);
-                    $query1="update user_columns set column" . $_GET["c"] . "_Order = '" . $newpos . "' where user_id = '" . $_SESSION['loginid'] . "';";
-                    $result1 = $conn->query($query1);
+                    $strQuery1="update user_columns set column" . $intFoundID . "_Order = '" . $curpos . "' where user_id = '" . $_SESSION['loginid'] . "';";
+                    $result = mysqli_query($conn, $strQuery1);
+                    $strQuery1="update user_columns set column" . $_GET["c"] . "_Order = '" . $newpos . "' where user_id = '" . $_SESSION['loginid'] . "';";
+                    $result = mysqli_query($conn, $strQuery1);
                 } else {
                     #Uh oh found more than one guy at that position.
                     #Fist let's deal with the case where we don't find anyone at the address we want to use
@@ -147,8 +147,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $lc5=1;
                         while($lc5 < $num_columns) {
                             #Query the database and put each result in it's position in an array
-                            $query="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
-                            $result = $conn->query($query);
+                            $strQuery="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
+                            $result = mysqli_query($conn, $strQuery);
  #Increment the positions so we can see who gets hit more than once
                             $positions[$row['Column' . $lc5 . "_Order"]]++;
                             $lc5++;
@@ -168,11 +168,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                     while($is_resolved==0) {
                         unset($intPOS);
                         while($lc5 < $num_columns) {
-                            $query="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
-                            $result = $conn->query($query);
+                            $strQuery="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
+                            $result = mysqli_query($conn, $strQuery);
                             if(! is_numeric($row['Column' . $lc5 . "_Order"]) || $row['Column' . $lc5 . "_Order"] > $num_columns || $row['Column' . $lc5 . "_Order"] < 1) {
-                                $query1="update user_columns set column" . $intFoundID . "_Order = '" . $lc5 . "' where user_id = '" . $_SESSION['loginid'] . "';";
-                                $result1 = $conn->query($query1);
+                                $strQuery1="update user_columns set column" . $intFoundID . "_Order = '" . $lc5 . "' where user_id = '" . $_SESSION['loginid'] . "';";
+                                $result = mysqli_query($conn, $strQuery1);
                                 $is_resolved=1;
                             }
                             $lc5++;
@@ -184,9 +184,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $lc5 = 1;
                         $intFound=0;
                         while($lc5 < $num_columns) {
-                            $query="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
-                            $result = $conn->query($query);
-                            while ($row = mysql_fetch_assoc($result)) {
+                            $strQuery="select Column" . $lc5 . "_Order from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
+                            $result = mysqli_query($conn, $strQuery);
+                            while ($row = mysqli_fetch_assoc($result)) {
                                 if($row['Column' . $lc5 . "_Order"] == $newpos) {
                                     $intFound++;
                                     $intFoundID=$lc5;
@@ -201,19 +201,19 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
     }
-	$query = "SELECT * from user where loginid = '" . $_SESSION['loginid'] . "';";
-	$result = run_query($query);
-	$num_rows = mysql_num_rows($result);
-	while($row = mysql_fetch_assoc($result)) {
+	$strQuery = "SELECT * from user where loginid = '" . $_SESSION['loginid'] . "';";
+	$result = mysqli_query($conn, $strQuery);
+	$num_rows = mysqli_num_rows($result);
+	while($row = mysqli_fetch_assoc($result)) {
             $_POST['add_user_name'] = $row['username'];
             $_POST['add_page_size'] = $row['page_size'];
             $_POST['add_refresh_dekay'] = $row['refresh_dekay'];
 	}
 	#Need to pull column information from the database
 	$lc1=0;
-	$query="select * from page_columns;";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result))
+	$strQuery="select * from page_columns;";
+	$result = mysqli_query($conn, $strQuery);
+	while($row = mysqli_fetch_assoc($result))
 	{
 		$ucolumns[$lc1]["id"] = $row["id"];
 		$ucolumns[$lc1]["name"] = $row["name"];
@@ -224,20 +224,20 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	}
 	#Now that we have all the page columns, let's retrieve the user's settings for them
 	$lc2=0;
-	$query="select * from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
-	$result = mysql_query($query);
-	$num_rows = mysql_num_rows($result);
+	$strQuery="select * from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
+	$result = mysqli_query($conn, $strQuery);
+	$num_rows = mysqli_num_rows($result);
 	#If we didn't get any results, we need to add this user to the user_columns table.
 	#This will set default values for all columns.
 	if ($num_rows < 1) {
-		$query="insert into user_columns (user_id) values ('" . $_SESSION['loginid'] . "');";
-		$result2 = mysql_query($query);
+		$strQuery="insert into user_columns (user_id) values ('" . $_SESSION['loginid'] . "');";
+		$result2 = mysqli_query($conn, $strQuery);
 	}
 	#Now that the user is added, let's start over and query again so that we can get the default values
-	$query="select * from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
-	$result = mysql_query($query);
-	$num_rows = mysql_num_rows($result);
-	while($row = mysql_fetch_assoc($result))
+	$strQuery="select * from user_columns where user_id = '" . $_SESSION['loginid'] . "';";
+	$result = mysqli_query($conn, $strQuery);
+	$num_rows = mysqli_num_rows($result);
+	while($row = mysqli_fetch_assoc($result))
 	{
 		$lc2=0;
 		while($lc2 < count($ucolumns)) {
