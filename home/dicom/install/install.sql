@@ -121,7 +121,7 @@ create table conf_rec (conf_rec_id bigint(20) UNSIGNED UNIQUE not null AUTO_INCR
 					  rec_type varchar(32) not null default 'dicom',
 					  rec_port int(5) default 2000,
 					  rec_dir varchar(128) not null default '/home/dicom/receive',
-					  rec_log_full_path varchar(128) not null '/var/log/primal/receive.log',
+					  rec_log_full_path varchar(128) not null default '/var/log/primal/receive.log',
 					  rec_log_level varchar(32) not null default 'debug',
 					  rec_aet varchar(32) not null default 'PRIMAL',
 					  rec_time_out int(5) not null default 10,

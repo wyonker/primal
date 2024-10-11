@@ -26,84 +26,195 @@ echo <<<EOT
 EOT;
 Display_Header2();
 
-$strQuery = "SELECT * FROM conf_rec;"
-$result = mysqli_query($conn, $strQuery);
-$intNumRows = mysqli_num_rows($result);
-if($intNumRows > 0) {
-	$intLC=1;
-	while($intNumRows >= $intLC) {
-		$row = mysqli_fetch_assoc($result);
-		$_SESSION['conf'][$intLC]['conf_rec_id'] = $row['conf_rec_id'];
-		$_SESSION['conf'][$intLC]['conf_name'] = $row['conf_name'];
-		$_SESSION['conf'][$intLC]['conf_server'] = $row['conf_server'];
-		$_SESSION['conf'][$intLC]['rec_type'] = $row['rec_type'];
-		$_SESSION['conf'][$intLC]['rec_port'] = $row['rec_port'];
-		$_SESSION['conf'][$intLC]['rec_dir'] = $row['rec_dir'];
-		$_SESSION['conf'][$intLC]['rec_log_full_path'] = $row['rec_log_full_path'];
-		$_SESSION['conf'][$intLC]['rec_log_level'] = $row['rec_log_level'];
-		$_SESSION['conf'][$intLC]['rec_aet'] = $row['rec_aet'];
-		$_SESSION['conf'][$intLC]['rec_time_out'] = $row['rec_time_out'];
-		$_SESSION['conf'][$intLC]['proc_dir'] = $row['proc_dir'];
-		$_SESSION['conf'][$intLC]['proc_log_full_path'] = $row['proc_log_full_path'];
-		$_SESSION['conf'][$intLC]['out_dir'] = $row['out_dir'];
-		$_SESSION['conf'][$intLC]['out_log_full_path'] = $row['out_log_full_path'];
-		$_SESSION['conf'][$intLC]['sent_dir'] = $row['sent_dir'];
-		$_SESSION['conf'][$intLC]['hold_dir'] = $row['hold_dir'];
-		$_SESSION['conf'][$intLC]['error_dir'] = $row['error_dir'];
-		$_SESSION['conf'][$intLC]['dupe'] = $row['dupe'];
-		$_SESSION['conf'][$intLC]['out_comp_level'] = $row['out_comp_level'];
-		$_SESSION['conf'][$intLC]['pass_through'] = $row['pass_through'];
-		$_SESSION['conf'][$intLC]['ret_period'] = $row['ret_period'];
-		$_SESSION['conf'][$intLC]['active'] = $row['active'];
-		$intLC++;
-	}
+if ($_GET['action'] == 'L') {
+	fLoadConfig();
+}
+echo "<H2>System Setup</H2>";
+if($_GET['action'] == 'L') {
+	fLoadConfig();
+} elseif($_GET['action'] == 'N') {
+	echo '<form action="setup.php" method="post">';
+	echo '<table border="1">';
+	echo '<tr><td>' . 'Config Name:</td>';
+	echo '<td><input type="text" name="conf_name" value ="' . $_SESSION["conf_name"] . '" /></td></tr>';
+	echo '<tr><td>' . 'Server FQDN or IP' . '</td>';
+	echo '<td><input type="text" name="conf_server" value ="' . $_SESSION["conf_server"] . '" /></td></tr>';
+	echo '<tr><td>' . '<label for="rec_type">Receiver Type:</label></td><td>';
+	echo '<select name="rec_type" id="rec_type">';
+	echo '<option value="1" selected>Dicom</option>';
+	echo '<option value="2">Directory</option>';
+	echo '</select></td></tr>';
+	echo '<tr><td>' . 'Port number to listen on (not used for directory type)' . '</td>';
+	echo '<td><input type="text" name="rec_port" value ="' . $_SESSION["rec_port"] . '" /></td></tr>';
+	echo '<tr><td>' . 'Absolute directory path for receiver data' . '</td>';
+	echo '<td><input type="text" name="rec_dir" value ="' . $_SESSION["rec_dir"] . '" /></td></tr>';
+	echo '<tr><td>' . 'Absolute directory path for receiver logs' . '</td>';
+	echo '<td><input type="text" name="rec_log_full_path" value ="' . $_SESSION["rec_log_full_path"] . '" /></td></tr>';
+	echo '<tr><td>' . '<label for="rec_log_level">Log Level:</label></td><td>';
+	echo '<select name="rec_log_level" id="rec_log_level">';
+	echo '<option value="1">fatal</option>';
+	echo '<option value="2">error</option>';
+	echo '<option value="3">warn</option>';
+	echo '<option value="4">info</option>';
+	echo '<option value="5" selected><b>debug</b></option>';
+	echo '<option value="6">trace</option>';
+	echo '</select></td></tr>';
+	echo '<tr><td>' . 'AET' . '</td>';
+	echo '<td><input type="text" name="rec_aet" value ="' . $_SESSION["rec_aet"] . '" /></td></tr>';
+	echo '<tr><td>' . 'Time Out' . '</td>';
+	echo '<td><input type="text" name="rec_time_out" value ="' . $_SESSION["rec_time_out"] . '" /></td></tr>';
+	echo '<tr><td>' . 'Absolute directory path for moving data to for processing' . '</td>';
+	echo '<td><input type="text" name="proc_dir" value ="' . $_SESSION["proc_dir"] . '" /></td></tr>';
+	echo '<tr><td>' . 'Absolute directory path for processing logs' . '</td>';
+	echo '<td><input type="text" name="proc_log_full_path" value ="' . $_SESSION["proc_log_full_path"] . '" /></td></tr>';
+	echo '<tr><td>' . 'Absolute directory path for moving outging data to' . '</td>';
+	echo '<td><input type="text" name="out_dir" value ="' . $_SESSION["out_dir"] . '" /></td></tr>';
+	echo '<tr><td>' . 'Absolute directory path for outgoing logs' . '</td>';
+	echo '<td><input type="text" name="out_log_full_path" value ="' . $_SESSION["out_log_full_path"] . '" /></td></tr>';
+	echo '<tr><td>' . 'Absolute directory path for sent files' . '</td>';
+	echo '<td><input type="text" name="sent_dir" value ="' . $_SESSION["sent_dir"] . '" /></td></tr>';
+	echo '<tr><td>' . 'Absolute directory path for held files' . '</td>';
+	echo '<td><input type="text" name="hold_dir" value ="' . $_SESSION["hold_dir"] . '" /></td></tr>';
+	echo '<tr><td>' . 'Absolute directory path for errored files' . '</td>';
+	echo '<td><input type="text" name="error_dir" value ="' . $_SESSION["error_dir"] . '" /></td></tr>';
+	echo '<tr><td>' . '<label for="dupe">Deduplication (WARNING!  This is a CPU hog):</label></td><td>';
+	echo '<select name="dupe" id="dupe">';
+	echo '<option value="1">Yes</option>';
+	echo '<option value="2" selected><b>No</b></option>';
+	echo '</select></td></tr>';
+	echo '<tr><td>' . '<label for="out_comp_level">Compression Level (lower is faster):</label></td><td>';
+	echo '<select name="out_comp_level" id="out_comp_level">';
+	echo '<option value="1">1</option>';
+	echo '<option value="2">2</option>';
+	echo '<option value="3">3</option>';
+	echo '<option value="4">4</option>';
+	echo '<option value="5">5</option>';
+	echo '<option value="6" selected><b>6</b></option>';
+	echo '<option value="7">7</option>';
+	echo '<option value="8">8</option>';
+	echo '<option value="9">9</option>';
+	echo '</select></td></tr>';
+	echo '<tr><td>' . '<label for="pass_through">Use AET of sender?:</label></td><td>';
+	echo '<select name="pass_through" id="pass_through">';
+	echo '<option value="1">Yes</option>';
+	echo '<option value="2" selected><b>No</b></option>';
+	echo '</select></td></tr>';
+	echo '<tr><td>' . 'Minutes to store sent files' . '</td>';
+	echo '<td><input type="text" name="ret_period" value ="' . $_SESSION["ret_period"] . '" /></td></tr>';
+	echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
+	echo '<select name="active" id="active" default=1>';
+	echo '<option value="1"><b>Yes</b></option>';
+	echo '<option value="2">No</option>';
+	echo '</select></td></tr>';
+	echo '</table>';
+	echo '<br><button type="submit" id="btnAdd" name="btnAdd">Add</button>';
+	echo '<button type="submit" id="btnReset" name="btnReset">Clear</button>';
+	echo '<button type="submit" id="btnCancel" name="btnCancel">Cancel</button>';
+	echo '</form>';
 } else {
-	echo "No configuration found.  Please contact your administrator.";
-}
-
-$strQuery = "SELECT * FROM conf_proc;"
-$result = mysqli_query($conn, $strQuery);
-$intNumRows = mysqli_num_rows($result);
-if($intNumRows > 0) {
-	$intLC=1;
-	while($intNumRows >= $intLC) {
-		$row = mysqli_fetch_assoc($result);
-		$_SESSION['conf_proc'][$intLC]['conf_proc_id'] = $row['conf_proc_id'];
-		$_SESSION['conf_proc'][$intLC]['conf_rec_id'] = $row['conf_rec_id'];
-		$_SESSION['conf_proc'][$intLC]['proc_name'] = $row['proc_name'];
-		$_SESSION['conf_proc'][$intLC]['proc_type'] = $row['proc_type'];
-		$_SESSION['conf_proc'][$intLC]['proc_perator'] = $row['proc_perator'];
-		$_SESSION['conf_proc'][$intLC]['proc_cond'] = $row['proc_cond'];
-		$_SESSION['conf_proc'][$intLC]['proc_action'] = $row['proc_action'];
-		$_SESSION['conf_proc'][$intLC]['proc_order'] = $row['proc_order'];
-		$_SESSION['conf_proc'][$intLC]['proc_dest'] = $row['proc_dest'];
-		$_SESSION['conf_proc'][$intLC]['active'] = $row['active'];
-		$intLC++;
+	echo '<a href="/primal/setup.php?action=L">Load Config</a><BR><BR>';
+	$strQuery = "SELECT count(*) FROM conf_rec;";
+	$result = mysqli_query($conn, $strQuery);
+	$row = mysqli_fetch_assoc($result);
+	$intNumRows = $row['count(*)'];
+	if($intNumRows > 0) {
+		echo '<div id="rec">';
+		echo '</div>';
+		echo '<svg width="300" height="500"><line x1="100" y1="70" x2="350" y2="70" stroke="black"/></svg>';
+		echo '<div id="proc">';
+		echo '</div>';
+		echo '<svg width="300" height="500"><line x1="5" y1="70" x2="350" y2="70" stroke="black"/></svg>';
+		echo '<div id="out">';
+		echo '</div>';
+	} else {
+		echo "No receivers found.  Please create a new one.<br><br>";
 	}
+	echo '<a href="/primal/setup.php?action=N">New Config</a><BR><BR>';
 }
+Display_Footer();
+echo '</BODY>';
+echo '</HTML>';
 
-$strQuery = "SELECT * FROM conf_send;"
-$result = mysqli_query($conn, $strQuery);
-$intNumRows = mysqli_num_rows($result);
-if($intNumRows > 0) {
-	$intLC=1;
-	while($intNumRows >= $intLC) {
-		$row = mysqli_fetch_assoc($result);
-		$_SESSION['conf_send'][$intLC]['conf_send_id'] = $row['conf_send_id'];
-		$_SESSION['conf_send'][$intLC]['conf_rec_id'] = $row['conf_rec_id'];
-		$_SESSION['conf_send'][$intLC]['send_name'] = $row['send_name'];
-		$_SESSION['conf_send'][$intLC]['send_aet'] = $row['send_aet'];
-		$_SESSION['conf_send'][$intLC]['send_aec'] = $row['send_aec'];
-		$_SESSION['conf_send'][$intLC]['send_hip'] = $row['send_hip'];
-		$_SESSION['conf_send'][$intLC]['send_type'] = $row['send_type'];
-		$_SESSION['conf_send'][$intLC]['send_port'] = $row['send_port'];
-		$_SESSION['conf_send'][$intLC]['send_time_out'] = $row['send_time_out'];
-		$_SESSION['conf_send'][$intLC]['send_comp_level'] = $row['send_comp_level'];
-		$_SESSION['conf_send'][$intLC]['send_retry'] = $row['send_retry'];
-		$_SESSION['conf_send'][$intLC]['send_username'] = $row['send_username'];
-		$_SESSION['conf_send'][$intLC]['send_password'] = $row['send_password'];
-		$_SESSION['conf_send'][$intLC]['active'] = $row['active'];
-		$intLC++;
+function fLoadConfig() {
+	$strQuery = "SELECT * FROM conf_rec;";
+	$result = mysqli_query($conn, $strQuery);
+	$intNumRows = mysqli_num_rows($result);
+	if($intNumRows > 0) {
+		$intLC=1;
+		while($intNumRows >= $intLC) {
+			$row = mysqli_fetch_assoc($result);
+			$_SESSION['conf'][$intLC]['conf_rec_id'] = $row['conf_rec_id'];
+			$_SESSION['conf'][$intLC]['conf_name'] = $row['conf_name'];
+			$_SESSION['conf'][$intLC]['conf_server'] = $row['conf_server'];
+			$_SESSION['conf'][$intLC]['rec_type'] = $row['rec_type'];
+			$_SESSION['conf'][$intLC]['rec_port'] = $row['rec_port'];
+			$_SESSION['conf'][$intLC]['rec_dir'] = $row['rec_dir'];
+			$_SESSION['conf'][$intLC]['rec_log_full_path'] = $row['rec_log_full_path'];
+			$_SESSION['conf'][$intLC]['rec_log_level'] = $row['rec_log_level'];
+			$_SESSION['conf'][$intLC]['rec_aet'] = $row['rec_aet'];
+			$_SESSION['conf'][$intLC]['rec_time_out'] = $row['rec_time_out'];
+			$_SESSION['conf'][$intLC]['proc_dir'] = $row['proc_dir'];
+			$_SESSION['conf'][$intLC]['proc_log_full_path'] = $row['proc_log_full_path'];
+			$_SESSION['conf'][$intLC]['out_dir'] = $row['out_dir'];
+			$_SESSION['conf'][$intLC]['out_log_full_path'] = $row['out_log_full_path'];
+			$_SESSION['conf'][$intLC]['sent_dir'] = $row['sent_dir'];
+			$_SESSION['conf'][$intLC]['hold_dir'] = $row['hold_dir'];
+			$_SESSION['conf'][$intLC]['error_dir'] = $row['error_dir'];
+			$_SESSION['conf'][$intLC]['dupe'] = $row['dupe'];
+			$_SESSION['conf'][$intLC]['out_comp_level'] = $row['out_comp_level'];
+			$_SESSION['conf'][$intLC]['pass_through'] = $row['pass_through'];
+			$_SESSION['conf'][$intLC]['ret_period'] = $row['ret_period'];
+			$_SESSION['conf'][$intLC]['active'] = $row['active'];
+			$intLC++;
+		}
+	} else {
+		echo "No configuration found.  Please contact your administrator.";
+	}
+
+	$strQuery = "SELECT * FROM conf_proc;";
+	$result = mysqli_query($conn, $strQuery);
+	$intNumRows = mysqli_num_rows($result);
+	if($intNumRows > 0) {
+		$intLC=1;
+		while($intNumRows >= $intLC) {
+			$row = mysqli_fetch_assoc($result);
+			$_SESSION['conf_proc'][$intLC]['conf_proc_id'] = $row['conf_proc_id'];
+			$_SESSION['conf_proc'][$intLC]['conf_rec_id'] = $row['conf_rec_id'];
+			$_SESSION['conf_proc'][$intLC]['proc_name'] = $row['proc_name'];
+			$_SESSION['conf_proc'][$intLC]['proc_type'] = $row['proc_type'];
+			$_SESSION['conf_proc'][$intLC]['proc_perator'] = $row['proc_perator'];
+			$_SESSION['conf_proc'][$intLC]['proc_cond'] = $row['proc_cond'];
+			$_SESSION['conf_proc'][$intLC]['proc_action'] = $row['proc_action'];
+			$_SESSION['conf_proc'][$intLC]['proc_order'] = $row['proc_order'];
+			$_SESSION['conf_proc'][$intLC]['proc_dest'] = $row['proc_dest'];
+			$_SESSION['conf_proc'][$intLC]['active'] = $row['active'];
+			$intLC++;
+		}
+	}
+
+	$strQuery = "SELECT * FROM conf_send;";
+	$result = mysqli_query($conn, $strQuery);
+	$intNumRows = mysqli_num_rows($result);
+	if($intNumRows > 0) {
+		$intLC=1;
+		while($intNumRows >= $intLC) {
+			$row = mysqli_fetch_assoc($result);
+			$_SESSION['conf_send'][$intLC]['conf_send_id'] = $row['conf_send_id'];
+			$_SESSION['conf_send'][$intLC]['conf_rec_id'] = $row['conf_rec_id'];
+			$_SESSION['conf_send'][$intLC]['send_name'] = $row['send_name'];
+			$_SESSION['conf_send'][$intLC]['send_aet'] = $row['send_aet'];
+			$_SESSION['conf_send'][$intLC]['send_aec'] = $row['send_aec'];
+			$_SESSION['conf_send'][$intLC]['send_hip'] = $row['send_hip'];
+			$_SESSION['conf_send'][$intLC]['send_type'] = $row['send_type'];
+			$_SESSION['conf_send'][$intLC]['send_port'] = $row['send_port'];
+			$_SESSION['conf_send'][$intLC]['send_time_out'] = $row['send_time_out'];
+			$_SESSION['conf_send'][$intLC]['send_comp_level'] = $row['send_comp_level'];
+			$_SESSION['conf_send'][$intLC]['send_retry'] = $row['send_retry'];
+			$_SESSION['conf_send'][$intLC]['send_username'] = $row['send_username'];
+			$_SESSION['conf_send'][$intLC]['send_password'] = $row['send_password'];
+			$_SESSION['conf_send'][$intLC]['active'] = $row['active'];
+			$intLC++;
+		}
 	}
 }
 
