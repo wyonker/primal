@@ -24,289 +24,459 @@ echo <<<EOT
 </HEAD>
 <BODY>
 EOT;
+
+if($_SERVER['REQUEST_METHOD'] == 'POST') {
+	if(isset($_POST['btnCancel'])) {
+		unset($_SESSION["conf_rec"]);
+		unset($_SESSION["conf_proc"]);
+		unset($_SESSION["conf_send"]);
+		header("Location: setup.php");
+		exit();
+	} elseif(isset($_POST['btnAdd'])) {
+		$intReturn = fValidateInput(1, $_POST['conf_name']);
+		if($intReturn == 1) {
+			exit();
+		}
+		$strQuery = "INSERT INTO conf_rec SET ";
+		$strQuery .= "conf_name = '" . $_POST['conf_name'] . "', ";
+		$strQuery .= "conf_server = '" . $_POST['conf_server'] . "', ";
+		$strQuery .= "rec_type = '" . $_POST['rec_type'] . "', ";
+		$strQuery .= "rec_port = '" . $_POST['rec_port'] . "', ";
+		$strQuery .= "rec_dir = '" . $_POST['rec_dir'] . "', ";
+		$strQuery .= "rec_log_full_path = '" . $_POST['rec_log_full_path'] . "', ";
+		$strQuery .= "rec_log_level = '" . $_POST['rec_log_level'] . "', ";
+		$strQuery .= "rec_aet = '" . $_POST['rec_aet'] . "', ";
+		$strQuery .= "rec_time_out = '" . $_POST['rec_time_out'] . "', ";
+		$strQuery .= "proc_dir = '" . $_POST['proc_dir'] . "', ";
+		$strQuery .= "proc_log_full_path = '" . $_POST['proc_log_full_path'] . "', ";
+		$strQuery .= "out_dir = '" . $_POST['out_dir'] . "', ";
+		$strQuery .= "out_log_full_path = '" . $_POST['out_log_full_path'] . "', ";
+		$strQuery .= "sent_dir = '" . $_POST['sent_dir'] . "', ";
+		$strQuery .= "hold_dir = '" . $_POST['hold_dir'] . "', ";
+		$strQuery .= "error_dir = '" . $_POST['error_dir'] . "', ";
+		$strQuery .= "dupe = '" . $_POST['dupe'] . "', ";
+		$strQuery .= "out_comp_level = '" . $_POST['out_comp_level'] . "', ";
+		$strQuery .= "pass_through = '" . $_POST['pass_through'] . "', ";
+		$strQuery .= "ret_period = '" . $_POST['ret_period'] . "', ";
+		$strQuery .= "active = '" . $_POST['active'] . "';";
+
+		$result = mysqli_query($conn, $strQuery);
+		if($result) {
+			header("Location: setup.php");
+		} else {
+			echo "Error adding record: " . mysqli_error($conn) . "<br>";
+			echo "Query = " . $strQuery . "<br>";
+			exit();
+		}
+	} elseif(isset($_POST['btnUpdate'])) {
+		$strQuery = "UPDATE conf_rec SET ";
+		$strQuery .= "conf_name = '" . $_POST['conf_name'] . "', ";
+		$strQuery .= "conf_server = '" . $_POST['conf_server'] . "', ";
+		$strQuery .= "rec_type = '" . $_POST['rec_type'] . "', ";
+		$strQuery .= "rec_port = '" . $_POST['rec_port'] . "', ";
+		$strQuery .= "rec_dir = '" . $_POST['rec_dir'] . "', ";
+		$strQuery .= "rec_log_full_path = '" . $_POST['rec_log_full_path'] . "', ";
+		$strQuery .= "rec_log_level = '" . $_POST['rec_log_level'] . "', ";
+		$strQuery .= "rec_aet = '" . $_POST['rec_aet'] . "', ";
+		$strQuery .= "rec_time_out = '" . $_POST['rec_time_out'] . "', ";
+		$strQuery .= "proc_dir = '" . $_POST['proc_dir'] . "', ";
+		$strQuery .= "proc_log_full_path = '" . $_POST['proc_log_full_path'] . "', ";
+		$strQuery .= "out_dir = '" . $_POST['out_dir'] . "', ";
+		$strQuery .= "out_log_full_path = '" . $_POST['out_log_full_path'] . "', ";
+		$strQuery .= "sent_dir = '" . $_POST['sent_dir'] . "', ";
+		$strQuery .= "hold_dir = '" . $_POST['hold_dir'] . "', ";
+		$strQuery .= "error_dir = '" . $_POST['error_dir'] . "', ";
+		$strQuery .= "dupe = '" . $_POST['dupe'] . "', ";
+		$strQuery .= "out_comp_level = '" . $_POST['out_comp_level'] . "', ";
+		$strQuery .= "pass_through = '" . $_POST['pass_through'] . "', ";
+		$strQuery .= "ret_period = '" . $_POST['ret_period'] . "', ";
+		$strQuery .= "active = '" . $_POST['active'] . "' ";
+		$strQuery .= "WHERE conf_rec_id = " . $_POST['conf_rec_id'] . " limit 1;";
+
+		$result = mysqli_query($conn, $strQuery);
+		if($result) {
+			header("Location: setup.php");
+		} else {
+			echo "Error updating record: " . mysqli_error($conn) . "<br>";
+			echo "Query = " . $strQuery . "<br>";
+			exit();
+		}
+	} elseif(isset($_POST['btnBack'])) {
+		header("Location: setup.php");
+		exit();
+	} else {
+		echo "Error:  Unknown action...<br>";
+		exit();
+	}
+}
+
 Display_Header2();
 
-if ($_GET['action'] == 'L') {
-	fLoadConfig();
-}
 echo "<H2>System Setup</H2>";
-if($_GET['action'] == 'L') {
-	fLoadConfig();
-} elseif($_GET['action'] == 'N') {
-	echo '<form action="setup.php" method="post">';
-	echo '<table border="1">';
-	echo '<tr><td>' . 'Config Name:</td>';
-	echo '<td><input type="text" name="conf_name" value ="' . $_SESSION["conf_name"] . '" /></td></tr>';
-	echo '<tr><td>' . 'Server FQDN or IP' . '</td>';
-	echo '<td><input type="text" name="conf_server" value ="' . $_SESSION["conf_server"] . '" /></td></tr>';
-	echo '<tr><td>' . '<label for="rec_type">Receiver Type:</label></td><td>';
-	echo '<select name="rec_type" id="rec_type">';
-	echo '<option value="1" selected>Dicom</option>';
-	echo '<option value="2">Directory</option>';
-	echo '</select></td></tr>';
-	echo '<tr><td>' . 'Port number to listen on (not used for directory type)' . '</td>';
-	echo '<td><input type="text" name="rec_port" value ="' . $_SESSION["rec_port"] . '" /></td></tr>';
-	echo '<tr><td>' . 'Absolute directory path for receiver data' . '</td>';
-	echo '<td><input type="text" name="rec_dir" value ="' . $_SESSION["rec_dir"] . '" /></td></tr>';
-	echo '<tr><td>' . 'Absolute directory path for receiver logs' . '</td>';
-	echo '<td><input type="text" name="rec_log_full_path" value ="' . $_SESSION["rec_log_full_path"] . '" /></td></tr>';
-	echo '<tr><td>' . '<label for="rec_log_level">Log Level:</label></td><td>';
-	echo '<select name="rec_log_level" id="rec_log_level">';
-	echo '<option value="1">fatal</option>';
-	echo '<option value="2">error</option>';
-	echo '<option value="3">warn</option>';
-	echo '<option value="4">info</option>';
-	echo '<option value="5" selected><b>debug</b></option>';
-	echo '<option value="6">trace</option>';
-	echo '</select></td></tr>';
-	echo '<tr><td>' . 'AET' . '</td>';
-	echo '<td><input type="text" name="rec_aet" value ="' . $_SESSION["rec_aet"] . '" /></td></tr>';
-	echo '<tr><td>' . 'Time Out' . '</td>';
-	echo '<td><input type="text" name="rec_time_out" value ="' . $_SESSION["rec_time_out"] . '" /></td></tr>';
-	echo '<tr><td>' . 'Absolute directory path for moving data to for processing' . '</td>';
-	echo '<td><input type="text" name="proc_dir" value ="' . $_SESSION["proc_dir"] . '" /></td></tr>';
-	echo '<tr><td>' . 'Absolute directory path for processing logs' . '</td>';
-	echo '<td><input type="text" name="proc_log_full_path" value ="' . $_SESSION["proc_log_full_path"] . '" /></td></tr>';
-	echo '<tr><td>' . 'Absolute directory path for moving outging data to' . '</td>';
-	echo '<td><input type="text" name="out_dir" value ="' . $_SESSION["out_dir"] . '" /></td></tr>';
-	echo '<tr><td>' . 'Absolute directory path for outgoing logs' . '</td>';
-	echo '<td><input type="text" name="out_log_full_path" value ="' . $_SESSION["out_log_full_path"] . '" /></td></tr>';
-	echo '<tr><td>' . 'Absolute directory path for sent files' . '</td>';
-	echo '<td><input type="text" name="sent_dir" value ="' . $_SESSION["sent_dir"] . '" /></td></tr>';
-	echo '<tr><td>' . 'Absolute directory path for held files' . '</td>';
-	echo '<td><input type="text" name="hold_dir" value ="' . $_SESSION["hold_dir"] . '" /></td></tr>';
-	echo '<tr><td>' . 'Absolute directory path for errored files' . '</td>';
-	echo '<td><input type="text" name="error_dir" value ="' . $_SESSION["error_dir"] . '" /></td></tr>';
-	echo '<tr><td>' . '<label for="dupe">Deduplication (WARNING!  This is a CPU hog):</label></td><td>';
-	echo '<select name="dupe" id="dupe">';
-	echo '<option value="1">Yes</option>';
-	echo '<option value="2" selected><b>No</b></option>';
-	echo '</select></td></tr>';
-	echo '<tr><td>' . '<label for="out_comp_level">Compression Level (lower is faster):</label></td><td>';
-	echo '<select name="out_comp_level" id="out_comp_level">';
-	echo '<option value="1">1</option>';
-	echo '<option value="2">2</option>';
-	echo '<option value="3">3</option>';
-	echo '<option value="4">4</option>';
-	echo '<option value="5">5</option>';
-	echo '<option value="6" selected><b>6</b></option>';
-	echo '<option value="7">7</option>';
-	echo '<option value="8">8</option>';
-	echo '<option value="9">9</option>';
-	echo '</select></td></tr>';
-	echo '<tr><td>' . '<label for="pass_through">Use AET of sender?:</label></td><td>';
-	echo '<select name="pass_through" id="pass_through">';
-	echo '<option value="1">Yes</option>';
-	echo '<option value="2" selected><b>No</b></option>';
-	echo '</select></td></tr>';
-	echo '<tr><td>' . 'Minutes to store sent files' . '</td>';
-	echo '<td><input type="text" name="ret_period" value ="' . $_SESSION["ret_period"] . '" /></td></tr>';
-	echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
-	echo '<select name="active" id="active" default=1>';
-	echo '<option value="1"><b>Yes</b></option>';
-	echo '<option value="2">No</option>';
-	echo '</select></td></tr>';
-	echo '</table>';
-	echo '<br><button type="submit" id="btnAdd" name="btnAdd">Add</button>';
-	echo '<button type="submit" id="btnReset" name="btnReset">Clear</button>';
-	echo '<button type="submit" id="btnCancel" name="btnCancel">Cancel</button>';
-	echo '</form>';
-} else {
-	echo '<a href="/primal/setup.php?action=L">Load Config</a><BR><BR>';
-	$strQuery = "SELECT count(*) FROM conf_rec;";
-	$result = mysqli_query($conn, $strQuery);
-	$row = mysqli_fetch_assoc($result);
-	$intNumRows = $row['count(*)'];
-	if($intNumRows > 0) {
-		echo '<div id="rec">';
-		echo '</div>';
-		echo '<svg width="300" height="500"><line x1="100" y1="70" x2="350" y2="70" stroke="black"/></svg>';
-		echo '<div id="proc">';
-		echo '</div>';
-		echo '<svg width="300" height="500"><line x1="5" y1="70" x2="350" y2="70" stroke="black"/></svg>';
-		echo '<div id="out">';
-		echo '</div>';
-	} else {
-		echo "No receivers found.  Please create a new one.<br><br>";
+if($_GET['action'] == 'N') {
+	if(isset($_GET['rec'])) {
+		$strQuery = "SELECT * FROM conf_rec WHERE conf_rec_id = " . $_GET['rec'] . " limit 1;";
+		$result = mysqli_query($conn, $strQuery);
+		$row = mysqli_fetch_assoc($result);
+		echo '<form action="setup.php?action=save" method="post">';
+		echo '<input type="hidden" name="conf_rec_id" value ="' . $row["conf_rec_id"] . '" />';
+		echo '<table border="1">';
+		echo '<tr><td>' . 'Config Name:</td>';
+		echo '<td><input type="text" name="conf_name" value ="' . $row["conf_name"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Server FQDN or IP' . '</td>';
+		echo '<td><input type="text" name="conf_server" value ="' . $row["conf_server"] . '" /></td></tr>';
+		echo '<tr><td>' . '<label for="rec_type">Receiver Type:</label></td><td>';
+		echo '<select name="rec_type" id="rec_type">';
+		echo '<option value="1" selected>Dicom</option>';
+		echo '<option value="2">Directory</option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Port number to listen on (not used for directory type)' . '</td>';
+		echo '<td><input type="text" name="rec_port" value ="' . $row["rec_port"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for receiver data' . '</td>';
+		echo '<td><input type="text" name="rec_dir" value ="' . $row["rec_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for receiver logs' . '</td>';
+		echo '<td><input type="text" name="rec_log_full_path" value ="' . $row["rec_log_full_path"] . '" /></td></tr>';
+		echo '<tr><td>' . '<label for="rec_log_level">Log Level:</label></td><td>';
+		echo '<select name="rec_log_level" id="rec_log_level">';
+		echo '<option value="1">fatal</option>';
+		echo '<option value="2">error</option>';
+		echo '<option value="3">warn</option>';
+		echo '<option value="4">info</option>';
+		echo '<option value="5" selected><b>debug</b></option>';
+		echo '<option value="6">trace</option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . 'AET' . '</td>';
+		echo '<td><input type="text" name="rec_aet" value ="' . $row["rec_aet"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Time Out (seconds)' . '</td>';
+		echo '<td><input type="text" name="rec_time_out" value ="' . $row["rec_time_out"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for moving data to for processing' . '</td>';
+		echo '<td><input type="text" name="proc_dir" value ="' . $row["proc_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for processing logs' . '</td>';
+		echo '<td><input type="text" name="proc_log_full_path" value ="' . $row["proc_log_full_path"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for moving outging data to' . '</td>';
+		echo '<td><input type="text" name="out_dir" value ="' . $row["out_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for outgoing logs' . '</td>';
+		echo '<td><input type="text" name="out_log_full_path" value ="' . $row["out_log_full_path"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for sent files' . '</td>';
+		echo '<td><input type="text" name="sent_dir" value ="' . $row["sent_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for held files' . '</td>';
+		echo '<td><input type="text" name="hold_dir" value ="' . $row["hold_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for errored files' . '</td>';
+		echo '<td><input type="text" name="error_dir" value ="' . $row["error_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . '<label for="dupe">Deduplication (WARNING!  This is a CPU hog):</label></td><td>';
+		echo '<select name="dupe" id="dupe">';
+		echo '<option value="1">Yes</option>';
+		echo '<option value="2" selected><b>No</b></option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . '<label for="out_comp_level">Compression Level (lower is faster):</label></td><td>';
+		echo '<select name="out_comp_level" id="out_comp_level">';
+		echo '<option value="1">1</option>';
+		echo '<option value="2">2</option>';
+		echo '<option value="3">3</option>';
+		echo '<option value="4">4</option>';
+		echo '<option value="5">5</option>';
+		echo '<option value="6" selected><b>6</b></option>';
+		echo '<option value="7">7</option>';
+		echo '<option value="8">8</option>';
+		echo '<option value="9">9</option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . '<label for="pass_through">Use AET of sender?:</label></td><td>';
+		echo '<select name="pass_through" id="pass_through">';
+		echo '<option value="1">Yes</option>';
+		echo '<option value="2" selected><b>No</b></option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Store sent files (minutes)' . '</td>';
+		echo '<td><input type="text" name="ret_period" value ="' . $row["ret_period"] . '" /></td></tr>';
+		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
+		echo '<select name="active" id="active" default=1>';
+		echo '<option value="1"><b>Yes</b></option>';
+		echo '<option value="2">No</option>';
+		echo '</select></td></tr>';
+		echo '</table>';
+		echo '<br><button type="submit" id="btnUpdate" name="btnUpdate">Update</button>';
+		echo '<button type="submit" id="btnReset" name="btnReset">Clear</button>';
+		echo '<button type="submit" id="btnCancel" name="btnCancel">Cancel</button>';
+		echo '</form>';
+		} else {
+		echo '<form action="setup.php?action=save" method="post">';
+		echo '<table border="1">';
+		echo '<tr><td>' . 'Config Name:</td>';
+		echo '<td><input type="text" name="conf_name"></td></tr>';
+		echo '<tr><td>' . 'Server FQDN or IP' . '</td>';
+		echo '<td><input type="text" name="conf_server"></td></tr>';
+		echo '<tr><td>' . '<label for="rec_type">Receiver Type:</label></td><td>';
+		echo '<select name="rec_type" id="rec_type">';
+		echo '<option value="1" selected>Dicom</option>';
+		echo '<option value="2">Directory</option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Port number to listen on (not used for directory type)' . '</td>';
+		echo '<td><input type="text" name="rec_port"></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for receiver data' . '</td>';
+		echo '<td><input type="text" name="rec_dir"></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for receiver logs' . '</td>';
+		echo '<td><input type="text" name="rec_log_full_path"></td></tr>';
+		echo '<tr><td>' . '<label for="rec_log_level">Log Level:</label></td><td>';
+		echo '<select name="rec_log_level" id="rec_log_level">';
+		echo '<option value="1">fatal</option>';
+		echo '<option value="2">error</option>';
+		echo '<option value="3">warn</option>';
+		echo '<option value="4">info</option>';
+		echo '<option value="5" selected><b>debug</b></option>';
+		echo '<option value="6">trace</option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . 'AET' . '</td>';
+		echo '<td><input type="text" name="rec_aet"></td></tr>';
+		echo '<tr><td>' . 'Time Out (seconds)' . '</td>';
+		echo '<td><input type="text" name="rec_time_out"></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for moving data to for processing' . '</td>';
+		echo '<td><input type="text" name="proc_dir"></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for processing logs' . '</td>';
+		echo '<td><input type="text" name="proc_log_full_path"></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for moving outging data to' . '</td>';
+		echo '<td><input type="text" name="out_dir"></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for outgoing logs' . '</td>';
+		echo '<td><input type="text" name="out_log_full_path"></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for sent files' . '</td>';
+		echo '<td><input type="text" name="sent_dir"></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for held files' . '</td>';
+		echo '<td><input type="text" name="hold_dir"></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for errored files' . '</td>';
+		echo '<td><input type="text" name="error_dir"></td></tr>';
+		echo '<tr><td>' . '<label for="dupe">Deduplication (WARNING!  This is a CPU hog):</label></td><td>';
+		echo '<select name="dupe" id="dupe">';
+		echo '<option value="1">Yes</option>';
+		echo '<option value="2" selected><b>No</b></option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . '<label for="out_comp_level">Compression Level (lower is faster):</label></td><td>';
+		echo '<select name="out_comp_level" id="out_comp_level">';
+		echo '<option value="1">1</option>';
+		echo '<option value="2">2</option>';
+		echo '<option value="3">3</option>';
+		echo '<option value="4">4</option>';
+		echo '<option value="5">5</option>';
+		echo '<option value="6" selected><b>6</b></option>';
+		echo '<option value="7">7</option>';
+		echo '<option value="8">8</option>';
+		echo '<option value="9">9</option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . '<label for="pass_through">Use AET of sender?:</label></td><td>';
+		echo '<select name="pass_through" id="pass_through">';
+		echo '<option value="1">Yes</option>';
+		echo '<option value="2" selected><b>No</b></option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Store sent files (minutes)' . '</td>';
+		echo '<td><input type="text" name="ret_period"></td></tr>';
+		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
+		echo '<select name="active" id="active" default=1>';
+		echo '<option value="1"><b>Yes</b></option>';
+		echo '<option value="2">No</option>';
+		echo '</select></td></tr>';
+		echo '</table>';
+		echo '<br><button type="submit" id="btnAdd" name="btnAdd">Add</button>';
+		echo '<button type="submit" id="btnReset" name="btnReset">Clear</button>';
+		echo '<button type="submit" id="btnCancel" name="btnCancel">Cancel</button>';
+		echo '</form>';
+		}
+} elseif($_GET['action'] == 'E') {
+	if(isset($_GET['rec'])) {
+		$intRec = $_GET['rec'];
+		$strQuery="SELECT * FROM conf_rec WHERE conf_rec_id = " . $intRec . ";";
+		$result = mysqli_query($conn, $strQuery);
+		$row = mysqli_fetch_assoc($result);
+
+		echo '<form action="setup.php" method="post">';
+		echo '<table border="1">';
+		echo '<tr><td>' . 'Config Name:</td>';
+		echo '<td><input type="text" name="conf_name" value ="' . $row["conf_name"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Server FQDN or IP' . '</td>';
+		echo '<td><input type="text" name="conf_server" value ="' . $row["conf_server"] . '" /></td></tr>';
+		echo '<tr><td>' . '<label for="rec_type">Receiver Type:</label></td><td>';
+		echo '<select name="rec_type" id="rec_type">';
+		echo '<option value="1" selected>Dicom</option>';
+		echo '<option value="2">Directory</option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Port number to listen on (not used for directory type)' . '</td>';
+		echo '<td><input type="text" name="rec_port" value ="' . $row["rec_port"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for receiver data' . '</td>';
+		echo '<td><input type="text" name="rec_dir" value ="' . $row["rec_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for receiver logs' . '</td>';
+		echo '<td><input type="text" name="rec_log_full_path" value ="' . $row["rec_log_full_path"] . '" /></td></tr>';
+		echo '<tr><td>' . '<label for="rec_log_level">Log Level:</label></td><td>';
+		echo '<select name="rec_log_level" id="rec_log_level">';
+		echo '<option value="1">fatal</option>';
+		echo '<option value="2">error</option>';
+		echo '<option value="3">warn</option>';
+		echo '<option value="4">info</option>';
+		echo '<option value="5" selected><b>debug</b></option>';
+		echo '<option value="6">trace</option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . 'AET' . '</td>';
+		echo '<td><input type="text" name="rec_aet" value ="' . $row["rec_aet"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Time Out' . '</td>';
+		echo '<td><input type="text" name="rec_time_out" value ="' . $_SESSION["rec_time_out"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for moving data to for processing' . '</td>';
+		echo '<td><input type="text" name="proc_dir" value ="' . $row["proc_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for processing logs' . '</td>';
+		echo '<td><input type="text" name="proc_log_full_path" value ="' . $row["proc_log_full_path"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for moving outging data to' . '</td>';
+		echo '<td><input type="text" name="out_dir" value ="' . $row["out_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for outgoing logs' . '</td>';
+		echo '<td><input type="text" name="out_log_full_path" value ="' . $row["out_log_full_path"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for sent files' . '</td>';
+		echo '<td><input type="text" name="sent_dir" value ="' . $row["sent_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for held files' . '</td>';
+		echo '<td><input type="text" name="hold_dir" value ="' . $row["hold_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Absolute directory path for errored files' . '</td>';
+		echo '<td><input type="text" name="error_dir" value ="' . $row["error_dir"] . '" /></td></tr>';
+		echo '<tr><td>' . '<label for="dupe">Deduplication (WARNING!  This is a CPU hog):</label></td><td>';
+		echo '<select name="dupe" id="dupe">';
+		echo '<option value="1">Yes</option>';
+		echo '<option value="2" selected><b>No</b></option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . '<label for="out_comp_level">Compression Level (lower is faster):</label></td><td>';
+		echo '<select name="out_comp_level" id="out_comp_level">';
+		echo '<option value="1">1</option>';
+		echo '<option value="2">2</option>';
+		echo '<option value="3">3</option>';
+		echo '<option value="4">4</option>';
+		echo '<option value="5">5</option>';
+		echo '<option value="6" selected><b>6</b></option>';
+		echo '<option value="7">7</option>';
+		echo '<option value="8">8</option>';
+		echo '<option value="9">9</option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . '<label for="pass_through">Use AET of sender?:</label></td><td>';
+		echo '<select name="pass_through" id="pass_through">';
+		echo '<option value="1">Yes</option>';
+		echo '<option value="2" selected><b>No</b></option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Minutes to store sent files' . '</td>';
+		echo '<td><input type="text" name="ret_period" value ="' . $row["ret_period"] . '" /></td></tr>';
+		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
+		echo '<select name="active" id="active" default=1>';
+		echo '<option value="1"><b>Yes</b></option>';
+		echo '<option value="2">No</option>';
+		echo '</select></td></tr>';
+		echo '</table>';
+		echo '<br><button type="submit" id="btnAdd" name="btnAdd">Add</button>';
+		echo '<button type="submit" id="btnReset" name="btnReset">Clear</button>';
+		echo '<button type="submit" id="btnCancel" name="btnCancel">Cancel</button>';
+		echo '</form>';
 	}
-	echo '<a href="/primal/setup.php?action=N">New Config</a><BR><BR>';
+} else {
+	$strQuery = "SELECT conf_rec_id, conf_name FROM conf_rec;";
+	$result = mysqli_query($conn, $strQuery);
+	$intNumRows = mysqli_num_rows($result);
+	$intLC=1;
+	while($intLC <= ($intNumRows + 1)) {
+		$row = mysqli_fetch_assoc($result);
+		echo '<div id="rec" style="top: ' . $intLC * 150 . ';">';
+		if($intLC > $intNumRows) {
+			echo '<BR><BR><a href="/primal/setup.php?action=E&rec=0">New</a><BR><BR>';
+		} else {
+			echo '<BR><BR><a href="/primal/setup.php?action=N&rec=' . $row['conf_rec_id'] . '">' . $row['conf_name'] . '</a><BR><BR>';
+		}
+		echo '</div>';
+
+		echo '<svg width="350" height="150"><line x1="100" y1="70" x2="350" y2="70" stroke="black"/></svg>';
+
+		echo '<div id="proc" style="top: ' . $intLC * 150 . ';">';
+		if(!isset($row['conf_rec_id'])) {
+			echo '<BR><BR>No<BR>Receiver<BR>Selected';
+		} else {
+			$strQuery2 = "SELECT conf_proc_id, proc_name FROM conf_proc WHERE conf_rec_id = " . $row['conf_rec_id'] . ";";
+			$result2 = mysqli_query($conn, $strQuery2);
+			$intNumRows2 = mysqli_num_rows($result2);
+			$intLC2=0;
+			while($intLC2 <= $intNumRows2) {
+				$row2 = mysqli_fetch_assoc($result2);
+				echo '<BR><BR><a href="/primal/setup.php?action=E&proc=' . $row2['conf_proc_id'] . '">' . $row2['proc_name'] . '</a><BR><BR>';
+				$intLC2++;
+			}
+		}
+		echo '</div>';
+
+		echo '<svg width="300" height="150"><line x1="50" y1="70" x2="350" y2="70" stroke="black"/></svg>';
+		
+		echo '<div id="out" style="top: ' . $intLC * 150 . ';">';
+		if(!isset($row['conf_rec_id'])) {
+			echo '<BR><BR>No<BR>Receiver<BR>Selected';
+		} else {
+			$strQuery2 = "SELECT conf_send_id, send_name FROM conf_send WHERE conf_rec_id = " . $row['conf_rec_id'] . ";";
+			$result2 = mysqli_query($conn, $strQuery2);
+			$intNumRows2 = mysqli_num_rows($result2);
+			$intLC2=0;
+			while($intLC2 <= $intNumRows2) {
+				$row2 = mysqli_fetch_assoc($result2);
+				echo '<BR><BR><a href="/primal/setup.php?action=N&proc=' . $row2['conf_send_id'] . '">' . $row2['send_name'] . '</a><BR><BR>';
+				$intLC2++;
+			}
+		}
+		echo '</div>';
+		echo '<BR>';
+		$intLC++;
+	}
+	echo '<BR><BR>';
 }
 Display_Footer();
 echo '</BODY>';
 echo '</HTML>';
 
-function fLoadConfig() {
-	$strQuery = "SELECT * FROM conf_rec;";
-	$result = mysqli_query($conn, $strQuery);
-	$intNumRows = mysqli_num_rows($result);
-	if($intNumRows > 0) {
-		$intLC=1;
-		while($intNumRows >= $intLC) {
-			$row = mysqli_fetch_assoc($result);
-			$_SESSION['conf'][$intLC]['conf_rec_id'] = $row['conf_rec_id'];
-			$_SESSION['conf'][$intLC]['conf_name'] = $row['conf_name'];
-			$_SESSION['conf'][$intLC]['conf_server'] = $row['conf_server'];
-			$_SESSION['conf'][$intLC]['rec_type'] = $row['rec_type'];
-			$_SESSION['conf'][$intLC]['rec_port'] = $row['rec_port'];
-			$_SESSION['conf'][$intLC]['rec_dir'] = $row['rec_dir'];
-			$_SESSION['conf'][$intLC]['rec_log_full_path'] = $row['rec_log_full_path'];
-			$_SESSION['conf'][$intLC]['rec_log_level'] = $row['rec_log_level'];
-			$_SESSION['conf'][$intLC]['rec_aet'] = $row['rec_aet'];
-			$_SESSION['conf'][$intLC]['rec_time_out'] = $row['rec_time_out'];
-			$_SESSION['conf'][$intLC]['proc_dir'] = $row['proc_dir'];
-			$_SESSION['conf'][$intLC]['proc_log_full_path'] = $row['proc_log_full_path'];
-			$_SESSION['conf'][$intLC]['out_dir'] = $row['out_dir'];
-			$_SESSION['conf'][$intLC]['out_log_full_path'] = $row['out_log_full_path'];
-			$_SESSION['conf'][$intLC]['sent_dir'] = $row['sent_dir'];
-			$_SESSION['conf'][$intLC]['hold_dir'] = $row['hold_dir'];
-			$_SESSION['conf'][$intLC]['error_dir'] = $row['error_dir'];
-			$_SESSION['conf'][$intLC]['dupe'] = $row['dupe'];
-			$_SESSION['conf'][$intLC]['out_comp_level'] = $row['out_comp_level'];
-			$_SESSION['conf'][$intLC]['pass_through'] = $row['pass_through'];
-			$_SESSION['conf'][$intLC]['ret_period'] = $row['ret_period'];
-			$_SESSION['conf'][$intLC]['active'] = $row['active'];
-			$intLC++;
+fValidateInput($intType, $strUserInput) {
+	if($intType == 1) {
+		if(!preg_match("/^[a-zA-Z0-9_ ]*$/", $strUserInput)) {
+			echo "Invalid input:  " . $strUserInput . "<br>";
+			return 1;
+		} else {
+			return 0;
 		}
-	} else {
-		echo "No configuration found.  Please contact your administrator.";
-	}
-
-	$strQuery = "SELECT * FROM conf_proc;";
-	$result = mysqli_query($conn, $strQuery);
-	$intNumRows = mysqli_num_rows($result);
-	if($intNumRows > 0) {
-		$intLC=1;
-		while($intNumRows >= $intLC) {
-			$row = mysqli_fetch_assoc($result);
-			$_SESSION['conf_proc'][$intLC]['conf_proc_id'] = $row['conf_proc_id'];
-			$_SESSION['conf_proc'][$intLC]['conf_rec_id'] = $row['conf_rec_id'];
-			$_SESSION['conf_proc'][$intLC]['proc_name'] = $row['proc_name'];
-			$_SESSION['conf_proc'][$intLC]['proc_type'] = $row['proc_type'];
-			$_SESSION['conf_proc'][$intLC]['proc_perator'] = $row['proc_perator'];
-			$_SESSION['conf_proc'][$intLC]['proc_cond'] = $row['proc_cond'];
-			$_SESSION['conf_proc'][$intLC]['proc_action'] = $row['proc_action'];
-			$_SESSION['conf_proc'][$intLC]['proc_order'] = $row['proc_order'];
-			$_SESSION['conf_proc'][$intLC]['proc_dest'] = $row['proc_dest'];
-			$_SESSION['conf_proc'][$intLC]['active'] = $row['active'];
-			$intLC++;
+	} elseif($intType == 2) {
+		if(preg_match("/^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/", $strUserInput)) {
+			return 0;
 		}
-	}
-
-	$strQuery = "SELECT * FROM conf_send;";
-	$result = mysqli_query($conn, $strQuery);
-	$intNumRows = mysqli_num_rows($result);
-	if($intNumRows > 0) {
-		$intLC=1;
-		while($intNumRows >= $intLC) {
-			$row = mysqli_fetch_assoc($result);
-			$_SESSION['conf_send'][$intLC]['conf_send_id'] = $row['conf_send_id'];
-			$_SESSION['conf_send'][$intLC]['conf_rec_id'] = $row['conf_rec_id'];
-			$_SESSION['conf_send'][$intLC]['send_name'] = $row['send_name'];
-			$_SESSION['conf_send'][$intLC]['send_aet'] = $row['send_aet'];
-			$_SESSION['conf_send'][$intLC]['send_aec'] = $row['send_aec'];
-			$_SESSION['conf_send'][$intLC]['send_hip'] = $row['send_hip'];
-			$_SESSION['conf_send'][$intLC]['send_type'] = $row['send_type'];
-			$_SESSION['conf_send'][$intLC]['send_port'] = $row['send_port'];
-			$_SESSION['conf_send'][$intLC]['send_time_out'] = $row['send_time_out'];
-			$_SESSION['conf_send'][$intLC]['send_comp_level'] = $row['send_comp_level'];
-			$_SESSION['conf_send'][$intLC]['send_retry'] = $row['send_retry'];
-			$_SESSION['conf_send'][$intLC]['send_username'] = $row['send_username'];
-			$_SESSION['conf_send'][$intLC]['send_password'] = $row['send_password'];
-			$_SESSION['conf_send'][$intLC]['active'] = $row['active'];
-			$intLC++;
+		
+	} elseif($intType == 3) {
+		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
+			echo "Invalid input:  " . $strUserInput . "<br>";
+			exit();
 		}
-	}
-}
-
-/*
-$strConfigFile = "/etc/primal/primal.conf";
-if (file_exists($strConfigFile) == FALSE) {
-	echo "Config file does not exist.<br><br>";
-	echo '<a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/edit_conf.php">New</a>';
-}
-if (is_file($strConfigFile) == FALSE) {
-	echo "Config file is not a file.  Please contact your admistrator!<br><br>";
-	exit(1);
-}
-
-if (isset($_SESSION['obj']) || isset($_SESSION['obj1']))
-{
-    unset($_SESSION['obj']);
-    unset($_SESSION['obj1']);
-}
-unset($_SESSION['result']);
-unset($_SESSION['rec_list']);
-
-if(isset($_SESSION['HAVECONFIG']))
-    unset($_SESSION['HAVECONFIG']);
-if(isset($_SESSION['PRIDESTHIP']))
-    unset($_SESSION['PRIDESTHIP']);
-if(isset($_SESSION['PRIDESTAEC']))
-    unset($_SESSION['PRIDESTAEC']);
-if(isset($_SESSION['PRIDESTPORT']))
-    unset($_SESSION['PRIDESTPORT']);
-if(isset($_SESSION['PRIDESTCDCR']))
-    unset($_SESSION['PRIDESTCDCR']);
-if(isset($_SESSION['PRITAG']))
-    unset($_SESSION['PRITAG']);
-if(isset($_SESSION['PRIQRTAG']))
-    unset($_SESSION['PRIQRTAG']);
-
-echo '<a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/edit.php?zz=1">Edit</a>';
-echo '<br><br><br>';
-echo '<a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/add_user.php">Add User</a></br>';
-echo '<br><br>';
-if ($_GET['e'] == 1)
-{
-	$myfile = fopen("/etc/primal/primal.conf", "r") or die("Unable to open primal.conf file!");
-	echo fread($myfile,filesize("/etc/primal/primal.conf"));
-	fclose($myfile);
-} else {
-	$query = "SELECT * from user";
-	$result = $conn->query($query);
-	$num_rows = $result->num_rows;
-	$lc1=0;
-	while($row = mysqli_fetch_assoc($result)) {
-		$users[$lc1]['loginid'] = $row['loginid'];
-		$users[$lc1]['login_sec_level'] = $row['login_sec_level'];
-		$users[$lc1]['username'] = $row['username'];
-		$users[$lc1]['active'] = $row['active'];
-		$users[$lc1]['access'] = $row['access'];
-		$users[$lc1]['sec_bit'] = $row['sec_bit'];
-		$users[$lc1]['page_size'] = $row['page_size'];
-		$lc1++;
-	}
-	echo '<table border="1">';
-	echo '<tr>';
-	echo '<th>loginid</th>';
-	echo '<th>Security Level</th>';
-	echo '<th>username</th>';
-	echo '<th>active</th>';
-	echo '<th>Last Access</th>';
-	echo '<th>Security Bits</th>';
-	echo '<th>Page Size</th>';
-	echo '</th>';
-	$lc1=0;
-	foreach($users as $u) {
-		if($users[$lc1]['login_sec_level'] <= $_SESSION['login_sec_level']) {
-			echo '<tr>';
-			echo '<td><a href="http://' . $_SERVER['HTTP_HOST'] . '/primal/update_user.php?e=' . $users[$lc1]['loginid'] . '">' . $users[$lc1]['loginid'] . '</a></td>';
-			echo '<td>' . $users[$lc1]['login_sec_level'] . '</td>';
-			echo '<td>' . $users[$lc1]['username'] . '</td>';
-			echo '<td>' . $users[$lc1]['active'] . '</td>';
-			echo '<td>' . $users[$lc1]['access'] . '</td>';
-			echo '<td>' . $users[$lc1]['sec_bit'] . '</td>';
-			echo '<td>' . $users[$lc1]['page_size'] . '</td>';
-			echo '</tr>';
+	} elseif($intType == 4) {
+		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
+			echo "Invalid input:  " . $strUserInput . "<br>";
+			exit();
 		}
-		$lc1++;
-	}
-	echo '</table>';
+	} elseif($intType == 5) {
+		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
+			echo "Invalid input:  " . $strUserInput . "<br>";
+			exit();
+		}
+	} elseif($intType == 6) {
+		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
+			echo "Invalid input:  " . $strUserInput . "<br>";
+			exit();
+		}
+	} elseif($intType == 7) {
+		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
+			echo "Invalid input:  " . $strUserInput . "<br>";
+			exit();
+		}
+	} elseif($intType == 8) {
+		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
+			echo "Invalid input:  " . $strUserInput . "<br>";
+			exit();
+		}
+	} elseif($intType == 9) {
+		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
+			echo "Invalid input:  " . $strUserInput
 }
-echo '   </form><br>';
-*/
-Display_Footer();
-echo '</BODY>';
-echo '</HTML>';
 
+function pingAddress($ip) {
+    $pingresult = exec("/bin/ping -n 3 $ip", $outcome, $status);
+    if (0 == $status) {
+        $status = "alive";
+    } else {
+        $status = "dead";
+    }
+    echo "The IP address, $ip, is  ".$status;
+}
 ?>

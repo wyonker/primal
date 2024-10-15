@@ -128,6 +128,7 @@ create table conf_rec (conf_rec_id bigint(20) UNSIGNED UNIQUE not null AUTO_INCR
 					  proc_dir varchar(128) not null default '/home/dicom/process',
 					  proc_log_full_path varchar(128) not null default '/var/log/primal/process.log',
 					  out_dir varchar(128) not null default '/home/dicom/send',
+					  out_comp_level int(5) not null default 0,
 					  out_log_full_path varchar(128) not null default '/var/log/primal/send.log',
 					  sent_dir varchar(128) not null default '/home/dicom/sent',
 					  hold_dir varchar(128) not null default '/home/dicom/hold',
