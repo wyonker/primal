@@ -26,14 +26,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST')
     } else {
 		$query = "SELECT * from user WHERE loginid = '" . $_SESSION['loginid'] . "'";
 		$result = $conn->query($query);
-		$num_rows = mysql_num_rows($result);
+		$num_rows = mysqli_num_rows($result);
 		if ($num_rows <= 0) {
 			$_SESSION['perror'] = 2;
 		}
 		if ($num_rows >= 2) {
 			$_SESSION['perror'] = 3;
 		}
-		$row = mysql_fetch_assoc($result);
+		$row = mysqli_fetch_assoc($result);
 	}
 	if($_SESSION['callerid']!= "/primal/update_user.php") {
 		if ($row['password'] != $curpasswd) {
@@ -80,10 +80,6 @@ EOT;
 Display_Header2();
 	echo '<br><br><br>';
 	echo '<h2>Setup Screen</h2><br />';
-if($_SESSION['loginid'] == "primal")
-{
-	echo '<b><font color="red">WARNING:  NEVER CHANG THE PRIMAL USER\'S PASSWORD!!!</font></b><br><br>';
-}
 if($_SESSION['callerid']== "/primal/update_user.php")
 {
 	echo '<h3>Modifying password for ' . $_SESSION['orig_loginid'] . '</h3><br>';
