@@ -347,7 +347,7 @@ int main() {
     std::string strLogMessage, strCMD, strID, strPUID, strServerName, strDestNum, strDest, strOrg, strStartSend, strEndSend, strImages, strError, strRetry, strComplete;
     std::string strQuery, strQuery2, strQuery3, strQuery4, strLocation, strSendPort, strSendHIP, strSendAEC, strSendAET, strStatus;
     std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId;
-    std::string strSendActive, strSendUser;
+    std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5;
 
     std::size_t intNumRows;
 
@@ -359,10 +359,12 @@ int main() {
     MYSQL_ROW row;
     MYSQL_ROW row2;
     MYSQL_ROW row3;
+    MYSQL_ROW row5;
 
     MYSQL_RES *result;
     MYSQL_RES *result2;
     MYSQL_RES *result3;
+    MYSQL_RES *result5;
 
     mconnect=mysql_init(NULL);
     mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
@@ -383,7 +385,7 @@ int main() {
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     while (1) {
-        strQuery = "SELECT * FROM send WHERE complete = 3;";
+        strQuery = "SELECT send.id, send.puid, send.sservername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete = 3;";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
             strLogMessage="SQL Error: ";
@@ -394,7 +396,7 @@ int main() {
         result = mysql_store_result(mconnect);
         if(result) {
             intNumRows = mysql_num_rows(result);
-            if(intNumRows < 1) {
+            if(intNumRows > 0) {
                 while ((row = mysql_fetch_row(result))) {
                     strID = row[0];
                     strPUID = row[1];
@@ -403,74 +405,90 @@ int main() {
                     strDest = row[4];
                     strOrg = row[5];
                     strStartSend = row[6];
-                    strEndSend = row[7];
-                    strImages = row[8];
-                    strError = row[9];
-                    strRetry = row[10];
-                    strComplete = row[11];
-                }
-                mysql_free_result(result);
-                strQuery2="SELECT * FROM conf_send WHERE conf_send_id = " + strDestNum + " limit 1;";
-                mysql_query(mconnect, strQuery2.c_str());
-                if(*mysql_error(mconnect)) {
-                    strLogMessage="SQL Error: ";
-                    strLogMessage+=mysql_error(mconnect);
-                    strLogMessage+="strQuery2 = " + strQuery2 + ".";
-                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                }
-                result2 = mysql_store_result(mconnect);
-                if(result2) {
-                    intNumRows = mysql_num_rows(result2);
-                    if(intNumRows < 1) {
-                        while ((row2 = mysql_fetch_row(result2))) {
-                            strRecId = row2[1];
-                            strSendName = row2[2];
-                            strSendOrg = row2[3];
-                            strSendAET = row2[4];
-                            strSendAEC = row2[5];
-                            strSendHIP = row2[6];
-                            strSendType = row2[7];
-                            strSendPort = row2[8];
-                            strSendTimeOut = row2[9];
-                            strSendCompression = row2[10];
-                            strSendRetry = row2[11];
-                            strSendUser = row2[12];
-                            strSendPass = row2[13];
-                            strSendOrder = row2[14];
-                            strSendActive = row2[15];
+                    strComplete = row[7];
+                    strAccn = row[8];
+
+                    strQuery5="SELECT * FROM mirth_primal WHERE accn = '" + strAccn + "' AND send_status=0;";
+                    mysql_query(mconnect, strQuery5.c_str());
+                    if(*mysql_error(mconnect)) {
+                        strLogMessage="SQL Error: ";
+                        strLogMessage+=mysql_error(mconnect);
+                        strLogMessage+="strQuery2 = " + strQuery5 + ".";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
+                    result5 = mysql_store_result(mconnect);
+                    if(result5) {
+                        intNumRows = mysql_num_rows(result5);
+                        if(intNumRows > 0) {
+                            while ((row5 = mysql_fetch_row(result5))) {
+                                //We have an unsent match in primal and mirth_primal.  Let's send it.
+                                strMPID = row5[0];
+                                
+                                strQuery2="SELECT * FROM conf_send WHERE conf_send_id = " + strDestNum + " limit 1;";
+                                mysql_query(mconnect, strQuery2.c_str());
+                                if(*mysql_error(mconnect)) {
+                                    strLogMessage="SQL Error: ";
+                                    strLogMessage+=mysql_error(mconnect);
+                                    strLogMessage+="strQuery2 = " + strQuery2 + ".";
+                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                }
+                                result2 = mysql_store_result(mconnect);
+                                if(result2) {
+                                    intNumRows = mysql_num_rows(result2);
+                                    if(intNumRows > 0) {
+                                        while ((row2 = mysql_fetch_row(result2))) {
+                                            strRecId = row2[1];
+                                            strSendName = row2[2];
+                                            strSendOrg = row2[3];
+                                            strSendAET = row2[4];
+                                            strSendAEC = row2[5];
+                                            strSendHIP = row2[6];
+                                            strSendType = row2[7];
+                                            strSendPort = row2[8];
+                                            strSendTimeOut = row2[9];
+                                            strSendCompression = row2[10];
+                                            strSendRetry = row2[11];
+                                            strSendUser = row2[12];
+                                            strSendPass = row2[13];
+                                            strSendOrder = row2[14];
+                                            strSendActive = row2[15];
+                                        }
+                                        mysql_free_result(result2);
+                                    }
+                                }
+                                strQuery3 = "SELECT DISTINCT ilocaiton FROM image WHERE puid = '" + strPUID + "';";
+                                mysql_query(mconnect, strQuery3.c_str());
+                                if(*mysql_error(mconnect)) {
+                                    strLogMessage="SQL Error: ";
+                                    strLogMessage+=mysql_error(mconnect);
+                                    strLogMessage+="strQuery3 = " + strQuery3 + ".";
+                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                }
+                                result3 = mysql_store_result(mconnect);
+                                if(result3) {
+                                    intNumRows = mysql_num_rows(result3);
+                                    if(intNumRows < 1) {
+                                        while ((row3 = mysql_fetch_row(result3))) {
+                                            strLocation = row3[0];
+                                        }
+                                        //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
+                                        strCMD = "echo \"dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm\" >> /var/log/primal/primal.log 2>&1";
+                                        strStatus = exec(strCMD.c_str());
+                                        strQuery4 = "UPDATE send SET complete = 1 WHERE id = '" + strID + "';";
+                                        mysql_query(mconnect, strQuery4.c_str());
+                                        if(*mysql_error(mconnect)) {
+                                            strLogMessage="SQL Error: ";
+                                            strLogMessage+=mysql_error(mconnect);
+                                            strLogMessage+="strQuery3 = " + strQuery4 + ".";
+                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        }
+                                    }
+                                }
+                                std::this_thread::sleep_for (std::chrono::seconds(10));
+                            }
                         }
-                        mysql_free_result(result2);
                     }
                 }
-                strQuery3 = "SELECT DISTINCT ilocaiton FROM image WHERE puid = '" + strPUID + "';";
-                mysql_query(mconnect, strQuery3.c_str());
-                if(*mysql_error(mconnect)) {
-                    strLogMessage="SQL Error: ";
-                    strLogMessage+=mysql_error(mconnect);
-                    strLogMessage+="strQuery3 = " + strQuery3 + ".";
-                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                }
-                result3 = mysql_store_result(mconnect);
-                if(result3) {
-                    intNumRows = mysql_num_rows(result3);
-                    if(intNumRows < 1) {
-                        while ((row3 = mysql_fetch_row(result3))) {
-                            strLocation = row3[0];
-                        }
-                        //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
-                        strCMD = "echo \"dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm\" >> /var/log/primal/primal.log 2>&1";
-                        strStatus = exec(strCMD.c_str());
-                        strQuery4 = "UPDATE send SET complete = 1 WHERE id = '" + strID + "';";
-                        mysql_query(mconnect, strQuery4.c_str());
-                        if(*mysql_error(mconnect)) {
-                            strLogMessage="SQL Error: ";
-                            strLogMessage+=mysql_error(mconnect);
-                            strLogMessage+="strQuery3 = " + strQuery4 + ".";
-                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                        }
-                    }
-                }
-                std::this_thread::sleep_for (std::chrono::seconds(10));
             }
         }
     }
