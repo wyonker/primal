@@ -179,9 +179,46 @@ int ReadDBConfFile() {
     return 0;
 };
 
+int fRuleTag(std::string strPUID, int intConf_proc_id) {
+    (void) strPUID;
+    (void) intConf_proc_id;
+    return 0;
+}
+
+int fRuleDate(std::string strPUID, int intConf_proc_id) {
+    (void) strPUID;
+    (void) intConf_proc_id;
+    return 0;
+}
+
+int fRuleTime(std::string strPUID, int intConf_proc_id) {
+    (void) strPUID;
+    (void) intConf_proc_id;
+    return 0;
+}
+
+int fRuleDateTime(std::string strPUID, int intConf_proc_id) {
+    (void) strPUID;
+    (void) intConf_proc_id;
+    return 0;
+}
+
+int fRuleScript(std::string strPUID, int intConf_proc_id) {
+    (void) strPUID;
+    (void) intConf_proc_id;
+    return 0;
+}
+
+int fRuleHL7(std::string strPUID, int intConf_proc_id) {
+    (void) strPUID;
+    (void) intConf_proc_id;
+    return 0;
+}
+
 int fProcess() {
-    std::string strQuery, strQuery2, strQuery3, strLogMessage, strPUID;
-    int intProc_type;
+    std::string strQuery, strQuery2, strQuery3, strLogMessage, strPUID, strID, strPservername, strTstartproc, strRecID, strConf_proc_id, strConf_rec_id, strProc_name, strProc_type;
+    std::string strProc_tag, strProc_operator, strProc_cond, strProc_action, strProc_order, strProc_dest, strProc_active;
+    int intProc_type, intNumRows, intConf_proc_id, intReturn;
 
     MYSQL_ROW row, row2, row3;
     MYSQL_RES *result, *result2, *result3;
@@ -192,7 +229,7 @@ int fProcess() {
         strLogMessage="SQL Error: ";
         strLogMessage+=mysql_error(mconnect);
         strLogMessage+="\nQuery: " + strQuery + "\n";
-        fWriteLog(strLogMessage);
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
     }
     result = mysql_store_result(mconnect);
     if(result) {
@@ -210,7 +247,7 @@ int fProcess() {
                     strLogMessage="SQL Error: ";
                     strLogMessage+=mysql_error(mconnect);
                     strLogMessage+="\nQuery: " + strQuery2 + "\n";
-                    fWriteLog(strLogMessage);
+                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                 }
                 result2 = mysql_store_result(mconnect);
                 if(result2) {
@@ -229,7 +266,7 @@ int fProcess() {
                     strLogMessage="SQL Error: ";
                     strLogMessage+=mysql_error(mconnect);
                     strLogMessage+="\nQuery: " + strQuery3 + "\n";
-                    fWriteLog(strLogMessage);
+                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                 }
                 result3 = mysql_store_result(mconnect);
                 if(result3) {
@@ -270,6 +307,12 @@ int fProcess() {
                                 intReturn = fRuleHL7(strPUID, intConf_proc_id);
                             }
                         }
+                    }
+                    mysql_free_result(result3);
+                }
+            }
+        }
+    }
 }
 
 std::string exec(const char* cmd) {
