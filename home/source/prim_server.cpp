@@ -383,7 +383,7 @@ int main() {
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     while (1) {
-        strQuery = "SELECT * from SEND where complete = 3;";
+        strQuery = "SELECT * FROM semd WHERE complete = 3;";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
             strLogMessage="SQL Error: ";
