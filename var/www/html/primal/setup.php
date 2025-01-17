@@ -1,5 +1,7 @@
 <?php
-    //License GPLv3
+	//License GPLv3
+	//Version 1.00.01
+	//2024-12-26
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -13,6 +15,17 @@ if ($_SESSION['active'] != '1')
     header("Location: login.php");
     exit();
 }
+
+$arrFiles = scandir("/usr/local/scripts/");
+
+$strOption = "'<select name=\"script_name\" id=\"script_name\">'";
+foreach($arrFiles as $strFile) {
+	if($strFile != "." && $strFile != "..") {
+		$strOption .= '<option value=\"' . $strFile . '\">' . $strFile . '</option>';
+	}
+}
+$strOption .= '</select>';
+
 echo <<<EOT
 <HTML>
 <!DOCTYPE !DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
@@ -41,6 +54,29 @@ function jsDelete() {
 		document.getElementById('btnDeleteRN').click();
 	}
 }
+function jsFunction(value) {
+    if (value == "1") {
+        x="Tag ID:";
+		y='<input type=\"text\" name=\"proc_tag\">';
+	} else if (value == "2") {
+		x="Date:";
+		y='<input type=\"date\" name=\"proc_tag\">';
+    } else if (value == "3") {
+        x="Time:"
+		y='<input type=\"time\" name=\"proc_tag\">';
+    } else if (value == "4") {
+	    x="Date/Time:";
+		y='<input type=\"date\" name=\"proc_tag\">';
+	} else if (value == "5") {
+	    x="Script Name:";
+		y=' . $strOption . ';
+	} else if (value == "6") {
+	    x="HL7 Segment:";
+		y='<input type=\"text\" name=\"proc_tag\">';
+	}
+    document.getElementById("heading").innerHTML = x;
+	document.getElementById("proc_tag1").innerHTML = y;
+}
 </SCRIPT>
 <BODY>
 EOT;
@@ -55,7 +91,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	} elseif(isset($_POST['btnAdd'])) {
 		$intReturn = fValidateInput(1, $_POST['conf_name']);
 		if($intReturn == 1) {
-			echo "Error:  Invalid input for Config Name...<br>";
+			echo $strErrMsg;
 			exit();
 		}
 		$strQuery = "INSERT INTO conf_rec SET ";
@@ -76,7 +112,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "hold_dir = '" . $_POST['hold_dir'] . "', ";
 		$strQuery .= "error_dir = '" . $_POST['error_dir'] . "', ";
 		$strQuery .= "dupe = '" . $_POST['dupe'] . "', ";
-		$strQuery .= "out_comp_level = '" . $_POST['out_comp_level'] . "', ";
+		$strQuery .= "rec_comp_level = '" . $_POST['rec_comp_level'] . "', ";
 		$strQuery .= "pass_through = '" . $_POST['pass_through'] . "', ";
 		$strQuery .= "ret_period = '" . $_POST['ret_period'] . "', ";
 		$strQuery .= "active = '" . $_POST['active'] . "';";
@@ -92,7 +128,70 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	} elseif(isset($_POST['btnUpdate'])) {
 		$intReturn = fValidateInput(1, $_POST['conf_name']);
 		if($intReturn == 1) {
-			echo "Error:  Invalid input for Config Name...<br>";
+			echo $strErrMsg;
+			exit();
+		}
+		$intReturn = fValidateInput(4, $_POST['rec_port']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for port number...<br>";
+			exit();
+		}
+		if(substr($_POST['rec_dir'], -1) != "/") {
+			$_POST['rec_dir'] .= "/";
+		}
+		$intReturn = fValidateInput(5, $_POST['rec_dir']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for receive directory...<br>";
+			exit();
+		}
+		$intReturn = fValidateInput(6, $_POST['rec_log_full_path']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for receive log (path and file must exist)...<br>";
+			exit();
+		}
+		$intReturn = fValidateInput(3, $_POST['rec_aet']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for AET <br>";
+			exit();
+		}
+		$intReturn = fValidateInput(5, $_POST['proc_dir']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for process directory...<br>";
+			exit();
+		}
+		$intReturn = fValidateInput(6, $_POST['proc_log_full_path']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for process log (path and file must exist)...<br>";
+			exit();
+		}
+		$intReturn = fValidateInput(5, $_POST['out_dir']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for out directory...<br>";
+			exit();
+		}
+		$intReturn = fValidateInput(6, $_POST['out_log_full_path']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for out log (path and file must exist)...<br>";
+			exit();
+		}
+		$intReturn = fValidateInput(5, $_POST['sent_dir']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for sent directory...<br>";
+			exit();
+		}
+		$intReturn = fValidateInput(5, $_POST['hold_dir']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for hold directory...<br>";
+			exit();
+		}
+		$intReturn = fValidateInput(5, $_POST['error_dir']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for error directory...<br>";
+			exit();
+		}
+		$intReturn = fValidateInput(8, $_POST['ret_period']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for retention period...<br>";
 			exit();
 		}
 		$strQuery = "UPDATE conf_rec SET ";
@@ -113,7 +212,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "hold_dir = '" . $_POST['hold_dir'] . "', ";
 		$strQuery .= "error_dir = '" . $_POST['error_dir'] . "', ";
 		$strQuery .= "dupe = '" . $_POST['dupe'] . "', ";
-		$strQuery .= "out_comp_level = '" . $_POST['out_comp_level'] . "', ";
+		$strQuery .= "rec_comp_level = '" . $_POST['rec_comp_level'] . "', ";
 		$strQuery .= "pass_through = '" . $_POST['pass_through'] . "', ";
 		$strQuery .= "ret_period = '" . $_POST['ret_period'] . "', ";
 		$strQuery .= "active = '" . $_POST['active'] . "' ";
@@ -164,6 +263,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 			exit();
 		}
 	} elseif(isset($_POST['btnAddR'])) {
+		$intReturn = fValidateInput(1, $_POST['proc_name']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for Rule Name...<br>";
+			exit();
+		}
 		$strQuery = "INSERT INTO conf_proc SET ";
 		$strQuery .= "proc_name = '" . $_POST['proc_name'] . "', ";
 		$strQuery .= "proc_type = '" . $_POST['proc_type'] . "', ";
@@ -185,6 +289,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 			exit();
 		}
 	} elseif(isset($_POST['btnUpdateR'])) {
+		$intReturn = fValidateInput(1, $_POST['proc_name']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for Rule Name...<br>";
+			exit();
+		}
 		$strQuery = "UPDATE conf_proc SET ";
 		$strQuery .= "proc_name = '" . $_POST['proc_name'] . "', ";
 		$strQuery .= "proc_type = '" . $_POST['proc_type'] . "', ";
@@ -216,6 +325,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 			exit();
 		}
 	} elseif(isset($_POST['btnAddD'])) {
+		$intReturn = fValidateInput(1, $_POST['send_name']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for destination Name...<br>";
+			exit();
+		}
 		$strQuery = "INSERT INTO conf_send SET ";
 		$strQuery .= "conf_rec_id = '" . $_POST['conf_rec_id'] . "', ";
 		$strQuery .= "send_name = '" . $_POST['send_name'] . "', ";
@@ -239,6 +353,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 			exit();
 		}
 	} elseif(isset($_POST['btnUpdateD'])) {
+		$intReturn = fValidateInput(1, $_POST['send_name']);
+		if($intReturn == 1) {
+			echo "Error:  Invalid input for destination Name...<br>";
+			exit();
+		}
 		$strQuery = "UPDATE conf_send SET ";
 		$strQuery .= "send_name = '" . $_POST['send_name'] . "', ";
 		$strQuery .= "send_aet = '" . $_POST['send_aet'] . "', ";
@@ -342,8 +461,8 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="1">Yes</option>';
 		echo '<option value="2" selected><b>No</b></option>';
 		echo '</select></td></tr>';
-		echo '<tr><td>' . '<label for="out_comp_level">Compression Level (lower is faster):</label></td><td>';
-		echo '<select name="out_comp_level" id="out_comp_level">';
+		echo '<tr><td>' . '<label for="rec_comp_level">Compression Level (lower is faster):</label></td><td>';
+		echo '<select name="rec_comp_level" id="rec_comp_level">';
 		echo '<option value="1">1</option>';
 		echo '<option value="2">2</option>';
 		echo '<option value="3">3</option>';
@@ -433,8 +552,8 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="1">Yes</option>';
 		echo '<option value="2" selected><b>No</b></option>';
 		echo '</select></td></tr>';
-		echo '<tr><td>' . '<label for="out_comp_level">Compression Level (lower is faster):</label></td><td>';
-		echo '<select name="out_comp_level" id="out_comp_level">';
+		echo '<tr><td>' . '<label for="rec_comp_level">Compression Level (lower is faster):</label></td><td>';
+		echo '<select name="rec_comp_level" id="rec_comp_level">';
 		echo '<option value="1">1</option>';
 		echo '<option value="2">2</option>';
 		echo '<option value="3">3</option>';
@@ -498,6 +617,11 @@ if($_GET['action'] == 'Rec') {
 			echo ' selected';
 		}
 		echo '>date/time</option>';
+		echo '<option value="5"';
+		if ($row["proc_type"] == 5) {
+			echo ' selected';
+		}
+		echo '>Script</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . '<label for="proc_operator">Operator Type:</label></td><td>';
 		echo '<select name="proc_operator" id="proc_operator">';
@@ -562,22 +686,32 @@ if($_GET['action'] == 'Rec') {
 		if($row["proc_action"] == 1) {
 			echo ' selected';
 		}
-		echo '>Allow</option>';
+		echo '>Pass</option>';
 		echo '<option value="2"';
 		if($row["proc_action"] == 2) {
 			echo ' selected';
 		}
-		echo '>Block</option>';
+		echo '>Drop</option>';
 		echo '<option value="3"';
 		if($row["proc_action"] == 3) {
 			echo ' selected';
 		}
-		echo '>Modify</option>';
+		echo '>Skip</option>';
 		echo '<option value="4"';
 		if($row["proc_action"] == 4) {
 			echo ' selected';
 		}
-		echo '>Hold</option>';
+		echo '>Error</option>';
+		echo '<option value="5"';
+		if($row["proc_action"] == 5) {
+			echo ' selected';
+		}
+		echo '>Send</option>';
+		echo '<option value="6"';
+		if($row["proc_action"] == 6) {
+			echo ' selected';
+		}
+		echo '>Jump</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Order:</td>';
 		echo '<td><input type="text" name="proc_order" value ="' . $row["proc_order"] . '" /></td></tr>';
@@ -612,14 +746,16 @@ if($_GET['action'] == 'Rec') {
 		echo '<tr><td>' . 'Rule Name:</td>';
 		echo '<td><input type="text" name="proc_name" value="default" /></td></tr>';
 		echo '<tr><td>' . '<label for="proc_type">Rule type:</label></td><td>';
-		echo '<select name="proc_type" id="proc_type">';
-		echo '<option value="1">tag</option>';
-		echo '<option value="2">date</option>';
-		echo '<option value="3">time</option>';
-		echo '<option value="4">date/time</option>';
+		echo '<select name="proc_type" id="proc_type" onchange="jsFunction(this.value);">';
+		echo '<option value="1">Tag</option>';
+		echo '<option value="2">Date</option>';
+		echo '<option value="3">Time</option>';
+		echo '<option value="4">Date/Time</option>';
+		echo '<option value="5">Script</option>';
+		echo '<option value="6">HL7</option>';
 		echo '</select></td></tr>';
-		echo '<tr><td>' . 'Tag ID:</td>';
-		echo '<td><input type="text" name="proc_tag" value="0010,0010" /></td></tr>';
+		echo '<tr><td>' . '<span id="heading">Tag ID:</span></td>';
+		echo '<td><span id="proc_tag1"><input type="text" name="proc_tag"></span></td></tr>';
 		echo '<tr><td>' . '<label for="proc_operator">Operator Type:</label></td><td>';
 		echo '<select name="proc_operator" id="proc_operator">';
 		echo '<option value="1">></option>';
@@ -637,10 +773,12 @@ if($_GET['action'] == 'Rec') {
 		echo '<td><input type="text" name="proc_cond" /></td></tr>';
 		echo '<tr><td>' . '<label for="proc_action">Action Type:</label></td><td>';
 		echo '<select name="proc_action" id="proc_action">';
-		echo '<option value="1">Allow</option>';
-		echo '<option value="2">Block</option>';
-		echo '<option value="3">Modify</option>';
-		echo '<option value="4">Hold</option>';
+		echo '<option value="1">Pass</option>';
+		echo '<option value="2">Drop</option>';
+		echo '<option value="3">Skip</option>';
+		echo '<option value="4">Error</option>';
+		echo '<option value="5">Send</option>';
+		echo '<option value="6">Jump</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Order:</td>';
 		echo '<td><input type="text" name="proc_order" value="1" /></td></tr>';
@@ -670,6 +808,8 @@ if($_GET['action'] == 'Rec') {
 		echo '<table border="1">';
 		echo '<tr><td>' . 'Destination Name:</td>';
 		echo '<td><input type="text" name="send_name" value ="' . $row["send_name"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Destination Org Code:</td>';
+		echo '<td><input type="text" name="send_org" value ="' . $row["send_org"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Destination AET:</td>';
 		echo '<td><input type="text" name="send_aet" value ="' . $row["send_aet"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Destination AEC:</td>';
@@ -780,6 +920,8 @@ if($_GET['action'] == 'Rec') {
 		echo '<table border="1">';
 		echo '<tr><td>' . 'Destination Name:</td>';
 		echo '<td><input type="text" name="send_name" value="Default" /></td></tr>';
+		echo '<tr><td>' . 'Destination Org Code:</td>';
+		echo '<td><input type="text" name="send_org" value="UNK" /></td></tr>';
 		echo '<tr><td>' . 'Destination AET:</td>';
 		echo '<td><input type="text" name="send_aet" /></td></tr>';
 		echo '<tr><td>' . 'Destination AEC:</td>';
@@ -815,6 +957,8 @@ if($_GET['action'] == 'Rec') {
 		echo '<tr><td>' . 'Password:</td>';
 		echo '<td><input type="text" name="send_password" /></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
+		echo '<tr><td>' . 'Order:</td>';
+		echo '<td><input type="text" name="send_order" value="1" /></td></tr>';
 		echo '<select name="active" id="active" default=1>';
 		echo '<option value="1">Yes</option>';
 		echo '<option value="2" selected>No</option>';
@@ -883,8 +1027,8 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="1">Yes</option>';
 		echo '<option value="2" selected><b>No</b></option>';
 		echo '</select></td></tr>';
-		echo '<tr><td>' . '<label for="out_comp_level">Compression Level (lower is faster):</label></td><td>';
-		echo '<select name="out_comp_level" id="out_comp_level">';
+		echo '<tr><td>' . '<label for="rec_comp_level">Compression Level (lower is faster):</label></td><td>';
+		echo '<select name="rec_comp_level" id="rec_comp_level">';
 		echo '<option value="1">1</option>';
 		echo '<option value="2">2</option>';
 		echo '<option value="3">3</option>';
@@ -916,7 +1060,7 @@ if($_GET['action'] == 'Rec') {
 		echo '</form>';
 	}
 } else {
-	$strQuery = "SELECT conf_rec_id, conf_name FROM conf_rec;";
+	$strQuery = "SELECT conf_rec_id, conf_name FROM conf_rec ORDER BY conf_name;";
 	$result = mysqli_query($conn, $strQuery);
 	$intNumRows = mysqli_num_rows($result);
 	$intLC=1;
@@ -984,46 +1128,74 @@ echo '</HTML>';
 
 function fValidateInput($intType, $strUserInput) {
 	if($intType == 1) {
-		if(!preg_match("/^[a-zA-Z0-9_ \[\]\(\)\-\_\*\^]*$/", $strUserInput)) {
-			echo "Invalid input:  " . $strUserInput . "<br>";
+		if(!preg_match("/^[a-zA-Z0-9_ \[\]\(\)\-\_\*\^]*$/", $strUserInput)) { // Alpha numeric
+			$strErrMsg = "Invalid input:  " . $strUserInput . "<br>";
+			return 1;
+		} elseif($strUserInput == "!Global!") {
+			$strErrMsg = "Invalid input:  " . $strUserInput . ".  !Global! is a reserved name.<br>";
 			return 1;
 		} else {
 			return 0;
 		}
 	} elseif($intType == 2) {
-		if(preg_match("/^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/", $strUserInput)) {
+		if(preg_match("/^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/", $strUserInput)) { // IP address
 			return 0;
 		}
 		return 0;
 	} elseif($intType == 3) {
-		if(!preg_match("/^[a-zA-Z0-9_ \[\]\(\)\-\_\*\^]*$/", $strUserInput)) {
+		if(!preg_match("/^[a-zA-Z0-9_\-\*\^]*$/", $strUserInput)) { // AET
 			echo "Invalid input:  " . $strUserInput . "<br>";
 			exit();
 		}
-	} elseif($intType == 4) {
-		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
-			echo "Invalid input:  " . $strUserInput . "<br>";
-			exit();
+	} elseif($intType == 4) { // Port number
+		if(!preg_match("/^[0-9]*$/", $strUserInput)) {
+			return 1;
+		} else {
+			if($strUserInput < 1 || $strUserInput > 65535) {
+				return 1;
+			}
+			return 0;
 		}
-	} elseif($intType == 5) {
-		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
-			echo "Invalid input:  " . $strUserInput . "<br>";
-			exit();
+	} elseif($intType == 5) { // Directory
+		if(!preg_match("/^[a-zA-Z0-9_\/]*$/", $strUserInput)) {
+			return 1;
+		} else {
+			if(!is_dir($strUserInput)) {
+				mkdir($strUserInput, 0777, true);
+				if(!is_dir($strUserInput)) {
+					return 1;
+				} else {
+					return 0;
+				}
+			} else {
+				return 0;
+			}
 		}
-	} elseif($intType == 6) {
-		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
-			echo "Invalid input:  " . $strUserInput . "<br>";
-			exit();
+	} elseif($intType == 6) { // File
+		if(!file_exists($strUserInput)) {
+			return 1;
+		} else {
+			return 0;
 		}
 	} elseif($intType == 7) {
-		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
-			echo "Invalid input:  " . $strUserInput . "<br>";
-			exit();
+		if(!is_numeric($strUserInput)) {
+			return 1;
+		} else {
+			if($strUserInput < 1 || $strUserInput > 10) {
+				return 1;
+			} else {
+				return 0;
+			}
 		}
 	} elseif($intType == 8) {
-		if(!preg_match("/^[a-zA-Z0-9_]*$/", $strUserInput)) {
-			echo "Invalid input:  " . $strUserInput . "<br>";
-			exit();
+		if(!is_numeric($strUserInput)) {
+			return 1;
+		} else {
+			if($strUserInput < 1 || $strUserInput > 5256000) {
+				return 1;
+			} else {
+				return 0;
+			}
 		}
 	}
 }
