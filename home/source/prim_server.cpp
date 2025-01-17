@@ -60,6 +60,8 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
+MYSQL *mconnect;
+
 const std::string strVersionNum = "4.00.00";
 const std::string strVersionDate = "2025-01-14";
 
@@ -177,6 +179,99 @@ int ReadDBConfFile() {
     return 0;
 };
 
+int fProcess() {
+    std::string strQuery, strQuery2, strQuery3, strLogMessage, strPUID;
+    int intProc_type;
+
+    MYSQL_ROW row, row2, row3;
+    MYSQL_RES *result, *result2, *result3;
+
+    strQuery="SELECT * FROM process WHERE complete = 0;";
+    mysql_query(mconnect, strQuery.c_str());
+    if(*mysql_error(mconnect)) {
+        strLogMessage="SQL Error: ";
+        strLogMessage+=mysql_error(mconnect);
+        strLogMessage+="\nQuery: " + strQuery + "\n";
+        fWriteLog(strLogMessage);
+    }
+    result = mysql_store_result(mconnect);
+    if(result) {
+        intNumRows=mysql_num_rows(result);
+        if(intNumRows > 0) {
+            while((row = mysql_fetch_row(result))) {
+                strID = row[0];
+                strPUID = row[1];
+                strPservername = row[2];
+                strTstartproc = row[3];
+
+                strQuery2="SELECT rec_id FROM reecieve WHERE puid = '" + strPUID + "';";
+                mysql_query(mconnect, strQuery2.c_str());
+                if(*mysql_error(mconnect)) {
+                    strLogMessage="SQL Error: ";
+                    strLogMessage+=mysql_error(mconnect);
+                    strLogMessage+="\nQuery: " + strQuery2 + "\n";
+                    fWriteLog(strLogMessage);
+                }
+                result2 = mysql_store_result(mconnect);
+                if(result2) {
+                    intNumRows=mysql_num_rows(result2);
+                    if(intNumRows > 0) {
+                        while((row2 = mysql_fetch_row(result2))) {
+                            strRecID = row2[0];
+                        }
+                    }
+                    mysql_free_result(result2);
+                }
+
+                strQuery3="SELECT * FROM conf_proc WHERE conf_rec_id = " + strRecID + " ORDER BY proc_order;";
+                mysql_query(mconnect, strQuery3.c_str());
+                if(*mysql_error(mconnect)) {
+                    strLogMessage="SQL Error: ";
+                    strLogMessage+=mysql_error(mconnect);
+                    strLogMessage+="\nQuery: " + strQuery3 + "\n";
+                    fWriteLog(strLogMessage);
+                }
+                result3 = mysql_store_result(mconnect);
+                if(result3) {
+                    intNumRows=mysql_num_rows(result3);
+                    if(intNumRows > 0) {
+                        while((row3 = mysql_fetch_row(result3))) {
+                            strConf_proc_id = row3[0];
+                            intConf_proc_id = stoi(row3[0]);
+                            strConf_rec_id = row3[1];
+                            strProc_name = row3[2];
+                            strProc_type = row3[3];
+                            intProc_type = stoi(strProc_type);
+                            strProc_tag = row3[4];
+                            strProc_operator = row3[5];
+                            strProc_cond = row3[6];
+                            strProc_action = row3[7];
+                            strProc_order = row3[8];
+                            strProc_dest = row3[9];
+                            strProc_active = row3[10];
+
+                            if(intProc_type == 1) {
+                                //Tag modification
+                                intReturn = fRuleTag(strPUID, intConf_proc_id);
+                            } else if(intProc_type == 2) {
+                                //Date
+                                intReturn = fRuleDate(strPUID, intConf_proc_id);
+                            } else if(intProc_type == 3) {
+                                //Time
+                                intReturn = fRuleTime(strPUID, intConf_proc_id);
+                            } else if(intProc_type == 4) {
+                                //Date-Time
+                                intReturn = fRuleDateTime(strPUID, intConf_proc_id);
+                            } else if(intProc_type == 5) {
+                                //Script
+                                intReturn = fRuleScript(strPUID, intConf_proc_id);
+                            } else if(intProc_type == 6) {
+                                //HL7
+                                intReturn = fRuleHL7(strPUID, intConf_proc_id);
+                            }
+                        }
+}
+
 std::string exec(const char* cmd) {
     std::array<char, 256> buffer;
     std::string result;
@@ -218,8 +313,6 @@ int main() {
     mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
 
-    MYSQL *mconnect;
-
     MYSQL_ROW row;
     MYSQL_ROW row2;
     MYSQL_ROW row3;
@@ -243,11 +336,11 @@ int main() {
     }
 
     strRecNum = "1";
-    strLogMessage = "Starting prim_send_server version " + strVersionNum + ".";
+    strLogMessage = "Starting prim_server version " + strVersionNum + ".";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     while (1) {
-        strQuery = "SELECT * from SEND where complete = 2;";
+        strQuery = "SELECT * from SEND where complete = 3;";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
             strLogMessage="SQL Error: ";
@@ -322,7 +415,7 @@ int main() {
                             strLocation = row3[0];
                         }
                         //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
-                        strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/primal.log 2>&1";
+                        strCMD = "echo \"dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm\" >> /var/log/primal/primal.log 2>&1";
                         strStatus = exec(strCMD.c_str());
                         strQuery4 = "UPDATE send SET complete = 1 WHERE id = '" + strID + "';";
                         mysql_query(mconnect, strQuery4.c_str());
