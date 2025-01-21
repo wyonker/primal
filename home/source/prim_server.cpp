@@ -347,7 +347,7 @@ int main() {
     std::string strLogMessage, strCMD, strID, strPUID, strServerName, strDestNum, strDest, strOrg, strStartSend, strEndSend, strImages, strError, strRetry, strComplete;
     std::string strQuery, strQuery2, strQuery3, strQuery4, strLocation, strSendPort, strSendHIP, strSendAEC, strSendAET, strStatus;
     std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId;
-    std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5;
+    std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn;
 
     std::size_t intNumRows;
 
@@ -408,7 +408,7 @@ int main() {
                     strComplete = row[7];
                     strAccn = row[8];
 
-                    strQuery5="SELECT * FROM mirth_primal WHERE accn = '" + strAccn + "' AND send_status=0;";
+                    strQuery5="SELECT * FROM mirth_primal WHERE accn = '" + strAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
                     mysql_query(mconnect, strQuery5.c_str());
                     if(*mysql_error(mconnect)) {
                         strLogMessage="SQL Error: ";
@@ -423,6 +423,7 @@ int main() {
                             while ((row5 = mysql_fetch_row(result5))) {
                                 //We have an unsent match in primal and mirth_primal.  Let's send it.
                                 strMPID = row5[0];
+                                strMPAccn = row5[1];
                                 
                                 strQuery2="SELECT * FROM conf_send WHERE conf_send_id = " + strDestNum + " limit 1;";
                                 mysql_query(mconnect, strQuery2.c_str());
