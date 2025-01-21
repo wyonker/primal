@@ -61,6 +61,7 @@ std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
 MYSQL *mconnect;
+MYSQL *mconnect2;
 
 const std::string strVersionNum = "4.00.00";
 const std::string strVersionDate = "2025-01-14";
@@ -379,6 +380,19 @@ int main() {
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         return -1;
     }
+    mconnect2=mysql_init(NULL);
+    mysql_options(mconnect2,MYSQL_OPT_RECONNECT,"1");
+    if (!mconnect2) {
+        strLogMessage="MySQL Initilization failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return -1;
+    }
+    mconnect2=mysql_real_connect(mconnect2, mainDB.DBHOST.c_str(), "primal", "ThisIsMirth1!", "mirth_primal", mainDB.intDBPORT,NULL,0);
+    if (!mconnect) {
+        strLogMessage="MySQL connection failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return -1;
+    }
 
     strRecNum = "1";
     strLogMessage = "Starting prim_server version " + strVersionNum + ".";
@@ -409,14 +423,14 @@ int main() {
                     strAccn = row[8];
 
                     strQuery5="SELECT * FROM mirth_primal WHERE accn = '" + strAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
-                    mysql_query(mconnect, strQuery5.c_str());
-                    if(*mysql_error(mconnect)) {
+                    mysql_query(mconnect2, strQuery5.c_str());
+                    if(*mysql_error(mconnect2)) {
                         strLogMessage="SQL Error: ";
                         strLogMessage+=mysql_error(mconnect);
                         strLogMessage+="strQuery2 = " + strQuery5 + ".";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     }
-                    result5 = mysql_store_result(mconnect);
+                    result5 = mysql_store_result(mconnect2);
                     if(result5) {
                         intNumRows = mysql_num_rows(result5);
                         if(intNumRows > 0) {
