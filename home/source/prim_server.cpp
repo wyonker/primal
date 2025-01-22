@@ -350,7 +350,7 @@ int main() {
     std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId;
     std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn;
 
-    std::size_t intNumRows;
+    int intNumRows, intStartSec, intNowSec, intSend=0;
 
     std::signal(SIGHUP, signal_handler);
 
@@ -441,74 +441,89 @@ int main() {
                                 strMPAccn = row5[1];
                                 strLogMessage = "Found " + strMPAccn + " HL7 message.  Sending...";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                
-                                strQuery2="SELECT * FROM conf_send WHERE conf_send_id = " + strDestNum + " limit 1;";
-                                mysql_query(mconnect, strQuery2.c_str());
-                                if(*mysql_error(mconnect)) {
-                                    strLogMessage="SQL Error: ";
-                                    strLogMessage+=mysql_error(mconnect);
-                                    strLogMessage+="strQuery2 = " + strQuery2 + ".";
-                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                }
-                                result2 = mysql_store_result(mconnect);
-                                if(result2) {
-                                    intNumRows = mysql_num_rows(result2);
-                                    if(intNumRows > 0) {
-                                        while ((row2 = mysql_fetch_row(result2))) {
-                                            strRecId = row2[1];
-                                            strSendName = row2[2];
-                                            strSendOrg = row2[3];
-                                            strSendAET = row2[4];
-                                            strSendAEC = row2[5];
-                                            strSendHIP = row2[6];
-                                            strSendType = row2[7];
-                                            strSendPort = row2[8];
-                                            strSendTimeOut = row2[9];
-                                            strSendCompression = row2[10];
-                                            strSendRetry = row2[11];
-                                            strSendUser = row2[12];
-                                            strSendPass = row2[13];
-                                            strSendOrder = row2[14];
-                                            strSendActive = row2[15];
-                                        }
-                                        mysql_free_result(result2);
+                                intSend=1;
+                            }
+                        } else {
+                            //Need to see if it's older than 3 days.
+                            strCMD = "date +\%s -d \"" + strStartSend + "\"";
+                            intStartSec = stoi(exec(strCMD.c_str()));
+                            strCMD = "date +\%s";
+                            intNowSec = stoi(exec(strCMD.c_str()));
+                            if ((intNowSec - intStartSec) > 259200) {
+                                strLogMessage = strAccn + " has been waiting to send for more than 3 days.  Let's send";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                intSend = 2;
+                            }
+                        }
+                        if(intSend > 0) {
+                            strQuery2="SELECT * FROM conf_send WHERE conf_send_id = " + strDestNum + " limit 1;";
+                            mysql_query(mconnect, strQuery2.c_str());
+                            if(*mysql_error(mconnect)) {
+                                strLogMessage="SQL Error: ";
+                                strLogMessage+=mysql_error(mconnect);
+                                strLogMessage+="strQuery2 = " + strQuery2 + ".";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            }
+                            result2 = mysql_store_result(mconnect);
+                            if(result2) {
+                                intNumRows = mysql_num_rows(result2);
+                                if(intNumRows > 0) {
+                                    while ((row2 = mysql_fetch_row(result2))) {
+                                        strRecId = row2[1];
+                                        strSendName = row2[2];
+                                        strSendOrg = row2[3];
+                                        strSendAET = row2[4];
+                                        strSendAEC = row2[5];
+                                        strSendHIP = row2[6];
+                                        strSendType = row2[7];
+                                        strSendPort = row2[8];
+                                        strSendTimeOut = row2[9];
+                                        strSendCompression = row2[10];
+                                        strSendRetry = row2[11];
+                                        strSendUser = row2[12];
+                                        strSendPass = row2[13];
+                                        strSendOrder = row2[14];
+                                        strSendActive = row2[15];
                                     }
+                                    mysql_free_result(result2);
                                 }
-                                strQuery3 = "SELECT DISTINCT ilocaiton FROM image WHERE puid = '" + strPUID + "';";
-                                mysql_query(mconnect, strQuery3.c_str());
-                                if(*mysql_error(mconnect)) {
-                                    strLogMessage="SQL Error: ";
-                                    strLogMessage+=mysql_error(mconnect);
-                                    strLogMessage+="strQuery3 = " + strQuery3 + ".";
-                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                }
-                                result3 = mysql_store_result(mconnect);
-                                if(result3) {
-                                    intNumRows = mysql_num_rows(result3);
-                                    if(intNumRows < 1) {
-                                        while ((row3 = mysql_fetch_row(result3))) {
-                                            strLocation = row3[0];
-                                        }
-                                        //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
-                                        strCMD = "echo \"dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm\" >> /var/log/primal/primal.log 2>&1";
-                                        strStatus = exec(strCMD.c_str());
-                                        strQuery4 = "UPDATE send SET complete = 1 WHERE id = '" + strID + "';";
-                                        mysql_query(mconnect, strQuery4.c_str());
-                                        if(*mysql_error(mconnect)) {
-                                            strLogMessage="SQL Error: ";
-                                            strLogMessage+=mysql_error(mconnect);
-                                            strLogMessage+="strQuery3 = " + strQuery4 + ".";
-                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                        }
+                            }
+                            strQuery3 = "SELECT DISTINCT ilocaiton FROM image WHERE puid = '" + strPUID + "';";
+                            mysql_query(mconnect, strQuery3.c_str());
+                            if(*mysql_error(mconnect)) {
+                                strLogMessage="SQL Error: ";
+                                strLogMessage+=mysql_error(mconnect);
+                                strLogMessage+="strQuery3 = " + strQuery3 + ".";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            }
+                            result3 = mysql_store_result(mconnect);
+                            if(result3) {
+                                intNumRows = mysql_num_rows(result3);
+                                if(intNumRows < 1) {
+                                    while ((row3 = mysql_fetch_row(result3))) {
+                                        strLocation = row3[0];
                                     }
+                                    //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
+                                    strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm 2>&1";
+                                    fWriteLog(strCMD, "/var/log/primal/primal.log");
+                                    //strStatus = exec(strCMD.c_str());
+                                    strQuery4 = "UPDATE send SET complete = 1 WHERE id = '" + strID + "';";
+                                    //mysql_query(mconnect, strQuery4.c_str());
+                                    //if(*mysql_error(mconnect)) {
+                                    //    strLogMessage="SQL Error: ";
+                                    //    strLogMessage+=mysql_error(mconnect);
+                                    //    strLogMessage+="strQuery3 = " + strQuery4 + ".";
+                                    //    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                    //}
+                                    fWriteLog(strQuery4, "/var/log/primal/primal.log");
                                 }
-                                
                             }
                         }
                     }
                 }
             }
         }
+        intSend=0;
         strLogMessage = "Sleeping for 5 minutes.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         std::this_thread::sleep_for (std::chrono::seconds(300));
