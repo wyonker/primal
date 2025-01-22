@@ -499,7 +499,7 @@ int main() {
                             result3 = mysql_store_result(mconnect);
                             if(result3) {
                                 intNumRows = mysql_num_rows(result3);
-                                if(intNumRows < 1) {
+                                if(intNumRows > 0) {
                                     while ((row3 = mysql_fetch_row(result3))) {
                                         strLocation = row3[0];
                                     }
