@@ -383,13 +383,13 @@ int main() {
     mconnect2=mysql_init(NULL);
     mysql_options(mconnect2,MYSQL_OPT_RECONNECT,"1");
     if (!mconnect2) {
-        strLogMessage="MySQL Initilization failed.";
+        strLogMessage="MySQL 2nd Initilization failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         return -1;
     }
-    mconnect2=mysql_real_connect(mconnect2, mainDB.DBHOST.c_str(), "primal", "ThisIsMirth1!", "mirth_primal", mainDB.intDBPORT,NULL,0);
-    if (!mconnect) {
-        strLogMessage="MySQL connection failed.";
+    mconnect2=mysql_real_connect(mconnect2, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), "mirth_primal", mainDB.intDBPORT,NULL,0);
+    if (!mconnect2) {
+        strLogMessage="MySQL 2nd connection failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         return -1;
     }
@@ -421,13 +421,14 @@ int main() {
                     strStartSend = row[6];
                     strComplete = row[7];
                     strAccn = row[8];
-
-                    strQuery5="SELECT * FROM mirth_primal WHERE accn = '" + strAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
+                    strLogMessage = "Found " + strAccn + " waiting to send.";
+                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    strQuery5="SELECT * FROM rec WHERE accn = '" + strAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
                     mysql_query(mconnect2, strQuery5.c_str());
                     if(*mysql_error(mconnect2)) {
                         strLogMessage="SQL Error: ";
                         strLogMessage+=mysql_error(mconnect);
-                        strLogMessage+="strQuery2 = " + strQuery5 + ".";
+                        strLogMessage+="strQuery5 = " + strQuery5 + ".";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     }
                     result5 = mysql_store_result(mconnect2);
@@ -438,6 +439,8 @@ int main() {
                                 //We have an unsent match in primal and mirth_primal.  Let's send it.
                                 strMPID = row5[0];
                                 strMPAccn = row5[1];
+                                strLogMessage = "Found " + strMPAccn + " HL7 message.  Sending...";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 
                                 strQuery2="SELECT * FROM conf_send WHERE conf_send_id = " + strDestNum + " limit 1;";
                                 mysql_query(mconnect, strQuery2.c_str());
@@ -499,13 +502,16 @@ int main() {
                                         }
                                     }
                                 }
-                                std::this_thread::sleep_for (std::chrono::seconds(10));
+                                
                             }
                         }
                     }
                 }
             }
         }
+        strLogMessage = "Sleeping for 5 minutes.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        std::this_thread::sleep_for (std::chrono::seconds(300));
     }
 
     mysql_library_end();
