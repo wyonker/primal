@@ -488,7 +488,7 @@ int main() {
                                     mysql_free_result(result2);
                                 }
                             }
-                            strQuery3 = "SELECT DISTINCT ilocaiton FROM image WHERE puid = '" + strPUID + "';";
+                            strQuery3 = "SELECT DISTINCT ilocation FROM image WHERE puid = '" + strPUID + "';";
                             mysql_query(mconnect, strQuery3.c_str());
                             if(*mysql_error(mconnect)) {
                                 strLogMessage="SQL Error: ";
