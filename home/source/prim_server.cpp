@@ -504,6 +504,8 @@ int main() {
                                         strLocation = row3[0];
                                     }
                                     //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
+                                    strLogMessage = "Sending " + strAccn + " to " + strSendHIP + ".";
+                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                     strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm 2>&1";
                                     fWriteLog(strCMD, "/var/log/primal/primal.log");
                                     //strStatus = exec(strCMD.c_str());
