@@ -361,6 +361,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery = "UPDATE conf_send SET ";
 		$strQuery .= "send_name = '" . $_POST['send_name'] . "', ";
 		$strQuery .= "send_aet = '" . $_POST['send_aet'] . "', ";
+		$strQuery .= "send_org = '" . $_POST['send_org'] . "', ";
 		$strQuery .= "send_aec = '" . $_POST['send_aec'] . "', ";
 		$strQuery .= "send_hip = '" . $_POST['send_hip'] . "', ";
 		$strQuery .= "send_type = '" . $_POST['send_type'] . "', ";
