@@ -18,7 +18,7 @@ if ($_SESSION['active'] != '1')
 
 $arrFiles = scandir("/usr/local/scripts/");
 
-$strOption = "'<select name=\"script_name\" id=\"script_name\">'";
+$strOption = "";
 foreach($arrFiles as $strFile) {
 	if($strFile != "." && $strFile != "..") {
 		$strOption .= '<option value=\"' . $strFile . '\">' . $strFile . '</option>';
@@ -55,27 +55,28 @@ function jsDelete() {
 	}
 }
 function jsFunction(value) {
-    if (value == "1") {
+    if (value == "tag") {
         x="Tag ID:";
-		y='<input type=\"text\" name=\"proc_tag\">';
-	} else if (value == "2") {
+		y="<input type=\"text\" name=\"proc_tag\">";
+	} else if (value == "date") {
 		x="Date:";
-		y='<input type=\"date\" name=\"proc_tag\">';
-    } else if (value == "3") {
-        x="Time:"
-		y='<input type=\"time\" name=\"proc_tag\">';
-    } else if (value == "4") {
+		y="<input type=\"date\" name=\"proc_tag\">";
+    } else if (value == "time") {
+        x="Time:";
+		y="<input type=\"time\" name=\"proc_tag\">";
+    } else if (value == "datetime") {
 	    x="Date/Time:";
-		y='<input type=\"date\" name=\"proc_tag\">';
-	} else if (value == "5") {
+		y="<input type=\"date\" name=\"proc_tag\">";
+	} else if (value == "script") {
 	    x="Script Name:";
-		y=' . $strOption . ';
-	} else if (value == "6") {
+		y="<select name=\"proc_tag\" id=\"proc_tag\">";
+		y=y + "<?php echo $strOption";
+	} else if (value == "hl7") {
 	    x="HL7 Segment:";
-		y='<input type=\"text\" name=\"proc_tag\">';
+		y="<input type=\"text\" name=\"proc_tag\">";
 	}
     document.getElementById("heading").innerHTML = x;
-	document.getElementById("proc_tag1").innerHTML = y;
+    document.getElementById("proc_tag1").innerHTML = y;
 }
 </SCRIPT>
 <BODY>
@@ -268,10 +269,13 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 			echo "Error:  Invalid input for Rule Name...<br>";
 			exit();
 		}
+		$arrSearch = array("\\", '"');
+		$strProcType = str_replace($arrSearch, "", $_POST['proc_type']);
+		$strProcTag = str_replace($arrSearch, "", $_POST['proc_tag']);
 		$strQuery = "INSERT INTO conf_proc SET ";
 		$strQuery .= "proc_name = '" . $_POST['proc_name'] . "', ";
-		$strQuery .= "proc_type = '" . $_POST['proc_type'] . "', ";
-		$strQuery .= "proc_tag = '" . $_POST['proc_tag'] . "', ";
+		$strQuery .= "proc_type = '" . $strProcType . "', ";
+		$strQuery .= "proc_tag = '" . $strProcTag . "', ";
 		$strQuery .= "proc_operator = '" . $_POST['proc_operator'] . "', ";
 		$strQuery .= "proc_cond = '" . $_POST['proc_cond'] . "', ";
 		$strQuery .= "proc_action = '" . $_POST['proc_action'] . "', ";
@@ -294,10 +298,13 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 			echo "Error:  Invalid input for Rule Name...<br>";
 			exit();
 		}
+		$arrSearch = array("\\", '"');
+		$strProcType = str_replace($arrSearch, "", $_POST['proc_type']);
+		$strProcTag = str_replace($arrSearch, "", $_POST['proc_tag']);
 		$strQuery = "UPDATE conf_proc SET ";
 		$strQuery .= "proc_name = '" . $_POST['proc_name'] . "', ";
-		$strQuery .= "proc_type = '" . $_POST['proc_type'] . "', ";
-		$strQuery .= "proc_tag = '" . $_POST['proc_tag'] . "', ";
+		$strQuery .= "proc_type = '" . $strProcType . "', ";
+		$strQuery .= "proc_tag = '" . $strProcTag . "', ";
 		$strQuery .= "proc_operator = '" . $_POST['proc_operator'] . "', ";
 		$strQuery .= "proc_cond = '" . $_POST['proc_cond'] . "', ";
 		$strQuery .= "proc_action = '" . $_POST['proc_action'] . "', ";
@@ -597,88 +604,114 @@ if($_GET['action'] == 'Rec') {
 		echo '<tr><td>' . 'Rule Name:</td>';
 		echo '<td><input type="text" name="proc_name" value ="' . $row["proc_name"] . '" /></td></tr>';
 		echo '<tr><td>' . '<label for="proc_type">Rule type:</label></td><td>';
-		echo '<select name="proc_type" id="proc_type">';
-		echo '<option value="1"';
-		if ($row["proc_type"] == 1) {
+		echo '<select name="proc_type" id="proc_type" onchange="jsFunction(this.value);">';
+		echo '<option value="tag"';
+		if ($row["proc_type"] == "tag") {
 			echo ' selected';
 		}
 		echo '>tag</option>';
-		echo '<option value="2"';
-		if ($row["proc_type"] == 2) {
+		echo '<option value="date"';
+		if ($row["proc_type"] == "date") {
 			echo ' selected';
 		}
 		echo '>date</option>';
-		echo '<option value="3"';
-		if ($row["proc_type"] == 3) {
+		echo '<option value="time"';
+		if ($row["proc_type"] == "time") {
 			echo ' selected';
 		}
 		echo '>time</option>';
-		echo '<option value="4"';
-		if ($row["proc_type"] == 4) {
+		echo '<option value="datetime"';
+		if ($row["proc_type"] == "datetime") {
 			echo ' selected';
 		}
 		echo '>date/time</option>';
-		echo '<option value="5"';
-		if ($row["proc_type"] == 5) {
+		echo '<option value="script"';
+		if ($row["proc_type"] == "script") {
 			echo ' selected';
 		}
 		echo '>Script</option>';
+		echo '<option value="hl7"';
+		if ($row["proc_type"] == "hl7") {
+			echo ' selected';
+		}
+		echo '>HL7</option>';
 		echo '</select></td></tr>';
+		if ($row["proc_type"] == "tag") {
+			echo '<tr><td>' . '<span id="heading">Tag ID:</span></td>';
+			echo '<td><span id="proc_tag1"><input type="text" name="proc_tag" value="' . $row["proc_tag"] . '"></span></td></tr>';
+		} elseif ($row["proc_type"] == "date") {
+			echo '<tr><td>' . '<span id="heading">Date:</span></td>';
+			echo '<td><span id="proc_tag1"><input type="date" name="proc_tag" value="' . $row["proc_tag"] . '"></span></td></tr>';
+		} elseif ($row["proc_type"] == "time") {
+			echo '<tr><td>' . '<span id="heading">Time:</span></td>';
+			echo '<td><span id="proc_tag1"><input type="time" name="proc_tag" value="' . $row["proc_tag"] . '"></span></td></tr>';
+		} elseif ($row["proc_type"] == "datetime") {
+			echo '<tr><td>' . '<span id="heading">Date:</span></td>';
+			echo '<td><span id="proc_tag1"><input type="date" name="proc_tag" value="' . $row["proc_tag"] . '"></span></td></tr>';
+			//echo '<tr><td>' . '<span id="heading">Time:</span></td>';
+			//echo '<td><span id="proc_tag1"><input type="text" name="proc_tag"></span></td></tr>';
+		} elseif ($row["proc_type"] == "script") {
+			echo '<tr><td>' . '<span id="heading">Script:</span></td>';
+			echo '<td><span id="proc_tag1"><select name="proc_tag">';
+			echo $strOption;
+			echo '</span></td></tr>';
+		} elseif ($row["proc_type"] == "hl7") {
+			echo '<tr><td>' . '<span id="heading">HL7:</span></td>';
+			echo '<td><span id="proc_tag1"><input type="text" name="proc_tag" value="' . $row["proc_tag"] . '"></span></td></tr>';
+		}
 		echo '<tr><td>' . '<label for="proc_operator">Operator Type:</label></td><td>';
 		echo '<select name="proc_operator" id="proc_operator">';
-		echo '<option value="1"';
-		if($row["proc_type"] == 1) {
+		echo '<option value=">"';
+		if($row["proc_operator"] == ">") {
 			echo ' selected';
 		}
 		echo '>></option>';
-		echo '<option value="2"';
-		if($row["proc_type"] == 2) {
+		echo '<option value="<"';
+		if($row["proc_operator"] == "<") {
 			echo ' selected';
 		}
 		echo '><</option>';
-		echo '<option value="3"';
-		if($row["proc_type"] == 3) {
+		echo '<option value="equals"';
+		if($row["proc_operator"] == "equals") {
 			echo ' selected';
 		}
-		echo '>=</option>';
-		echo '<option value="4"';
-		if($row["proc_type"] == 4) {
+		echo '>equals</option>';
+		echo '<option value="!equals"';
+		if($row["proc_operator"] == "!equals") {
 			echo ' selected';
 		}
-		echo '>!=</option>';
-		echo '<option value="5"';
-		if($row["proc_type"] == 5) {
+		echo '>!equals</option>';
+		echo '<option value="contains"';
+		if($row["proc_operator"] == "contains") {
 			echo ' selected';
 		}
 		echo '>contains</option>';
-		echo '<option value="6"';
-		if($row["proc_type"] == 6) {
+		echo '<option value="!contains"';
+		if($row["proc_operator"] == "!contains") {
 			echo ' selected';
 		}
 		echo '>!Contains</option>';
-		echo '<option value="7"';
-		if($row["proc_type"] == 7) {
+		echo '<option value="regex"';
+		if($row["proc_operator"] == "regex") {
 			echo ' selected';
 		}
 		echo '>regex</option>';
-		echo '<option value="8"';
-		if($row["proc_type"] == 8) {
+		echo '<option value="script"';
+		if($row["proc_operator"] == "script") {
 			echo ' selected';
 		}
 		echo '>script</option>';
-		echo '<option value="9"';
-		if($row["proc_type"] == 9) {
+		echo '<option value="begins"';
+		if($row["proc_operator"] == "begins") {
 			echo ' selected';
 		}
 		echo '>Begins</option>';
-		echo '<option value="10"';
-		if($row["proc_type"] == 10) {
+		echo '<option value="!begins"';
+		if($row["proc_operator"] == "!begins") {
 			echo ' selected';
 		}
 		echo '>!Begins</option>';
 		echo '</select></td></tr>';
-		echo '<tr><td>' . 'Tag ID:</td>';
-		echo '<td><input type="text" name="proc_tag" value ="' . $row["proc_tag"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Rule Condition:</td>';
 		echo '<td><input type="text" name="proc_cond" value ="' . $row["proc_cond"] . '" /></td></tr>';
 		echo '<tr><td>' . '<label for="proc_action">Action Type:</label></td><td>';
@@ -748,12 +781,12 @@ if($_GET['action'] == 'Rec') {
 		echo '<td><input type="text" name="proc_name" value="default" /></td></tr>';
 		echo '<tr><td>' . '<label for="proc_type">Rule type:</label></td><td>';
 		echo '<select name="proc_type" id="proc_type" onchange="jsFunction(this.value);">';
-		echo '<option value="1">Tag</option>';
-		echo '<option value="2">Date</option>';
-		echo '<option value="3">Time</option>';
-		echo '<option value="4">Date/Time</option>';
-		echo '<option value="5">Script</option>';
-		echo '<option value="6">HL7</option>';
+		echo '<option value="tag">Tag</option>';
+		echo '<option value="date">Date</option>';
+		echo '<option value="time">Time</option>';
+		echo '<option value="datetime">Date/Time</option>';
+		echo '<option value="script">Script</option>';
+		echo '<option value="hl7">HL7</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . '<span id="heading">Tag ID:</span></td>';
 		echo '<td><span id="proc_tag1"><input type="text" name="proc_tag"></span></td></tr>';
