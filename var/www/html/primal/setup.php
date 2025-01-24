@@ -55,6 +55,7 @@ function jsDelete() {
 	}
 }
 function jsFunction(value) {
+    value2 = document.getElementById("proc_result").value;
     if (value == "tag") {
         x="Tag ID:";
 		y="<input type=\"text\" name=\"proc_tag\">";
@@ -70,7 +71,9 @@ function jsFunction(value) {
 	} else if (value == "script") {
 	    x="Script Name:";
 		y="<select name=\"proc_tag\" id=\"proc_tag\">";
-		y=y + "<?php echo $strOption";
+		y=y + "$strOption";
+		value2 = value2 + '\"';
+		y=y.replace(value2, value2 + " selected");
 	} else if (value == "hl7") {
 	    x="HL7 Segment:";
 		y="<input type=\"text\" name=\"proc_tag\">";
@@ -600,6 +603,7 @@ if($_GET['action'] == 'Rec') {
 		echo '<form action="setup.php?action=save" method="post">';
 		echo '<input type="hidden" name="conf_rec_id" value ="' . $row["conf_rec_id"] . '" />';
 		echo '<input type="hidden" name="conf_proc_id" value ="' . $_GET['rule'] . '" />';
+		echo '<input type="hidden" name="proc_result" id="proc_result" value ="' . $row["proc_tag"] . '" />';
 		echo '<table border="1">';
 		echo '<tr><td>' . 'Rule Name:</td>';
 		echo '<td><input type="text" name="proc_name" value ="' . $row["proc_name"] . '" /></td></tr>';
@@ -653,7 +657,9 @@ if($_GET['action'] == 'Rec') {
 		} elseif ($row["proc_type"] == "script") {
 			echo '<tr><td>' . '<span id="heading">Script:</span></td>';
 			echo '<td><span id="proc_tag1"><select name="proc_tag">';
-			echo $strOption;
+			$strOption2 = str_replace("\\", "", $strOption);
+			$strOption2 = str_replace($row['proc_tag'] . "\"", $row['proc_tag'] . "\"" . " selected", $strOption2);
+			echo $strOption2;
 			echo '</span></td></tr>';
 		} elseif ($row["proc_type"] == "hl7") {
 			echo '<tr><td>' . '<span id="heading">HL7:</span></td>';
@@ -772,7 +778,7 @@ if($_GET['action'] == 'Rec') {
 		echo '<button type="submit" id="btnDeleteR" name="btnDeleteR">Delete</button>';
 		echo '</div>';
 		echo '</form>';
-	} else {
+} else {
 		echo '<form action="setup.php?action=save" method="post">';
 		echo '<input type="hidden" name="conf_rec_id" value ="' . $_GET["rec"] . '" />';
 		echo '<input type="hidden" name="conf_proc_id" value ="0" />';
