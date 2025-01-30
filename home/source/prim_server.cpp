@@ -80,6 +80,38 @@ struct DataBase {
     int intDBPORT;
 } mainDB;
 
+struct PatientData {
+    std::string strPName, strLastPName;
+    std::string strPUID, strLastPUID;
+    std::string strSEX, strLastSEX;
+    std::string strMRN, strLastMRN;
+    std::string strDOB, strLastDOB;
+    std::string strPatientComments, strLastPatientComments;
+    std::string strACCN, strLastACCN;
+    std::string strMod, strLastMod;
+    std::string strSIUID="NULL", strLastSIUID;
+    std::string strStudyDate, strLastStudyDate;
+    std::string strStartDate, strStudyTime;
+    std::string strStudyDesc, strLastStudyDesc;
+    time_t tmStartDT; //In seconds since Epoch
+    time_t tmEndDT; //In seconds since Epoch
+    std::string strEndDate;
+    std::size_t intNumFiles, intLastNumFiles;
+    std::size_t intEOS, intStartReceive=0;
+    std::string strPath;
+    std::string strDirName;
+    std::string strRec;
+    std::string strDest;
+    std::string strStartRec, strLastStartRec;
+    std::string strEndRec, strLastEndRec;
+    std::size_t intIsError;
+    std::string calledAETitle;
+    std::string callingAETitle;
+    std::string lastStudyInstanceUID;
+    std::size_t intMoved=0, intLastMoved=0;
+    std::string strRequestedProcedureID;
+} pData;
+
 std::string GetDate() {
     time_t t = time(0);
     struct tm * now = localtime( & t );
@@ -124,6 +156,17 @@ std::string GetDate() {
     return strDate;
 }
 
+std::string fDcmDump(std::string strTemp) {
+    std::string strCMD, strReturn, strReadLine;
+
+    strCMD="/home/dicom/bin/dcmdump " + strTemp;
+    redi::ipstream proc(strCMD, redi::pstreams::pstdout);
+    //while (std::getline(proc.err(), strReadLine))
+    while (std::getline(proc, strReadLine))
+        strReturn.append(strReadLine + "\n");
+    return strReturn;
+}
+
 std::size_t fWriteLog(std::string strLogMessage, std::string strLogFile) {
     std::ofstream fpLogFile;
     std::string strLogDate=GetDate();
@@ -133,6 +176,56 @@ std::size_t fWriteLog(std::string strLogMessage, std::string strLogFile) {
     fpLogFile << std::flush;
     fpLogFile.close();
     return 0;
+}
+
+std::string fGetTagValue(std::string strTagID, std::string strDcmDump, std::size_t intType, std::size_t intOrder){
+    std::size_t intFound, intEOL, intBracket, intBracketClose;
+    std::string strReturn, strTemp, strTagType;
+
+    if(intOrder == 1) {
+        intFound = strDcmDump.find_last_of(strTagID);
+    } else {
+        intFound = strDcmDump.find(strTagID);
+    }
+    if(intFound != std::string::npos) {
+        intEOL = strDcmDump.find("\n", intFound);
+        strTemp = strDcmDump.substr(intFound, intEOL-intFound);
+        //Need to determine tag type
+        strTagType = strDcmDump.substr(intFound + 11, 2);
+        intFound = strTemp.find("(no value available)");
+        if(intFound == std::string::npos) {
+            //std::cout << "Searching for " << strTagID << " found at " << intFound << " newline at " << intEOL << std::endl;
+            //std::cout << strTagID << " : " << strTagType << std::endl;
+            intBracket = strTemp.find("[");
+            if(intBracket != std::string::npos) {
+                //Use brackets to capture just the value
+                strTemp = strTemp.substr(intBracket);
+                intBracketClose = strTemp.find("]");
+                strTemp = strTemp.substr(1, intBracketClose - 1);
+                strReturn = strTemp;
+            } else {
+                //No brackets so gotta guess with spaces
+                intBracketClose = strTemp.find_first_of(" ", 14);
+                strTemp = strTemp.substr(14, intBracketClose - 14);
+                strReturn = strTemp;
+            }
+            if(strTagType == "DA" && intType != 1) {
+                //This is a date
+                strTemp = strReturn.substr(0, 4) + "-" + strReturn.substr(4, 2) + "-" + strReturn.substr(6,2);
+                strReturn = strTemp;
+            } else if (strTagType == "TM" && intType != 1) {
+                //This is a time
+                strTemp = strReturn.substr(0,2) + ":" + strReturn.substr(2,2) + ":" + strReturn.substr(4,2);
+                strReturn = strTemp;
+            }
+            //std::cout << "Returning "  << strReturn << std::endl;
+        } else {
+            strReturn="null";
+        }
+    } else {
+        strReturn="null";
+    }
+    return strReturn;
 }
 
 int ReadDBConfFile() {
@@ -179,6 +272,275 @@ int ReadDBConfFile() {
 
     return 0;
 };
+
+int fStartReceivers() {
+    std::string strLogMessage, strQuery, strRecID, strRecNum, strServer, strType, strPort, strDir, strLog, strLL, strAET, strTO, strProcDir, strProcLog, strOutDir, strRecCompLevel, strOutLog, strSentDir, strHoldDir, strErrorDir, strDupe, strPassThr, strRetry, strCMD;
+    int intNumRows;
+
+    MYSQL_ROW row;
+    MYSQL_RES *result;
+
+    mconnect=mysql_init(NULL);
+    mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
+    if (!mconnect) {
+        strLogMessage="MySQL Initilization failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return -1;
+    }
+    mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
+    if (!mconnect) {
+        strLogMessage="MySQL connection failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return -1;
+    }
+
+    strQuery="SELECT * FROM conf_rec WHERE active = 1;";
+    mysql_query(mconnect, strQuery.c_str());
+    if(*mysql_error(mconnect)) {
+        strLogMessage="SQL Error: ";
+        strLogMessage+=mysql_error(mconnect);
+        strLogMessage+="\nQuery: " + strQuery + "\n";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    }
+    result = mysql_store_result(mconnect);
+    if(result) {
+        intNumRows=mysql_num_rows(result);
+        if(intNumRows > 0) {
+            while((row = mysql_fetch_row(result))) {
+                strRecID = row[0];
+                strRecNum = row[1];
+                strServer = row[2];
+                strType = row[3];
+                strPort = row[4];
+                strDir = row[5];
+                strLog = row[6];
+                strLL = row[7];
+                strAET = row[8];
+                strTO = row[9];
+                strProcDir = row[10];
+                strProcLog = row[11];
+                strOutDir = row[12];
+                strRecCompLevel = row[13];
+                strOutLog = row[14];
+                strSentDir = row[15];
+                strHoldDir = row[16];
+                strErrorDir = row[17];
+                strDupe = row[18];
+                strPassThr = row[19];
+                strRetry = row[20];
+                strLogMessage = "Starting to receive " + strRecNum + " from " + strServer + ".";
+                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                //Need to start the receive process.
+                if(strType == "DICOM") {
+                    strCMD = "/home/dicom/bin/storescp --fork +cl " + strRecCompLevel + " -aet " + strAET + " -tos " + strTO + " -ll " + strLL + " -od " + strDir;
+                    strCMD += " -ss " + strDir + " -xf /home/dicom/bin/storescp.cfg Default -fe \".dcm\" -xcr \"/home/dicom/rec.bash \"" + strRecID + " #p #a #c\"" + strPort + ">> " + strLog + " 2>&1 &";
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+std::size_t fEndReceive(std::string strMessage) {
+    std::string strLogMessage, strQuery, strID, strPUID, strFullPath, strServerName, strRecID, strDateTime, strThisFilename, strTemp3, strRawDCMdump, strSerIUID, strSerDesc, strModality, strSopIUID, strStudyDateTime;
+    std::string strQuery2;
+    int intNumRows, intPOS;
+    std::vector<std::string> filenames;
+    struct PatientData pData2;
+
+    MYSQL_ROW row;
+    MYSQL_RES *result;
+
+    strQuery = "SELECT id, puid, fullpath, rservername, rec_id, tstartrec FROM receive WHERE complete = 0;";
+    mysql_query(mconnect, strQuery.c_str());
+    if(*mysql_error(mconnect)) {
+        strLogMessage="SQL Error: ";
+        strLogMessage+=mysql_error(mconnect);
+        strLogMessage+="\nQuery: " + strQuery + "\n";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    }
+    result = mysql_store_result(mconnect);
+    if(result) {
+        intNumRows=mysql_num_rows(result);
+        if(intNumRows > 0) {
+            while((row = mysql_fetch_row(result))) {
+                strID = row[0];
+                strPUID = row[1];
+                strFullPath = row[2];
+                strServerName = row[3];
+                strRecID = row[4];
+                strDateTime = row[5];
+            }
+            //First let's see if the time out has been reached.
+
+            const std::filesystem::path study{strFullPath};
+            fs::directory_entry d1(strFullPath);
+            if(d1.is_directory()) {
+                strLogMessage = GetDate() + "   " + strPUID + " RECV  Ending receive";
+                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                for (auto const& dir_entry : std::filesystem::directory_iterator{strFullPath}) {
+                    intPOS=dir_entry.path().string().find_last_of("/");
+                    if(intPOS != std::string::npos) {
+                        strThisFilename = dir_entry.path().string().substr(intPOS+1);
+                        intPOS=strThisFilename.find_last_of(".");
+                        if(intPOS != std::string::npos) {
+                            strTemp3=strThisFilename.substr(intPOS);
+                        }
+                        if(strTemp3 == ".dcm") {
+                            strLogMessage = GetDate() + "   " + strPUID + " Getting tags from " + dir_entry.path().string();
+                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            //strRawDCMdump=fDcmDump(strFullPath.path().string());
+                            pData2.strPName=fGetTagValue("0010,0010", strRawDCMdump, 0, 0);
+                            pData2.strMRN=fGetTagValue("0010,0020", strRawDCMdump, 0, 0);
+                            pData2.strDOB=fGetTagValue("0010,0030", strRawDCMdump, 0, 0);
+                            strSerIUID=fGetTagValue("0020,000e", strRawDCMdump, 0, 0);
+                            strSerDesc=fGetTagValue("0008,103e", strRawDCMdump, 0, 0);
+                            strModality=fGetTagValue("0008,0060", strRawDCMdump, 0, 0);
+                            strSopIUID=fGetTagValue("0008,0018", strRawDCMdump, 0, 0);
+                            pData2.strSIUID=fGetTagValue("0020,000d", strRawDCMdump, 0, 0);
+                            pData2.strStudyDate=fGetTagValue("0008,0020", strRawDCMdump, 0, 0);
+                            pData2.strStudyTime=fGetTagValue("0008,0030", strRawDCMdump, 0, 0);
+                            strStudyDateTime = pData2.strStudyDate + " " + pData2.strStudyTime;
+                            pData2.strACCN=fGetTagValue("0008,0050", strRawDCMdump, 0, 0);
+                            pData2.strStudyDesc=fGetTagValue("0008,1030", strRawDCMdump, 0, 0);
+                            pData2.strPatientComments=fGetTagValue("0010,4000", strRawDCMdump, 0, 0);
+                            pData2.strRequestedProcedureID=fGetTagValue("0040,1001", strRawDCMdump, 0, 1);
+
+                            //write to image
+                        }
+                    }
+                }
+                //write to study
+                //strQuery2="INSERT INTO study SET puid = '" + strPUID + "', fullpath = '" + strFullPath + "', rservername = '" + hostname + "', rec_id = " + strRecID;
+                //strQuery2+= ", tstartrec = '" + strDateTime + "', tendrec = '" + getDate() + "', senderAET = '" + strAET + "', callingAET = '" + strServerName + "', complete = 1;";
+                //write to series
+                //write to patient
+                //write to receive
+            }
+        }
+    }
+    
+    /*
+    std::string strLogMessage, strTemp2, strFilename, strTemp3, strRawDCMdump, strSerIUID, strSerDesc, strModality, strSopIUID;
+    std::string strStudyDateTime, strPrimalID, strQuery, strRecNum, strDBREturn, strAEC, strClientID2, strClientID, strClientAET;
+    std::string strClientName, strPrefetchNode, strCmd, strResult, strTemp, strFullPath, strTempPath;
+    std::size_t intLC2, intTemp, intPos, intImgNum, intFound;
+    std::size_t intDone2, intLC;
+    std::vector<std::string> vMessage;
+    struct stat st;
+    struct PatientData pData2;
+    time_t t2 = time(0);   // get time now
+    struct tm * now2 = localtime( & t2 );
+    
+    intLC2=0;
+    fs::directory_entry d1(strMessage);
+    while(! d1.is_directory() && intLC2 < 10) {
+        //Let's wait up to 10 seconds for it to appear.
+        intLC2++;
+        std::this_thread::sleep_for (std::chrono::seconds(1));
+        d1.refresh();
+    }
+    if(! d1.is_directory()) {
+        //Directory never appeared.  Disgard message
+        return -1;
+    }
+    //Remove the last character if it's a /
+    if(strMessage.back() == '/') {
+        strMessage.pop_back();
+    }
+    intFound = strMessage.find_last_of("/");
+    if(intFound != std::string::npos) {
+        strPrimalID=strMessage.substr(intFound + 1);
+    } else {
+        strPrimalID=strMessage;
+    }
+    //Make sure last character is a /
+    if(strMessage.back() != '/') {
+        strMessage.push_back('/');
+    }
+
+    intPos = strPrimalID.find("_");
+    strRecNum=strPrimalID.substr(0,intPos);
+    //This is the end of receive
+    strLogMessage =strPrimalID+" RECV  Ending receive";
+    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+    intDone2 = 0;
+    intLC = 0;
+    while (intDone2 == 0) {
+        strTempPath="/tmp/" + strPrimalID;
+        if(stat(strTempPath.c_str(), &st) == 0) {
+            fs::remove(strTempPath);
+            intDone2 = 1;
+        } else if(intLC >= 100) {
+            intDone2 = 1;
+        } else {
+            std::this_thread::sleep_for (std::chrono::milliseconds(100));
+            intLC++;
+        }
+    }
+    pData2.strEndRec=std::to_string(now2->tm_year + 1900);
+    pData2.strEndRec.append("-");
+    pData2.strEndRec+=std::to_string(now2->tm_mon + 1);
+    pData2.strEndRec.append("-");
+    pData2.strEndRec+=std::to_string(now2->tm_mday);
+    pData2.strEndRec.append(" ");
+    pData2.strEndRec+=std::to_string(now2->tm_hour);
+    pData2.strEndRec.append(":");
+    pData2.strEndRec+=std::to_string(now2->tm_min);
+    pData2.strEndRec.append(":");
+    pData2.strEndRec+=std::to_string(now2->tm_sec);
+    strLogMessage = "Updating JSON and creating PKG for " + strPrimalID + ".";
+    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+    system(strCmd.c_str());
+    intImgNum=0;
+    for (const auto & entry : fs::directory_iterator(strMessage)) {
+        strTemp2=entry.path().string();
+        intTemp = strTemp2.find_last_of("/");
+        strFilename=strTemp2.substr(intTemp+1);
+        intPos=strFilename.find_last_of(".");
+        if(intPos != std::string::npos) {
+            strTemp3=strFilename.substr(intPos);
+        }
+        if(strTemp3 == ".dcm") {
+            intImgNum++;
+        }
+    }
+    //std::cout << "fEndReceive Found " << to_string(intImgNum) << " files in " << strMessage << std::endl;
+    strQuery="update receive set tendrec = '" + pData2.strEndRec + "', rec_images = " + to_string(intImgNum) + " where puid = '" + strPrimalID + "';";
+    mysql_query(mconnect, strQuery.c_str());
+    if(*mysql_error(mconnect)) {
+        strLogMessage="SQL Error: ";
+        strLogMessage+=mysql_error(mconnect);
+        strLogMessage+="\nstrQuery = " + strQuery;
+        fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+    }
+    if(strMessage.back() == '/') {
+        strMessage.pop_back();
+    }
+    if(conf1.primConf[strRecNum + "_PRIJSON"] == "1") {
+        strTemp=strMessage + "/payload.json";
+        while(stat(strTemp.c_str(),&st) != 0 && intLC < 20) {
+            strLogMessage = "Waiting for " + strTemp + " to appear.";
+            fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+            std::this_thread::sleep_for (std::chrono::seconds(3));
+            intLC++;
+        }
+    }
+    strCmd="mv " + strMessage + " " + conf1.primConf[strRecNum + "_PRIPROC"] + "/";
+    strLogMessage + "Moving study to " + strCmd;
+    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+    system(strCmd.c_str());
+    strFullPath=conf1.primConf[strRecNum + "_PRIPROC"] + "/" + strPrimalID;
+    //strCmd = "/usr/local/bin/mq send /prim_process \"" + strFullPath + " 2\" &";
+    strCmd = strFullPath + " 2";
+    fWriteMessage(strCmd, "/prim_process");
+    strLogMessage =strPrimalID + " RECV  Passing to the processing process.";
+    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+    */
+    
+    return 0;
+}
+
 
 int fRuleTag(std::string strPUID, int intConf_proc_id) {
     (void) strPUID;
