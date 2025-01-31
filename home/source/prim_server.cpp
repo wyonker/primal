@@ -906,10 +906,15 @@ int main() {
 
     std::signal(SIGHUP, signal_handler);
 
-    fStartReceivers();
+    //fStartReceivers();
     //DCMTK will get the DICOM, just need to start working on it when it's done.
     std::thread receive(fEndReceive);
     std::thread process(fProcess);
     std::thread send(fSend);
+
+    receive.join();
+    process.join();
+    send.join();
+    
     return 0;
 }
