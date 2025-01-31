@@ -341,12 +341,16 @@ int fStartReceivers() {
     return 0;
 }
 
-std::size_t fEndReceive(std::string strMessage) {
+void fEndReceive() {
     std::string strLogMessage, strQuery, strID, strPUID, strFullPath, strServerName, strRecID, strDateTime, strThisFilename, strTemp3, strRawDCMdump, strSerIUID, strSerDesc, strModality, strSopIUID, strStudyDateTime;
     std::string strQuery2;
-    int intNumRows, intPOS;
+    int intNumRows;
+    std::size_t intPOS;
     std::vector<std::string> filenames;
     struct PatientData pData2;
+
+    //Not ready yet.
+    return;
 
     MYSQL_ROW row;
     MYSQL_RES *result;
@@ -538,7 +542,7 @@ std::size_t fEndReceive(std::string strMessage) {
     fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
     */
     
-    return 0;
+    return;
 }
 
 
@@ -578,10 +582,13 @@ int fRuleHL7(std::string strPUID, int intConf_proc_id) {
     return 0;
 }
 
-int fProcess() {
+void fProcess() {
     std::string strQuery, strQuery2, strQuery3, strLogMessage, strPUID, strID, strPservername, strTstartproc, strRecID, strConf_proc_id, strConf_rec_id, strProc_name, strProc_type;
     std::string strProc_tag, strProc_operator, strProc_cond, strProc_action, strProc_order, strProc_dest, strProc_active;
     int intProc_type, intNumRows, intConf_proc_id, intReturn;
+
+    //Not ready yet.
+    return;
 
     MYSQL_ROW row, row2, row3;
     MYSQL_RES *result, *result2, *result3;
@@ -705,7 +712,7 @@ void signal_handler(int signal) {
     return;
 }
 
-int main() {
+void fSend() {
     std::string strRecNum, strAET, strFileExt, strHostName, strDateTime, strFullPath, strCmd, strSendType, strPrimalID, strReturn;
     std::string strLogMessage, strCMD, strID, strPUID, strServerName, strDestNum, strDest, strOrg, strStartSend, strEndSend, strImages, strError, strRetry, strComplete;
     std::string strQuery, strQuery2, strQuery3, strQuery4, strLocation, strSendPort, strSendHIP, strSendAEC, strSendAET, strStatus;
@@ -713,8 +720,6 @@ int main() {
     std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn;
 
     int intNumRows, intStartSec, intNowSec, intSend=0;
-
-    std::signal(SIGHUP, signal_handler);
 
     mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
@@ -734,26 +739,26 @@ int main() {
     if (!mconnect) {
         strLogMessage="MySQL Initilization failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return -1;
+        return;
     }
     mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
     if (!mconnect) {
         strLogMessage="MySQL connection failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return -1;
+        return;
     }
     mconnect2=mysql_init(NULL);
     mysql_options(mconnect2,MYSQL_OPT_RECONNECT,"1");
     if (!mconnect2) {
         strLogMessage="MySQL 2nd Initilization failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return -1;
+        return;
     }
     mconnect2=mysql_real_connect(mconnect2, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), "mirth_primal", mainDB.intDBPORT,NULL,0);
     if (!mconnect2) {
         strLogMessage="MySQL 2nd connection failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return -1;
+        return;
     }
 
     strRecNum = "1";
@@ -894,5 +899,17 @@ int main() {
     }
 
     mysql_library_end();
+    return;
+}
+
+int main() {
+
+    std::signal(SIGHUP, signal_handler);
+
+    fStartReceivers();
+    //DCMTK will get the DICOM, just need to start working on it when it's done.
+    std::thread receive(fEndReceive);
+    std::thread process(fProcess);
+    std::thread send(fSend);
     return 0;
 }
