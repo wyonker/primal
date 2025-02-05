@@ -63,7 +63,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.01";
+const std::string strVersionNum = "4.00.02";
 const std::string strVersionDate = "2025-02-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -766,7 +766,7 @@ void fSend() {
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     while (1) {
-        strQuery = "SELECT send.id, send.puid, send.sservername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete = 3;";
+        strQuery = "SELECT send.id, send.puid, send.sservername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete = 5;";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
             strLogMessage="SQL Error: ";
