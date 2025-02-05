@@ -63,8 +63,8 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.00";
-const std::string strVersionDate = "2025-01-14";
+const std::string strVersionNum = "4.00.01";
+const std::string strVersionDate = "2025-02-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -788,9 +788,10 @@ void fSend() {
                     strStartSend = row[6];
                     strComplete = row[7];
                     strAccn = row[8];
-                    strLogMessage = "Found " + strAccn + " waiting to send.";
+                    strNewAccn = strAccn.delete(strAccn.GetLength()-3);
+                    strLogMessage = "Found " + strAccn + " truncated to " + strNewAccn + ", waiting to send.";
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                    strQuery5="SELECT * FROM rec WHERE accn = '" + strAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
+                    strQuery5="SELECT * FROM rec WHERE accn = '" + strNewAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
                     mysql_query(mconnect2, strQuery5.c_str());
                     if(*mysql_error(mconnect2)) {
                         strLogMessage="SQL Error: ";
@@ -875,15 +876,15 @@ void fSend() {
                                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                     strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm 2>&1";
                                     fWriteLog(strCMD, "/var/log/primal/primal.log");
-                                    //strStatus = exec(strCMD.c_str());
+                                    strStatus = exec(strCMD.c_str());
                                     strQuery4 = "UPDATE send SET complete = 1 WHERE id = '" + strID + "';";
-                                    //mysql_query(mconnect, strQuery4.c_str());
-                                    //if(*mysql_error(mconnect)) {
-                                    //    strLogMessage="SQL Error: ";
-                                    //    strLogMessage+=mysql_error(mconnect);
-                                    //    strLogMessage+="strQuery3 = " + strQuery4 + ".";
-                                    //    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                    //}
+                                    mysql_query(mconnect, strQuery4.c_str());
+                                    if(*mysql_error(mconnect)) {
+                                        strLogMessage="SQL Error: ";
+                                        strLogMessage+=mysql_error(mconnect);
+                                        strLogMessage+="strQuery3 = " + strQuery4 + ".";
+                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                    }
                                     fWriteLog(strQuery4, "/var/log/primal/primal.log");
                                 }
                             }
