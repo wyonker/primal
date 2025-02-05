@@ -788,7 +788,9 @@ void fSend() {
                     strStartSend = row[6];
                     strComplete = row[7];
                     strAccn = row[8];
-                    strNewAccn = strAccn.delete(strAccn.GetLength()-3);
+                    if(strAccn.size() > 3) {
+                        strNewAccn = strAccn.substr(0, strAccn.size()-3);
+                    }
                     strLogMessage = "Found " + strAccn + " truncated to " + strNewAccn + ", waiting to send.";
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     strQuery5="SELECT * FROM rec WHERE accn = '" + strNewAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
