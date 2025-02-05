@@ -63,7 +63,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.03";
+const std::string strVersionNum = "4.00.04";
 const std::string strVersionDate = "2025-02-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -808,7 +808,7 @@ void fSend() {
                             while ((row5 = mysql_fetch_row(result5))) {
                                 //We have an unsent match in primal and mirth_primal.  Let's send it.
                                 strMPID = row5[0];
-                                strMPAccn = row5[1];
+                                strMPAccn = row5[2];
                                 strLogMessage = "Found " + strMPAccn + " HL7 message.  Sending...";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 intSend=1;
@@ -877,13 +877,22 @@ void fSend() {
                                     strLogMessage = "Sending " + strAccn + " to " + strSendHIP + ".";
                                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                     strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm 2>&1";
-                                    fWriteLog(strCMD, "/var/log/primal/primal.log");
+                                    //fWriteLog(strCMD, "/var/log/primal/primal.log");
                                     strStatus = exec(strCMD.c_str());
                                     strQuery4 = "UPDATE send SET complete = 1, tendsend = NOW() WHERE id = '" + strID + "';";
                                     mysql_query(mconnect, strQuery4.c_str());
                                     if(*mysql_error(mconnect)) {
                                         strLogMessage="SQL Error: ";
                                         strLogMessage+=mysql_error(mconnect);
+                                        strLogMessage+="strQuery3 = " + strQuery4 + ".";
+                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                    }
+                                    fWriteLog(strQuery4, "/var/log/primal/primal.log");
+                                    strQuery4 = "UPDATE rec SET send_status = 1 WHERE id = '" + strMPID + "';";
+                                    mysql_query(mconnect2, strQuery4.c_str());
+                                    if(*mysql_error(mconnect2)) {
+                                        strLogMessage="SQL Error: ";
+                                        strLogMessage+=mysql_error(mconnect2);
                                         strLogMessage+="strQuery3 = " + strQuery4 + ".";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                     }
