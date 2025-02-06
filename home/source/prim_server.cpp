@@ -63,8 +63,8 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.04";
-const std::string strVersionDate = "2025-02-05";
+const std::string strVersionNum = "4.00.05";
+const std::string strVersionDate = "2025-02-06";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -887,16 +887,16 @@ void fSend() {
                                         strLogMessage+="strQuery3 = " + strQuery4 + ".";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                     }
-                                    fWriteLog(strQuery4, "/var/log/primal/primal.log");
+                                    //fWriteLog(strQuery4, "/var/log/primal/primal.log");
                                     strQuery4 = "UPDATE rec SET send_status = 1 WHERE id = '" + strMPID + "';";
                                     mysql_query(mconnect2, strQuery4.c_str());
                                     if(*mysql_error(mconnect2)) {
                                         strLogMessage="SQL Error: ";
                                         strLogMessage+=mysql_error(mconnect2);
-                                        strLogMessage+="strQuery3 = " + strQuery4 + ".";
+                                        strLogMessage+="strQuery4 = " + strQuery4 + ".";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                     }
-                                    fWriteLog(strQuery4, "/var/log/primal/primal.log");
+                                    //fWriteLog(strQuery4, "/var/log/primal/primal.log");
                                 }
                             }
                         }
