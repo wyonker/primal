@@ -794,7 +794,7 @@ case 17:
 			echo '<td>' . $studies[$lc1]["senderAET"] . '</td>';
 		}
 	}
-break;
+}
 }
 
 ?>
