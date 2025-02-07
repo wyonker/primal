@@ -1,7 +1,7 @@
 <?php
     //License GPLv3
-	//Version 1.00.07
-	//2021-08-03
+	//Version 1.00.08
+	//2025-02-07
 	session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
