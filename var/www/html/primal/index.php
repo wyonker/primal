@@ -137,6 +137,8 @@ if (!isset($_GET["p"]) || $_GET["p"] < 3) {
 } else {
 	$tempvar2 = $_GET["p"] + 4;
 }
+//Going to disable sorting for now.
+/*
 if (!isset($_GET["o"])) {
 	$sort_order = "DESC";
 	$intSortOrder = 1;
@@ -147,6 +149,7 @@ if (!isset($_GET["o"])) {
 	$sort_order = "DESC";
 	$intSortOrder = 1;
 }
+*/
 
 //echo "Time Index before select count: " . xdebug_time_index() . "<br>";
 
@@ -158,6 +161,7 @@ $qdata=mysqli_fetch_assoc($result);
 $num_rows = $qdata['total'];
 $total_pages = floor($num_rows/$_SESSION['page_size']);
 //echo "num_rows = " . $num_rows . " : total_pages = " . $total_pages . "<br>";
+/*
 if(!isset($_GET["c"]) || $_GET["c"] == 0) {
 	$sort_column = "r.tstartrec";
 } elseif($_GET["c"] == 1) {
@@ -181,6 +185,7 @@ if(!isset($_GET["c"]) || $_GET["c"] == 0) {
 } else {
 	$sort_column = "r.tstartrec";
 }
+*/
 
 //echo "Time Index before select: " . xdebug_time_index() . "<br>";
 /*
@@ -200,8 +205,8 @@ if(!empty($_SESSION['cached_query'])) {
 	$query = $_SESSION['cached_query'];
 } else {
 	$query="select a.puid, a.pname, a.pid, a.pdob, r.tstartrec, r.tendrec, r.rec_images, r.rerror, r.senderAET, ";
-	$query.="p.tstartproc, p.tendproc, p.perror, s.tdest, s.tstartsend, s.tendsend, s.timages, s.serror, t.AccessionNum, t.StudyModType, ";
-	$query.="t.StudyDate , t.sCaseID from patient as a left join receive as r on a.puid = r.puid left join process as p on a.puid = p.puid ";
+	$query.="s.tdest, s.tstartsend, s.tendsend, s.timages, s.serror, t.AccessionNum, t.StudyModType, ";
+	$query.="t.StudyDate , t.sCaseID from patient as a left join receive as r on a.puid = r.puid ";
 	$query.="left join send as s on a.puid = s.puid left join study as t on a.puid = t.puid ";
 
 	if ($intFilter > 0) {
@@ -306,8 +311,6 @@ while($row = mysqli_fetch_assoc($result)) {
 		$studies[$lc1]["sdatetime"] = $row["StudyDate"];
 		$studies[$lc1]["tendrec"] = $row["tendrec"];
 		$studies[$lc1]["rec_images"] = $row["rec_images"];
-		$studies[$lc1]["tstartproc"] = $row["tstartproc"];
-		$studies[$lc1]["tendproc"] = $row["tendproc"];
 		$studies[$lc1]["tdest"] = $row["tdest"];
 		$studies[$lc1]["tstartsend"] = $row["tstartsend"];
 		$studies[$lc1]["tendsend"] = $row["tendsend"];
@@ -635,16 +638,6 @@ case 9:
 		}
 	}
 break;
-case 10:
-	if($ucolumns[9]["visible"] == 0) {
-		echo '<th>Start Process Date</th>';
-	}
-break;
-case 11:
-	if($ucolumns[10]["visible"] == 0) {
-		echo '<th>End Process Date</th>';
-	}
-break;
 case 12:
 	if($ucolumns[11]["visible"] == 0) {
 		echo '<th>Destination</th>';
@@ -687,11 +680,6 @@ case 17:
 			$bolSortOrder=0;
 		}
 		echo '<th><a href="/primal/index.php?c=10&o=' . $bolSortOrder . '&p=' . $_GET["p"] . '">Sender<br>AET</a></th>';
-	}
-break;
-case 18:
-	if($ucolumns[17]["visible"] == 0) {
-		echo '<th>Case ID</th>';
 	}
 break;
 }
@@ -757,24 +745,6 @@ case 9:
 		}
 	}
 break;
-case 10:
-	if($ucolumns[9]["visible"] == 0) {
-		if($studies[$lc1]["perror"] != 0) {
-			echo '<td bgcolor="#FF0000"><font color="#FFFFFF">' . $studies[$lc1]["tstartproc"] . '</td>';
-		} else {
-			echo '<td>' . $studies[$lc1]["tstartproc"] . '</td>';
-		}
-	}
-break;
-case 11:
-	if($ucolumns[10]["visible"] == 0) {
-		if($studies[$lc1]["perror"] != 0) {
-			echo '<td bgcolor="#FF0000"><font color="#FFFFFF">' . $studies[$lc1]["tendproc"] . '</td>';
-		} else {
-			echo '<td>' . $studies[$lc1]["tendproc"] . '</td>';
-		}
-	}
-break;
 case 12:
 	if($ucolumns[11]["visible"] == 0) {
 		if($studies[$lc1]["serror"] != 0) {
@@ -825,11 +795,6 @@ case 17:
 		}
 	}
 break;
-case 18:
-	if($ucolumns[17]["visible"] == 0) {
-		echo '<td>' . $studies[$lc1]["caseid"] . '</td>';
-	}
-}
 }
 
 ?>
