@@ -1131,6 +1131,7 @@ if($_GET['action'] == 'Rec') {
 					echo '<BR><BR><a href="/primal/setup.php?action=Rule&rec=' . $row2['conf_proc_id'] . '&rule=' . $row2['conf_proc_id'] . '">' . $row2['proc_name'] . '</a><BR><BR>';
 					$intLC2++;
 				}
+				echo '<BR><BR><a href="/primal/setup.php?action=Rule&rec=' . $row['conf_rec_id'] . '&rule=0">Add<BR>Rule<BR></a>';
 			} else {
 				echo '<BR><BR><a href="/primal/setup.php?action=Rule&rec=' . $row['conf_rec_id'] . '&rule=0">Add<BR>Rule<BR></a>';
 			}
@@ -1153,6 +1154,7 @@ if($_GET['action'] == 'Rec') {
 					echo '<BR><BR><a href="/primal/setup.php?action=Dest&dest=' . $row3['conf_send_id'] . '">' . $row3['send_name'] . '</a><BR><BR>';
 					$intLC3++;
 				}
+				echo '<BR><BR><a href="/primal/setup.php?action=Dest&rec=' . $row['conf_rec_id'] . '&dest=0">Add<BR>Destination<BR></a>';
 			} else {
 				echo '<BR><BR><a href="/primal/setup.php?action=Dest&rec=' . $row['conf_rec_id'] . '&dest=0">Add<BR>Destination<BR></a>';
 			}
