@@ -318,6 +318,9 @@ while($row = mysqli_fetch_assoc($result)) {
 		$studies[$lc1]["senderAET"] = $row["senderAET"];
 		//$studies[$lc1]["pmod"] = $row["StudyModType"];
 		$studies[$lc1]["pmod"] = $temppmod;
+		//20250210 New section to combine accession lines
+		$ThisAccn = $row["AccessionNum"];
+
 		/*
 		if(is_null($row["StudyModType"])) {
 			$query4="select count(*) as total from study where puid = '" . $studies[$lc1]["puid"] . "';";
