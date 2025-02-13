@@ -63,7 +63,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.08";
+const std::string strVersionNum = "4.00.09";
 const std::string strVersionDate = "2025-02-13";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -791,7 +791,7 @@ void fSend() {
                     if(strAccn.size() > 3) {
                         strNewAccn = strAccn.substr(0, strAccn.size()-3);
                     }
-                    strLogMessage = strPUID + " Found " + strAccn + " truncated to " + strNewAccn + ", waiting to send.";
+                    strLogMessage = strPUID + "  Found " + strAccn + " truncated to " + strNewAccn + ", waiting to send.";
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     strQuery5="SELECT * FROM rec WHERE accn = '" + strNewAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
                     mysql_query(mconnect2, strQuery5.c_str());
