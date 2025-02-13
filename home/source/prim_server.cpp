@@ -63,8 +63,8 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.05";
-const std::string strVersionDate = "2025-02-06";
+const std::string strVersionNum = "4.00.07";
+const std::string strVersionDate = "2025-02-13";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -791,7 +791,7 @@ void fSend() {
                     if(strAccn.size() > 3) {
                         strNewAccn = strAccn.substr(0, strAccn.size()-3);
                     }
-                    strLogMessage = "Found " + strAccn + " truncated to " + strNewAccn + ", waiting to send.";
+                    strLogMessage = strPUID + " Found " + strAccn + " truncated to " + strNewAccn + ", waiting to send.";
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     strQuery5="SELECT * FROM rec WHERE accn = '" + strNewAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
                     mysql_query(mconnect2, strQuery5.c_str());
@@ -819,8 +819,8 @@ void fSend() {
                             intStartSec = stoi(exec(strCMD.c_str()));
                             strCMD = "date +\%s";
                             intNowSec = stoi(exec(strCMD.c_str()));
-                            if ((intNowSec - intStartSec) > 259200) {
-                                strLogMessage = strAccn + " has been waiting to send for more than 3 days.  Let's send";
+                            if ((intNowSec - intStartSec) > 432000) {
+                                strLogMessage = strPUID + " " + strAccn + " has been waiting to send for more than 5 days.  Let's send";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 intSend = 2;
                             }
@@ -874,12 +874,20 @@ void fSend() {
                                         strLocation = row3[0];
                                     }
                                     //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
-                                    strLogMessage = "Sending " + strAccn + " to " + strSendHIP + ".";
+                                    strLogMessage = strPUID + " Sending " + strAccn + " to " + strSendHIP + ".";
                                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                     strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm 2>&1";
                                     //fWriteLog(strCMD, "/var/log/primal/primal.log");
                                     strStatus = exec(strCMD.c_str());
                                     strQuery4 = "UPDATE send SET complete = 1, tendsend = NOW() WHERE id = '" + strID + "';";
+                                    mysql_query(mconnect, strQuery4.c_str());
+                                    if(*mysql_error(mconnect)) {
+                                        strLogMessage="SQL Error: ";
+                                        strLogMessage+=mysql_error(mconnect);
+                                        strLogMessage+="strQuery3 = " + strQuery4 + ".";
+                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                    }
+                                    strQuery4 = "DELETE FROM send WHERE puid = \"" + strPUID + "\" AND tdest = \"0\" limit 1;";
                                     mysql_query(mconnect, strQuery4.c_str());
                                     if(*mysql_error(mconnect)) {
                                         strLogMessage="SQL Error: ";
