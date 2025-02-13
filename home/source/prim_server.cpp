@@ -63,7 +63,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.07";
+const std::string strVersionNum = "4.00.08";
 const std::string strVersionDate = "2025-02-13";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -809,7 +809,7 @@ void fSend() {
                                 //We have an unsent match in primal and mirth_primal.  Let's send it.
                                 strMPID = row5[0];
                                 strMPAccn = row5[2];
-                                strLogMessage = "Found " + strMPAccn + " HL7 message.  Sending...";
+                                strLogMessage = strPUID + "Found " + strMPAccn + " HL7 message.  Sending...";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 intSend=1;
                             }
