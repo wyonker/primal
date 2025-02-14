@@ -128,9 +128,9 @@ body {
 
 #rec {
 	width: 100px; 
-	height: 100px; 
-	left: 100px; 
-	position: absolute;
+	height: 100px;
+	position: relative;
+	display: inline-block;
 	border-radius: 6px;
 	overflow: hidden;
 	background:lightGrey;
