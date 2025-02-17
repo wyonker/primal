@@ -430,10 +430,20 @@ if($ISERROR == 1) {
 	}
 	$strOutput.='</div id="divright">';
 }
-	$intLC1=0;
 	echo '<form action="resend.php?p=' . $_GET['p'] . '" method="post">';
 	echo '<table border="1">';
 	echo "<tr><th>Destination AET</th><th>Destination</th><th>Port</th><th>Compress</th><th>Action</th></tr>";
+	$strQuery = "SELECT * FROM conf_send WHERE active = 1;";
+	$result = $conn->query($query);
+	while($row = mysqli_fetch_assoc($result)) {
+		echo "<tr>";
+		echo "<td>" . $row['send_aet'] . "</td>";
+		echo "<td>" . $row['send_hip'] . "</td>";
+		echo "<td>" . $row['send_port'] . "</td>";
+		echo "<td>" . $row['send_comp_level'] . "</td>";
+		echo '<td><a href="/primal/resend.php?p=' . $_GET["p"] . "&d=" . $row['conf_send_id'] . 'class="button" >Send</a></td>';
+	}
+	/*
 	while (isset($_SESSION['PRIDESTHIP'][$intLC1])) {
 		echo "<tr>";
 		eco "<td>" . $_SESSION['PRIDESTAEC'][$intLC1] . "</td>";
@@ -441,7 +451,7 @@ if($ISERROR == 1) {
 		echo "<td>" . $_SESSION['PRIDESTPORT'][$intLC1] . "</td>";
 		echo "<td>" . $_SESSION['PRIDESTCDCR'][$intLC1] . "</td>";
 		echo "<td>" . '<a href="/primal/resend.php?p=' . $_GET["p"] . "&d=" . $intLC1 . 'class="button" >Requeue</a></td>';
-/*		if(! isset($_GET['d0'])) {
+		if(! isset($_GET['d0'])) {
 			//Nothing to do here.
 		} elseif($_GET['d0'] == "a") {
 			$_GET['d' . $intLC1]=1;
@@ -464,15 +474,17 @@ if($ISERROR == 1) {
 			$intLC2++;
 		}
 		echo '<td><button type="submit" name="Requeue">Requeue</button></td></tr>';
-*/
+
 	echo $strURL . "</tr>";
 		$intLC1++;
 	}
+
 	echo '<tr><td><input type="text" name="AEC" />' . '</td>';
 	echo '<td><input type="text" name="HIP" />' . '</td>';
 	echo '<td><input type="text" name="PORT" />' . '</td>';
 	echo '<td><input type="text" name="CDCR" />' . '</td>';
 	echo '<td><button type="submit" name="Send">Send</button></td></tr>';
+	*/
 	echo "</table><br>";
 	echo '</form>';
 if(isset($_GET['d0'])) {
