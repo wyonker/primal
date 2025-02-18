@@ -431,7 +431,7 @@ if($ISERROR == 1) {
 	$strOutput.='</div id="divright">';
 } elseif(isset($_GET['p'])) {
 	echo '<table border="1">';
-	echo '<tr><th>AEC</th><th>Hostname/IP</th><th>Port</th><th>Compression Level</th></tr>';
+	echo '<tr><th>AEC</th><th>Hostname/IP</th><th>Port</th><th>Compression Level</th><th>Action</th></tr>';
 	$strQuery = "SELECT * FROM conf_send WHERE active = 1;";
 	$result = $conn->query($strQuery);
 	while($row = mysqli_fetch_assoc($result)) {
@@ -440,7 +440,7 @@ if($ISERROR == 1) {
 		echo "<td>" . $row['send_hip'] . "</td>";
 		echo "<td>" . $row['send_port'] . "</td>";
 		echo "<td>" . $row['send_comp_level'] . "</td>";
-		echo '<td><a href="/primal/resend.php?p=' . $_GET["p"] . "&d=" . $row['conf_send_id'] . '>Send</a></td></tr>';
+		echo '<td><a href="/primal/resend.php?p=' . $_GET["p"] . "&d=" . $row['conf_send_id'] . '">Send</a></td></tr>';
 	}
 	/*
 	while (isset($_SESSION['PRIDESTHIP'][$intLC1])) {
