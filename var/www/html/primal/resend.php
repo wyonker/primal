@@ -430,6 +430,8 @@ if($ISERROR == 1) {
 	}
 	$strOutput.='</div id="divright">';
 } elseif(isset($_GET['p'])) {
+	echo '<table border="1">';
+	echo '<tr><th>AEC</th><th>Hostname/IP</th><th>Port</th><th>Compression Level</th></tr>';
 	$strQuery = "SELECT * FROM conf_send WHERE active = 1;";
 	$result = $conn->query($strQuery);
 	while($row = mysqli_fetch_assoc($result)) {
