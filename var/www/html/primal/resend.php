@@ -429,19 +429,14 @@ if($ISERROR == 1) {
 		$strOutput.="<br>";
 	}
 	$strOutput.='</div id="divright">';
-}
-	echo '<form action="resend.php?p=' . $_GET['p'] . '" method="post">';
-	echo '<table border="1">';
-	echo "<tr><th>Destination AET</th><th>Destination</th><th>Port</th><th>Compress</th><th>Action</th></tr>";
-	$strQuery = "SELECT * FROM conf_send WHERE active = 1;";
-	$result = $conn->query($query);
+} elseif(isset($_GET['p'])) {
 	while($row = mysqli_fetch_assoc($result)) {
 		echo "<tr>";
-		echo "<td>" . $row['send_aet'] . "</td>";
+		echo "<td>" . $row['send_aec'] . "</td>";
 		echo "<td>" . $row['send_hip'] . "</td>";
 		echo "<td>" . $row['send_port'] . "</td>";
 		echo "<td>" . $row['send_comp_level'] . "</td>";
-		echo '<td><a href="/primal/resend.php?p=' . $_GET["p"] . "&d=" . $row['conf_send_id'] . 'class="button" >Send</a></td>';
+		echo '<td><a href="/primal/resend.php?p=' . $_GET["p"] . "&d=" . $row['conf_send_id'] . '>Send</a></td>';
 	}
 	/*
 	while (isset($_SESSION['PRIDESTHIP'][$intLC1])) {
@@ -487,8 +482,27 @@ if($ISERROR == 1) {
 	*/
 	echo "</table><br>";
 	echo '</form>';
-if(isset($_GET['d0'])) {
-	$intLC1=0;
+if(isset($_GET['d'])) {
+	$strQuery = "SELECT * FROM conf_send WHERE conf_send_id = " . $_GET['d'] . ";";
+	$result = $conn->query($strQuery);
+	while($row = mysqli_fetch_assoc($result)) {
+		$strDestName = $row['send_aec'];
+		$strOrg = $row['org'];
+	}
+	$strQuery = "SELECT * FROM send WHERE puid = '" . $_GET['p'] . "' limit 1;";
+	$result = $conn->query($strQuery);
+	$row = mysqli_fetch_assoc($result);
+	$intNumImages = $row['timages'];
+
+	$strQuery = "INSERT INTO send SET puid = '" . $_GET['p'] . "', sservername = '" . gethostname() . "', tdestnum = '" . $_GET['d'] . "', tdest = '" . $strDestName . "', org = '" . $strOrg . '", tstartsend = NOW(), TIMAGES = "' . $intNumImages . '", COMPLETE=0;';
+	$result = $conn->query($strQuery);
+	echo '<form action="resend.php?p=' . $_GET['p'] . '" method="post">';
+	echo '<table border="1">';
+	echo "<tr><th>Destination AET</th><th>Destination</th><th>Port</th><th>Compress</th><th>Action</th></tr>";
+	$strQuery = "SELECT * FROM conf_send WHERE active = 1;";
+	//$result = $conn->query($strQuery);
+
+/*	$intLC1=0;
 	$strURL='<a href="/primal/resend.php?p=' . $_GET["p"];
 	while (isset($_SESSION['PRIDESTHIP'][$intLC1])) {
 		$strURL=$strURL . "&d" . $intLC1 . "=" . $_GET['d' . $intLC1];
@@ -496,6 +510,7 @@ if(isset($_GET['d0'])) {
 	}
 	$strURL=$strURL . '&g=1">Execute</a>';
 	echo $strURL . "<br>";
+*/
 }
 Display_Footer();
 echo '</div class="leftdiv">';
