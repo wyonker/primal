@@ -430,9 +430,11 @@ if($ISERROR == 1) {
 	}
 	$strOutput.='</div id="divright">';
 } elseif(isset($_GET['p'])) {
+	$strAccn = $_SESSION['strACCN'];
+	$strSuff = substr($strAccn, -3);
 	echo '<table border="1">';
 	echo '<tr><th>AEC</th><th>Hostname/IP</th><th>Port</th><th>Compression Level</th><th>Action</th></tr>';
-	$strQuery = "SELECT * FROM conf_send WHERE active = 1;";
+	$strQuery = "SELECT * FROM conf_send WHERE active = 1 AND org = \"" . $strSuff . "\";";
 	$result = $conn->query($strQuery);
 	while($row = mysqli_fetch_assoc($result)) {
 		echo "<tr>";
@@ -499,7 +501,7 @@ if(isset($_GET['d'])) {
 	$row = mysqli_fetch_assoc($result);
 	$intNumImages = $row['timages'];
 
-	$strQuery = "INSERT INTO send SET puid = '" . $_GET['p'] . "', sservername = '" . gethostname() . "', tdestnum = '" . $_GET['d'] . "', tdest = '" . $strDestName . "', org = '" . $strOrg . '", tstartsend = NOW(), TIMAGES = "' . $intNumImages . '", COMPLETE=0;';
+	$strQuery = "INSERT INTO send SET puid = '" . $_GET['p'] . "', sservername = '" . gethostname() . "', tdestnum = '" . $_GET['d'] . "', tdest = '" . $strDestName . "', org = '" . $strOrg . '", tstartsend = NOW(), timages = "' . $intNumImages . '", complete=0;';
 	$result = $conn->query($strQuery);
 	echo '<form action="resend.php?p=' . $_GET['p'] . '" method="post">';
 	echo '<table border="1">';
