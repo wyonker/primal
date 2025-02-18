@@ -503,11 +503,27 @@ if(isset($_GET['d'])) {
 
 	$strQuery = "INSERT INTO send SET puid = '" . $_GET['p'] . "', sservername = '" . gethostname() . "', tdestnum = '" . $_GET['d'] . "', tdest = '" . $strDestName . "', org = '" . $strOrg . '", tstartsend = NOW(), timages = "' . $intNumImages . '", complete=0;';
 	$result = $conn->query($strQuery);
-	echo '<form action="resend.php?p=' . $_GET['p'] . '" method="post">';
+	$strAccn = $_SESSION['strACCN'];
+	$strSuff = substr($strAccn, -3);
 	echo '<table border="1">';
-	echo "<tr><th>Destination AET</th><th>Destination</th><th>Port</th><th>Compress</th><th>Action</th></tr>";
+	echo '<tr><th>AEC</th><th>Hostname/IP</th><th>Port</th><th>Compression Level</th><th>Action</th></tr>';
+	$strQuery = "SELECT * FROM conf_send WHERE active = 1 AND send_org = \"" . $strSuff . "\";";
+	$result = $conn->query($strQuery);
+	while($row = mysqli_fetch_assoc($result)) {
+		echo "<tr>";
+		echo "<td>" . $row['send_aec'] . "</td>";
+		echo "<td>" . $row['send_hip'] . "</td>";
+		echo "<td>" . $row['send_port'] . "</td>";
+		echo "<td>" . $row['send_comp_level'] . "</td>";
+		echo '<td>Sent</td></tr>';
+	}
+	//echo '<form action="resend.php?p=' . $_GET['p'] . '" method="post">';
+	//echo '<table border="1">';
+	//echo "<tr><th>Destination AET</th><th>Destination</th><th>Port</th><th>Compress</th><th>Action</th></tr>";
 	$strQuery = "SELECT * FROM conf_send WHERE active = 1;";
-	//$result = $conn->query($strQuery);
+	$result = $conn->query($strQuery);
+	echo "</table><br>";
+	echo '</form>';
 
 /*	$intLC1=0;
 	$strURL='<a href="/primal/resend.php?p=' . $_GET["p"];
