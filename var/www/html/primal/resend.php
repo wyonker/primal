@@ -434,7 +434,7 @@ if($ISERROR == 1) {
 	$strSuff = substr($strAccn, -3);
 	echo '<table border="1">';
 	echo '<tr><th>AEC</th><th>Hostname/IP</th><th>Port</th><th>Compression Level</th><th>Action</th></tr>';
-	$strQuery = "SELECT * FROM conf_send WHERE active = 1 AND org = \"" . $strSuff . "\";";
+	$strQuery = "SELECT * FROM conf_send WHERE active = 1 AND send_org = \"" . $strSuff . "\";";
 	$result = $conn->query($strQuery);
 	while($row = mysqli_fetch_assoc($result)) {
 		echo "<tr>";
