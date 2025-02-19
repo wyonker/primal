@@ -156,6 +156,34 @@ std::string GetDate() {
     return strDate;
 }
 
+std::string fSecToTime(int intSec) {
+    std::string strReturn;
+    int intDay, intHour, intMin;
+
+    if (intSec < 60) {
+        strReturn = std::to_string(intSec) + "s";
+    } else if(intSec < 3600) {
+        intMin = intSec / 60;
+        intSec = intSec % 60;
+        strReturn = std::to_string(intMin) + "m " + std::to_string(intSec) + "s";
+    } else if(intSec < 86400) {
+        intHour = intSec / 3600;
+        intSec = intSec % 3600;
+        intMin = intSec / 60;
+        intSec = intSec % 60;
+        strReturn = std::to_string(intHour) + "h " + std::to_string(intMin) + "m " + std::to_string(intSec) + "s";
+    } else {
+        intDay = intSec / 86400;
+        intSec = intSec % 86400;
+        intHour = intSec / 3600;
+        intSec = intSec % 3600;
+        intMin = intSec / 60;
+        intSec = intSec % 60;
+        strReturn = std::to_string(intDay) + "d " + std::to_string(intHour) + "h " + std::to_string(intMin) + "m " + std::to_string(intSec) + "s";
+    }
+    return strReturn;
+}
+
 std::string fDcmDump(std::string strTemp) {
     std::string strCMD, strReturn, strReadLine;
 
@@ -717,7 +745,7 @@ void fSend() {
     std::string strLogMessage, strCMD, strID, strPUID, strServerName, strDestNum, strDest, strOrg, strStartSend, strEndSend, strImages, strError, strRetry, strComplete;
     std::string strQuery, strQuery2, strQuery3, strQuery4, strLocation, strSendPort, strSendHIP, strSendAEC, strSendAET, strStatus;
     std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId;
-    std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn;
+    std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn, strTime;
 
     int intNumRows, intStartSec, intNowSec, intSend=0;
 
@@ -791,7 +819,12 @@ void fSend() {
                     if(strAccn.size() > 3) {
                         strNewAccn = strAccn.substr(0, strAccn.size()-3);
                     }
-                    strLogMessage = strPUID + " Found " + strAccn + " truncated to " + strNewAccn + ", waiting to send.";
+                    strCMD = "date +\%s -d \"" + strStartSend + "\"";
+                    intStartSec = stoi(exec(strCMD.c_str()));
+                    strCMD = "date +\%s";
+                    intNowSec = stoi(exec(strCMD.c_str()));
+                    strTime = fSecToTime(intNowSec - intStartSec);
+                    strLogMessage = strPUID + " Found " + strAccn + " truncated to " + strNewAccn + ", has been waiting to send for " + strTime + ".";
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     strQuery5="SELECT * FROM rec WHERE accn = '" + strNewAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
                     mysql_query(mconnect2, strQuery5.c_str());
@@ -815,10 +848,10 @@ void fSend() {
                             }
                         } else {
                             //Need to see if it's older than 3 days.
-                            strCMD = "date +\%s -d \"" + strStartSend + "\"";
-                            intStartSec = stoi(exec(strCMD.c_str()));
-                            strCMD = "date +\%s";
-                            intNowSec = stoi(exec(strCMD.c_str()));
+                            //strCMD = "date +\%s -d \"" + strStartSend + "\"";
+                            //intStartSec = stoi(exec(strCMD.c_str()));
+                            //strCMD = "date +\%s";
+                            //intNowSec = stoi(exec(strCMD.c_str()));
                             if ((intNowSec - intStartSec) > 432000) {
                                 strLogMessage = strPUID + " " + strAccn + " has been waiting to send for more than 5 days.  Let's send";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
