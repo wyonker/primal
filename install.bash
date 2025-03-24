@@ -1,6 +1,6 @@
 #!/bin/bash
-#Version 13
-#2024-09-23
+#Version 14
+#2025-03-13
 # Author:  Will Yonker
 # License GPLv3
 
@@ -51,7 +51,13 @@ TEMPOSVER=`grep -c "Red Hat Enterprise Linux release 8" /etc/redhat-release`
 if [ $TEMPOSVER -gt 0 ]
 then
 	echo "RHEL 8 found."
-	OSVER=2
+	OSVER=8
+fi
+TEMPOSVER=`grep -c "Red Hat Enterprise Linux release 9" /etc/redhat-release`
+if [ $TEMPOSVER -gt 0 ]
+then
+	echo "RHEL 9 found."
+	OSVER=9
 fi
 TEMPOSVER=`grep -c "AlmaLinux release 9" /etc/redhat-release`
 if [ $TEMPOSVER -gt 0 ]
@@ -62,7 +68,7 @@ fi
 sleep 3
 if [ $OSVER -lt 1 ]
 then
-	echo "This script is for CentOS 7, RHEL 7, AlmaLinux 9, or RHEL 8.  Exiting..."
+	echo "This script is for CentOS 7, RHEL 7, RHEL 8, , RHEL 9 or AlmaLinux 9.  Exiting..."
 	exit 1
 fi
 
@@ -181,6 +187,12 @@ cp etc/primal/primal.version /etc/primal/
 echo "Changing ownership and permissions on /etc/primal to apache (for web edits)"
 	chown apache.apache -R /etc/primal
 	chmod 755 -R /etc/primal
+
+if [ $OSVER -ge 8]
+then
+	systemctl enable rc-local.service
+	systemctl start rc-local.service
+fi
 
 if [ ! -e "/etc/rc.d/rc.local" ]
 then
@@ -365,21 +377,22 @@ rm -f home/build/dcmnet/apps/storescp
 rm -f home/build/dcmnet/apps/storescu
 
 echo "Compiling DCMTK for this platform."
-if [ -e "dcmtk-3.6.5.tar.gz" ]
+if [ -e "dcmtk-3.6.9.tar.gz" ]
 then
-	echo "DCMTK v3.6.5 found.  Do you wish to use this version?."
+	echo "DCMTK v3.6.9 found.  Do you wish to use this version?."
 	read USER_INPUT
 	USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
 	if [ "$USER_INPUT" == "yes" ]
 	then
-		tar -xf dcmtk-3.6.5.tar.gz
-		if [ -e dcmtk-3.6.5-build ]
+		tar -xf dcmtk-3.6.9.tar.gz
+		if [ -e dcmtk-3.6.9-build ]
 		then
-			rm -fr dcmtk-3.6.5-build
+			rm -fr dcmtk-3.6.9-build
 		fi
-		mkdir dcmtk-3.6.5-build
-		cd dcmtk-3.6.5-build
-		cmake -DCMTK_CXX11_FLAGS:STRING=-std=c++17 -DCMTK_ENABLE_STL:STRING=ON -DCMTK_ENABLE_CXX11:STRING=INFERRED -DCMTK_ENABLE_PRIVATE_TAGS:STRING=ON ../dcmtk-3.6.5
+		mkdir dcmtk-3.6.9-build
+		cd dcmtk-3.6.9-build
+		#cmake -DCMTK_CXX11_FLAGS:STRING=-std=c++17 -DCMTK_ENABLE_STL:STRING=ON -DCMTK_ENABLE_CXX11:STRING=INFERRED -DCMTK_ENABLE_PRIVATE_TAGS:STRING=ON ../dcmtk-3.6.5
+		cmake -D CMAKE_CXX_STANDARD=20 -D DCMTK_ENABLE_BUILTIN_OFICONV_DATA:BOOL=ON -D DCMTK_ENABLE_PRIVATE_TAGS=ON -D DCMTK_ENABLE_STL=ON -D DCMTK_WITH_PNG=ON -D DCMTK_WITH_TIFF=ON -D DCMTK_WITH_XML=ON -D BUILD_SHARED_LIBS:BOOL=ON
 		make -j4 install
 		cd $CURDIR
 	else
