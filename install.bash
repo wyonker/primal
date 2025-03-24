@@ -638,7 +638,11 @@ fi
 if [ -e "dcmtk-3.6.9-build/bin/storescp" ]
 then
 	cp dcmtk-3.6.9-build/bin/storescp /home/dicom/bin/
-else
+fi
+
+STORESCP=`which storescp 2>/dev/null`
+if [ "$STORESCP" != "" ]
+then
 	echo "Error:  storescp is not found but was detected.  Exiting..."
 	exit 1
 fi
