@@ -638,6 +638,7 @@ fi
 if [ -e "dcmtk-3.6.9-build/bin/storescp" ]
 then
 	cp dcmtk-3.6.9-build/bin/storescp /home/dicom/bin/
+	cp dcmtk-3.6.9/dcmnet/etc/storescp.cfg /home/dicom/bin/
 fi
 
 STORESCP=`which storescp 2>/dev/null`
@@ -671,6 +672,8 @@ fi
 if [ -e "dcmtk-3.6.9-build/bin/storescu" ]
 then
 	cp dcmtk-3.6.9-build/bin/storescu /home/dicom/bin/primalscu
+	cp dcmtk-3.6.9-build/bin/storescu /home/dicom/bin/
+	cp dcmtk-3.6.9/dcmnet/etc/storescu.cfg /home/dicom/bin/
 fi
 
 rm /home/dicom/bin/*.cfg
