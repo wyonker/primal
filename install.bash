@@ -1,6 +1,6 @@
 #!/bin/bash
-#Version 14
-#2025-03-13
+#Version 15
+#2025-03-24
 # Author:  Will Yonker
 # License GPLv3
 
@@ -635,9 +635,9 @@ if [ -e "/home/dicom/bin/storescp" ]
 then
 	rm -f /home/dicom/bin/storescp
 fi
-if [ -e "dcmtk-3.6.5-build/bin/storescp" ]
+if [ -e "dcmtk-3.6.9-build/bin/storescp" ]
 then
-	cp dcmtk-3.6.5-build/bin/storescp /home/dicom/bin/
+	cp dcmtk-3.6.9-build/bin/storescp /home/dicom/bin/
 else
 	echo "Error:  storescp is not found but was detected.  Exiting..."
 	exit 1
