@@ -651,25 +651,30 @@ if [ -e "/home/dicom/bin/dcmdump" ]
 then
 	rm -f /home/dicom/bin/dcmdump
 fi
-if [ -e "dcmtk-3.6.5-build/bin/dcmdump" ]
+DCMDUMP=`which dcmdump 2>/dev/null`
+if [ "$DCMDUMP" != "" ]
 then
-	cp dcmtk-3.6.5-build/bin/dcmdump /home/dicom/bin/
-else
-	echo "Error:  dcmdump is not found.  Exiting..."
-	exit 1
+	cp $DCMDUMP /home/dicom/bin/
 fi
 
-if [ -e "dcmtk-3.6.5-build/bin/storescu" ]
+if [ -e "dcmtk-3.6.9-build/bin/dcmdump" ]
 then
-	cp dcmtk-3.6.5-build/bin/storescu /home/dicom/bin/primalscu
-	cp dcmtk-3.6.5-build/bin/storescu /home/dicom/bin/storescu
-else
-	echo "Error:  storescu is not found.  Exiting..."
-	exit 1
+	cp dcmtk-3.6.9-build/bin/dcmdump /home/dicom/bin/
+fi
+
+STORESCU=`which storescu 2>/dev/null`
+if [ "$STORESCU" != "" ]
+then
+	cp $STORESCU /home/dicom/bin/
+fi
+
+if [ -e "dcmtk-3.6.9-build/bin/storescu" ]
+then
+	cp dcmtk-3.6.9-build/bin/storescu /home/dicom/bin/primalscu
 fi
 
 rm /home/dicom/bin/*.cfg
-cp dcmtk-3.6.5/dcmnet/etc/*.cfg /home/dicom/bin/
+cp dcmtk-3.6.9/dcmnet/etc/*.cfg /home/dicom/bin/
 
 ISINPATH=`cat /root/.bashrc|grep /home/dicom/bin|wc -l`
 if [ $ISINPATH -lt 1 ]
