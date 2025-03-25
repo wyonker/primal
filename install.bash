@@ -1,6 +1,6 @@
 #!/bin/bash
-#Version 15
-#2025-03-24
+#Version 16
+#2025-03-25
 # Author:  Will Yonker
 # License GPLv3
 
@@ -403,7 +403,7 @@ then
 	mkdir "$DCMTK2-build"
 	cd "$DCMTK2-build"
 	#cmake -DCMTK_CXX11_FLAGS:STRING=-std=c++17 -DCMTK_ENABLE_STL:STRING=ON -DCMTK_ENABLE_CXX11:STRING=INFERRED -DCMTK_ENABLE_PRIVATE_TAGS:STRING=ON ../dcmtk-3.6.5
-	cmake -D CMAKE_CXX_STANDARD=20 -D DCMTK_ENABLE_BUILTIN_OFICONV_DATA:BOOL=ON -D DCMTK_ENABLE_PRIVATE_TAGS=ON -D DCMTK_ENABLE_STL=ON -D DCMTK_WITH_PNG=ON -D DCMTK_WITH_TIFF=ON -D DCMTK_WITH_XML=ON -D BUILD_SHARED_LIBS:BOOL=ON
+	cmake -D CMAKE_CXX_STANDARD=20 -D DCMTK_ENABLE_BUILTIN_OFICONV_DATA:BOOL=ON -D DCMTK_ENABLE_PRIVATE_TAGS=ON -D DCMTK_ENABLE_STL=ON -D DCMTK_WITH_PNG=ON -D DCMTK_WITH_TIFF=ON -D DCMTK_WITH_XML=ON -D BUILD_SHARED_LIBS:BOOL=ON ../dcmtk-3.6.9
 	make -j4 install
 	cd $CURDIR
 else
@@ -612,14 +612,14 @@ HASDB=`echo "show databases"|mysql -u root|grep primal|wc -l`
 if [ $HASDB -gt 0 ]
 then
 	echo "Existing PRIMAL database found.  Backing it up..."
-	mysqldump -cael -u primal -pprimal primal > ./primal_backup.sql
+	mysqldump -cael -u root primal > ./primal_backup.sql
 	if [ ! -e "./primal_backup.sql" ]
 	then
 		echo "PRIMAL backup file not found.  Exiting..."
 		exit 1
 	fi
 	echo "Creating backup without schema..."
-	mysqldump --no-create-info --skip-triggers --no-create-db --compact -u primal -pprimal primal > ./primal_backup_noschema.sql
+	mysqldump --no-create-info --skip-triggers --no-create-db --compact -u root primal > ./primal_backup_noschema.sql
 	if [ ! -e "./primal_backup_noschema.sql" ]
 	then
 		echo "PRIMAL no schema backup file not found.  Exiting..."
