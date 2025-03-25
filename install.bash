@@ -376,32 +376,39 @@ echo "Installing web componet"
 rm -f home/build/dcmnet/apps/storescp
 rm -f home/build/dcmnet/apps/storescu
 
-echo "Compiling DCMTK for this platform."
-if [ -e "dcmtk-3.6.9.tar.gz" ]
+echo "Searching for the DCMTK package."
+NUMDCMTK=`ls -1 dcmtk*.tar.gz 2>/dev/null|wc -l`
+if [ $NUMDCMTK -lt 1 ]
 then
-	echo "DCMTK v3.6.9 found.  Do you wish to use this version?."
-	read USER_INPUT
-	USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
-	if [ "$USER_INPUT" == "yes" ]
+	echo "DCMTK package not found.  Please download it and place it in the primal install directory.  Exiting..."
+	exit 1
+elif [ $NUMDCMTK -gt 1 ]
+then
+	echo "Multiple DCMTK packages found.  Please remove all but the most current one.  Exiting..."
+	exit 1
+fi
+
+DCMTK=`ls -1 dcmtk*.tar.gz 2>/dev/null|tail -1`
+echo "$DCMTK found.  Do you wish to use this version?."
+read USER_INPUT
+USER_INPUT=`echo "$USER_INPUT"|tr '[:upper:]' '[:lower:]'`
+if [ "$USER_INPUT" == "yes" ]
+then
+	DCMTK2=`echo $DCMTK|sed 's/.tar.gz//g'`
+	tar -xf $DCMTK
+	if [ -e "$DCMTK2-build" ]
 	then
-		tar -xf dcmtk-3.6.9.tar.gz
-		if [ -e dcmtk-3.6.9-build ]
-		then
-			rm -fr dcmtk-3.6.9-build
-		fi
-		mkdir dcmtk-3.6.9-build
-		cd dcmtk-3.6.9-build
-		#cmake -DCMTK_CXX11_FLAGS:STRING=-std=c++17 -DCMTK_ENABLE_STL:STRING=ON -DCMTK_ENABLE_CXX11:STRING=INFERRED -DCMTK_ENABLE_PRIVATE_TAGS:STRING=ON ../dcmtk-3.6.5
-		cmake -D CMAKE_CXX_STANDARD=20 -D DCMTK_ENABLE_BUILTIN_OFICONV_DATA:BOOL=ON -D DCMTK_ENABLE_PRIVATE_TAGS=ON -D DCMTK_ENABLE_STL=ON -D DCMTK_WITH_PNG=ON -D DCMTK_WITH_TIFF=ON -D DCMTK_WITH_XML=ON -D BUILD_SHARED_LIBS:BOOL=ON
-		make -j4 install
-		cd $CURDIR
-	else
-		echo "Please download the DCMTK and make sure it's in the path.  Press any key to continue..."
-		read USER_INPUT
+		rm -fr "$DCMTK2-build"
 	fi
+	mkdir "$DCMTK2-build"
+	cd "$DCMTK2-build"
+	#cmake -DCMTK_CXX11_FLAGS:STRING=-std=c++17 -DCMTK_ENABLE_STL:STRING=ON -DCMTK_ENABLE_CXX11:STRING=INFERRED -DCMTK_ENABLE_PRIVATE_TAGS:STRING=ON ../dcmtk-3.6.5
+	cmake -D CMAKE_CXX_STANDARD=20 -D DCMTK_ENABLE_BUILTIN_OFICONV_DATA:BOOL=ON -D DCMTK_ENABLE_PRIVATE_TAGS=ON -D DCMTK_ENABLE_STL=ON -D DCMTK_WITH_PNG=ON -D DCMTK_WITH_TIFF=ON -D DCMTK_WITH_XML=ON -D BUILD_SHARED_LIBS:BOOL=ON
+	make -j4 install
+	cd $CURDIR
 else
-		echo "Please download the DCMTK and make sure it's in the path.  Press any key to continue..."
-		read USER_INPUT
+	echo "Please download the DCMTK and make sure it's in the path.  Press any key to continue..."
+	read USER_INPUT
 fi
 
 echo "Compiling PRIMAL services for this platform"
