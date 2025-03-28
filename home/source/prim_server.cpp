@@ -794,7 +794,7 @@ void fSend() {
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     while (1) {
-        strQuery = "SELECT send.id, send.puid, send.sservername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete = 5;";
+        strQuery = "SELECT send.id, send.puid, send.sservername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete > 4;";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
             strLogMessage="SQL Error: ";
@@ -856,6 +856,11 @@ void fSend() {
                                 strLogMessage = strPUID + " " + strAccn + " has been waiting to send for more than 5 days.  Let's send";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 intSend = 2;
+                            }
+                            if (strComplete == "6") {
+                                strLogMessage = strPUID + " " + strAccn + " has been manually queued to send.  Let's send";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                intSend = 3;
                             }
                         }
                         if(intSend > 0) {

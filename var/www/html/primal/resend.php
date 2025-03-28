@@ -501,7 +501,7 @@ if(isset($_GET['d'])) {
 	$row = mysqli_fetch_assoc($result);
 	$intNumImages = $row['timages'];
 
-	$strQuery = "INSERT INTO send SET puid = '" . $_GET['p'] . "', sservername = '" . gethostname() . "', tdestnum = '" . $_GET['d'] . "', tdest = '" . $strDestName . "', org = '" . $strOrg . "', tstartsend = NOW(), timages = '" . $intNumImages . "', complete=0;";
+	$strQuery = "INSERT INTO send SET puid = '" . $_GET['p'] . "', sservername = '" . gethostname() . "', tdestnum = '" . $_GET['d'] . "', tdest = '" . $strDestName . "', org = '" . $strOrg . "', tstartsend = NOW(), timages = '" . $intNumImages . "', complete=6;";
 	$result = $conn->query($strQuery);
 	$strAccn = $_SESSION['strACCN'];
 	$strSuff = substr($strAccn, -3);
