@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-	//Version 1.00.04
-	//2021-08-11
+	//Version 1.00.05
+	//2025-03-28
 	session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -494,14 +494,14 @@ if(isset($_GET['d'])) {
 	$result = $conn->query($strQuery);
 	while($row = mysqli_fetch_assoc($result)) {
 		$strDestName = $row['send_aec'];
-		$strOrg = $row['org'];
+		$strOrg = $row['send_org'];
 	}
 	$strQuery = "SELECT * FROM send WHERE puid = '" . $_GET['p'] . "' limit 1;";
 	$result = $conn->query($strQuery);
 	$row = mysqli_fetch_assoc($result);
 	$intNumImages = $row['timages'];
 
-	$strQuery = "INSERT INTO send SET puid = '" . $_GET['p'] . "', sservername = '" . gethostname() . "', tdestnum = '" . $_GET['d'] . "', tdest = '" . $strDestName . "', org = '" . $strOrg . '", tstartsend = NOW(), timages = "' . $intNumImages . '", complete=0;';
+	$strQuery = "INSERT INTO send SET puid = '" . $_GET['p'] . "', sservername = '" . gethostname() . "', tdestnum = '" . $_GET['d'] . "', tdest = '" . $strDestName . "', org = '" . $strOrg . "', tstartsend = NOW(), timages = '" . $intNumImages . "', complete=0;";
 	$result = $conn->query($strQuery);
 	$strAccn = $_SESSION['strACCN'];
 	$strSuff = substr($strAccn, -3);
