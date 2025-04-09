@@ -415,13 +415,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 Display_Header2();
-
 echo "<H2>System Setup</H2>";
 
-
-
-
-if(!isset($_GET['rec'])) {
+if((!isset($_GET['rec'])) && (!isset($_GET['rule'])) && (!isset($_GET['dest']))) {
 	$arrRec = [];
 	echo '<table style="margin-right:auto;margin-left:0px;border="1">';
 	$strQuery = "SELECT * FROM conf_rec WHERE conf_name = \"!Global!\";";
@@ -458,9 +454,9 @@ if(!isset($_GET['rec'])) {
 		$result = mysqli_query($conn, $strQuery);
 		echo '<td><div id="rec"><br><br>';
 		while($row = mysqli_fetch_assoc($result)) {
-			echo '<a href="/primal/setup.php?action=Dest&rec=' . $rec . '&rule=' . $row['conf_send_id'] . '">' . $row['send_name'] . '</a><br>';
+			echo '<a href="/primal/setup.php?action=Dest&rec=' . $rec . '&dest=' . $row['conf_send_id'] . '">' . $row['send_name'] . '</a><br>';
 		}
-		echo '<div id="rec"><a href="/primal/setup.php?action=Dest&rec=' . $rec . '&rule=0">Add Destination</a></div></td>';
+		echo '<div id="rec"><a href="/primal/setup.php?action=Dest&rec=' . $rec . '&dest=0">Add Destination</a></div></td>';
 	}
 	echo "</tr>";
 	echo "</table>";
