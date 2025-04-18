@@ -63,8 +63,8 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.10";
-const std::string strVersionDate = "2025-02-13";
+const std::string strVersionNum = "4.00.20";
+const std::string strVersionDate = "2025-04-18";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -895,6 +895,11 @@ void fSend() {
                                     }
                                     mysql_free_result(result2);
                                 }
+                            }
+                            if(strSendActive == "0") {
+                                strLogMessage = strPUID + " " + strAccn + " " + strSendName + " is not active.  Not sending.";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                continue;
                             }
                             strQuery3 = "SELECT DISTINCT ilocation FROM image WHERE puid = '" + strPUID + "';";
                             mysql_query(mconnect, strQuery3.c_str());
