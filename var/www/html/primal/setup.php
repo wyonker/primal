@@ -416,6 +416,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 Display_Header2();
 echo "<H2>System Setup</H2>";
+echo "<H3><a href=\"/primal/setup_user.php\">Setup User</a></H3>"
 
 if((!isset($_GET['rec'])) && (!isset($_GET['rule'])) && (!isset($_GET['dest']))) {
 	$arrRec = [];
