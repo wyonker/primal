@@ -1,5 +1,7 @@
 <?php
     //License GPLv3
+    //Copyright (C) 2010 Will Yonker <
+    //version 1.00.01
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -32,9 +34,9 @@ echo <<<EOT
 EOT;
 Display_Header2();
 echo "<H2>User Management</H2>";
-Display_Links();
+echo "<H3><a href=\"/primal/setup_user.php\">Setup User</a></H3>";
 echo '<br><br>';
-$strQuery = "SELECT * from users ";
+$strQuery = "SELECT * from user ";
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if(isset($_POST['btnReset'])) {
         if(isset($_SESSION["rseclevel"])) {
@@ -46,7 +48,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         if(isset($_SESSION["rfullname"])) {
             unset($_SESSION["rfullname"]);
         }
-        header("Location: setup.php");
+        header("Location: setup_user.php");
         exit();
     }
     if(isset($_POST['btnQuery'])) {
@@ -200,7 +202,7 @@ while($row = mysqli_fetch_assoc($result)) {
     $users[$lc1]['active'] = $row['active'];
     $lc1++;
 }
-echo '<form action="setup.php" method="post">';
+echo '<form action="setup_user.php" method="post">';
 echo '<table border="1">';
 echo '<thead>';
 echo '<tr>';
@@ -252,8 +254,8 @@ foreach($users as $u) {
     if($users[$lc1]['login_sec_level'] <= $_SESSION['login_sec_level']) {
         echo '<tr>';
         echo '<td>' . $users[$lc1]['login_sec_level'] . '</td>';
-        echo '<td><a href="/primfax/update_user.php?e=' . $users[$lc1]['loginid'] . '">' . $users[$lc1]['userid'] . '</a></td>';
-        echo '<td><a href="/primfax/update_user.php?e=' . $users[$lc1]['loginid'] . '">' . $users[$lc1]['username'] . '</a></td>';
+        echo '<td><a href="setup_user.php?e=' . $users[$lc1]['loginid'] . '">' . $users[$lc1]['loginid'] . '</a></td>';
+        echo '<td><a href="setup_user.php?e=' . $users[$lc1]['loginid'] . '">' . $users[$lc1]['username'] . '</a></td>';
         echo '<td>' . $users[$lc1]['active'] . '</td>';
         echo '</tr>';
     }
@@ -268,9 +270,9 @@ echo "<BR>";
 
 $range = 3;
 if ($intCurPage > 1) {
-    echo " <a href='setup.php?page=1'><<</a> ";
+    echo " <a href='setup_user.php?page=1'><<</a> ";
     $intPrevPage = $intCurPage - 1;
-    echo " <a href='setup.php?page=$intPrevPage'><</a> ";
+    echo " <a href='setup_user.php?page=$intPrevPage'><</a> ";
 }
  
 for ($x = ($intCurPage - $range); $x < (($intCurPage + $range) + 1); $x++) {
@@ -278,15 +280,15 @@ for ($x = ($intCurPage - $range); $x < (($intCurPage + $range) + 1); $x++) {
        if ($x == $intCurPage) {
           echo " [<b>$x of $intTotalPages</b>] ";
        } else {
-          echo " <a href='setup.php?page=$x'>$x</a> ";
+          echo " <a href='setup_user.php?page=$x'>$x</a> ";
        }
     }
 }
  
 if ($intCurPage != $intTotalPages) {
     $intNextPage = $intCurPage + 1;
-    echo " <a href='setup.php?page=$intNextPage'>></a> ";
-    echo " <a href='setup.php?page=$intTotalPages'>>></a> ";
+    echo " <a href='setup_user.php?page=$intNextPage'>></a> ";
+    echo " <a href='setup_user.php?page=$intTotalPages'>>></a> ";
 }
 Display_Footer();
 echo '</BODY>';
