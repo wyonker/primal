@@ -1,8 +1,9 @@
 <?php
     //License GPLv3
-	//Version 1.10.00
-	//2024-09-19
+	//Version 1.00.02
+	//2025-04-21
 	//Written by Will Yonker
+
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -41,36 +42,18 @@
         $sr = ldap_search($ad, $dn, $filter, $arrEntries);
         $data = ldap_get_entries($ad, $sr);
         $strADGroups = print_r($data, true);
-        if(strpos($strADGroups, "primfax") !== FALSE) {
+        if(strpos($strADGroups, "primal_admin") !== FALSE) {
             $_SESSION['loginid'] = $name_entered;
-            $_SESSION['login_sec_level'] = 4;
+            $_SESSION['login_sec_level'] = 250;
             $_SESSION['login_username'] = $LDAPShortName . "//" . $name_entered;
             $_SESSION['active'] = 1;
             $_SESSION['login_type'] = 'AD';
             $strLogMessage = "AD User: " . $_SESSION['loginid'] . " logged in with security level " . $_SESSION['login_sec_level'];
             write_to_log($strLogMessage);
             header ("location: index.php");
-        } elseif(strpos($strADGroups, "CA Tier 2") !== FALSE) {
+        } elseif(strpos($strADGroups, "primal") !== FALSE) {
             $_SESSION['loginid'] = $name_entered;
-            $_SESSION['login_sec_level'] = 2;
-            $_SESSION['login_username'] = $LDAPShortName . "//" . $name_entered;
-            $_SESSION['active'] = 1;
-            $_SESSION['login_type'] = 'AD';
-            $strLogMessage = "AD User: " . $_SESSION['loginid'] . " logged in with security level " . $_SESSION['login_sec_level'];
-            write_to_log($strLogMessage);
-            header ("location: index.php");
-        } elseif(strpos($strADGroups, "CA Tier 1") !== FALSE) {
-            $_SESSION['loginid'] = $name_entered;
-            $_SESSION['login_sec_level'] = 2;
-            $_SESSION['login_username'] = $LDAPShortName . "//" . $name_entered;
-            $_SESSION['active'] = 1;
-            $_SESSION['login_type'] = 'AD';
-            $strLogMessage = "AD User: " . $_SESSION['loginid'] . " logged in with security level " . $_SESSION['login_sec_level'];
-            write_to_log($strLogMessage);
-            header ("location: index.php");
-        } elseif(strpos($strADGroups, "primfax_level2") !== FALSE) {
-            $_SESSION['loginid'] = $name_entered;
-            $_SESSION['login_sec_level'] = 2;
+            $_SESSION['login_sec_level'] = 100;
             $_SESSION['login_username'] = $LDAPShortName . "//" . $name_entered;
             $_SESSION['active'] = 1;
             $_SESSION['login_type'] = 'AD';
