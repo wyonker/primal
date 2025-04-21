@@ -1,7 +1,9 @@
 <?php
     //License GPLv3
     //Copyright (C) 2010 Will Yonker <
-    //version 1.00.01
+    //version 1.00.02
+    //2025-04-21
+    
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -34,7 +36,7 @@ echo <<<EOT
 EOT;
 Display_Header2();
 echo "<H2>User Management</H2>";
-echo "<H3><a href=\"/primal/setup_user.php\">Setup User</a></H3>";
+echo "<H3><a href=\"/primal/setup.php\">Setup</a></H3>";
 echo '<br><br>';
 $strQuery = "SELECT * from user ";
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
