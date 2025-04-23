@@ -3,6 +3,7 @@
     //Version 1.10.00
     //2024-09-19
     //Written by Will Yonker
+    
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );

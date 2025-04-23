@@ -1,7 +1,7 @@
 <?php
     //License GPLv3
-	//Version 1.00.02
-	//2025-04-21
+	//Version 1.00.03
+	//2025-04-23
 	//Written by Will Yonker
 
     session_start();
@@ -19,10 +19,6 @@
 	if(isset($_POST['cbLDAP'])) {
         echo "Getting here...<br>";
         exit ();
-        $host = 'dc3ad01';
-        $domain = 'advancedrad.com';
-        $basedn = 'DC=advancedrad,DC=com';
-        $group = 'End Users';
         $dn = "OU=" . $LDAPGroup . "," . $LDAPBaseDN;
         $ldap_dn = $name_entered . "@" . $LDAPDN;
         $ad = ldap_connect("ldap://" . $LDAPDomain . "/") or die('Could not connect to LDAP server.');
@@ -51,7 +47,7 @@
             $strLogMessage = "AD User: " . $_SESSION['loginid'] . " logged in with security level " . $_SESSION['login_sec_level'];
             write_to_log($strLogMessage);
             header ("location: index.php");
-        } elseif(strpos($strADGroups, "primal") !== FALSE) {
+        } elseif(strpos($strADGroups, "primal_user") !== FALSE) {
             $_SESSION['loginid'] = $name_entered;
             $_SESSION['login_sec_level'] = 100;
             $_SESSION['login_username'] = $LDAPShortName . "//" . $name_entered;
