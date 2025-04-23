@@ -1,6 +1,6 @@
 <?php
     //License GPLv3
-	//Version 1.00.03
+	//Version 1.00.04
 	//2025-04-23
 	//Written by Will Yonker
 
@@ -17,8 +17,6 @@
 	$password_entered = base64_encode($_POST['password']);
 	$password_ldap = $_POST['password'];
 	if(isset($_POST['cbLDAP'])) {
-        echo "Getting here...<br>";
-        exit ();
         $dn = "OU=" . $LDAPGroup . "," . $LDAPBaseDN;
         $ldap_dn = $name_entered . "@" . $LDAPDN;
         $ad = ldap_connect("ldap://" . $LDAPDomain . "/") or die('Could not connect to LDAP server.');
