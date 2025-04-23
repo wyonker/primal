@@ -1,6 +1,6 @@
 <?php
     //License GPLv3
-	//Version 1.00.04
+	//Version 1.00.05
 	//2025-04-23
 	//Written by Will Yonker
 
@@ -64,23 +64,27 @@
 	    $result = $conn->query($strQuery);
 	    $num_rows = $result->num_rows;
 	    if ($num_rows <= 0) {
-		$_SESSION['retry'] = 2;
-		$_SESSION['active'] = 0;
+			$_SESSION['retry'] = 2;
+			$_SESSION['active'] = 0;
 	    } elseif ($num_rows >= 2) {
-		$_SESSION['retry'] = 3;
-		$_SESSION['active'] = 0;
-		$_SESSION['login_username'] = $name_entered;
+			$_SESSION['retry'] = 3;
+			$_SESSION['active'] = 0;
+			$_SESSION['login_username'] = $name_entered;
 	    } else {
 			$row = mysqli_fetch_assoc($result);
 			if ($row['password'] == $password_entered) {
 				$_SESSION['loginid'] = $row['loginid'];
 				$_SESSION['login_sec_level'] = $row['login_sec_level'];
-				$_SESSION['login_username'] = $row['userid'];
+				$_SESSION['login_username'] = $row['username'];
 				$_SESSION['active'] = $row['active'];
 				$_SESSION['login_type'] = 'LOCAL';
-				if(!isset($_SESSION['page_size']) || (!ctype_digit($_SESSION['page_size']))) {
-					$_SESSION['page_size'] = 0;
+				if ($row['page_size'] < 10 || $row['page_size'] > 100) {
+					$_SESSION['page_size'] = 30;
+				} else {
+					$_SESSION['page_size'] = $row['page_size'];
 				}
+				$_SESSION['login_sec_bit'] = $row['sec_bit'];
+				$_SESSION['rec_sec'] = $row['rec_sec'];
 				$_SESSION['retry'] = 0;
 				if ($row['active'] != 1) {
 					if ($row['active'] == -1) {
