@@ -1,6 +1,6 @@
 <?php
     //License GPLv3
-	//Version 1.00.05
+	//Version 1.00.06
 	//2025-04-23
 	//Written by Will Yonker
 
@@ -42,6 +42,8 @@
             $_SESSION['login_username'] = $LDAPShortName . "//" . $name_entered;
             $_SESSION['active'] = 1;
             $_SESSION['login_type'] = 'AD';
+			$_SESSION['login_sec_bit'] = "000000";
+			$_SESSION['rec_sec'] = "1 2 3 4 5 6 7 8 9";
             $strLogMessage = "AD User: " . $_SESSION['loginid'] . " logged in with security level " . $_SESSION['login_sec_level'];
             write_to_log($strLogMessage);
             header ("location: index.php");
@@ -51,6 +53,8 @@
             $_SESSION['login_username'] = $LDAPShortName . "//" . $name_entered;
             $_SESSION['active'] = 1;
             $_SESSION['login_type'] = 'AD';
+			$_SESSION['login_sec_bit'] = "000000";
+			$_SESSION['rec_sec'] = "1 2 3 4 5 6 7 8 9";
             $strLogMessage = "AD User: " . $_SESSION['loginid'] . " logged in with security level " . $_SESSION['login_sec_level'];
             write_to_log($strLogMessage);
             header ("location: index.php");
