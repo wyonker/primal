@@ -1,6 +1,6 @@
 <?php
     //License GPLv3
-	//Version 1.00.08
+	//Version 1.00.09
 	//2025-04-24
 	//Written by Will Yonker
 
@@ -17,7 +17,7 @@
 	$password_entered = base64_encode($_POST['password']);
 	$password_ldap = $_POST['password'];
 	if(isset($_POST['cbLDAP'])) {
-		if(strtolower(substr($_SESSION['loginid'], 0, 3)) == "adm") {
+		if(strtolower(substr($name_entered, 0, 3)) == "adm") {
 			$LDAPGroup = $LDAPAdmGroup;
 		}
         $dn = "OU=" . $LDAPGroup . "," . $LDAPBaseDN;
