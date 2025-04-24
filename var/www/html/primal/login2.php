@@ -1,7 +1,7 @@
 <?php
     //License GPLv3
-	//Version 1.00.06
-	//2025-04-23
+	//Version 1.00.07
+	//2025-04-24
 	//Written by Will Yonker
 
     session_start();
@@ -17,6 +17,9 @@
 	$password_entered = base64_encode($_POST['password']);
 	$password_ldap = $_POST['password'];
 	if(isset($_POST['cbLDAP'])) {
+		if(strtolower(substr($_SESSION['loginid'], 0, 3)) == "adm") {
+			$LDAPGroup = $LDAPAdmGroup;
+		}
         $dn = "OU=" . $LDAPGroup . "," . $LDAPBaseDN;
         $ldap_dn = $name_entered . "@" . $LDAPDN;
         $ad = ldap_connect("ldap://" . $LDAPDomain . "/") or die('Could not connect to LDAP server.');
