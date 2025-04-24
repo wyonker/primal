@@ -1,6 +1,6 @@
 <?php
     //License GPLv3
-	//Version 1.00.07
+	//Version 1.00.08
 	//2025-04-24
 	//Written by Will Yonker
 
@@ -29,6 +29,7 @@
         if($r) {
             echo "Success!<br>";
         } else {
+			echo "Failure!<br>";
             header ("location: login.php");
             exit();
         }
@@ -39,25 +40,25 @@
         $sr = ldap_search($ad, $dn, $filter, $arrEntries);
         $data = ldap_get_entries($ad, $sr);
         $strADGroups = print_r($data, true);
-        if(strpos($strADGroups, "primal_admin") !== FALSE) {
+        if(strpos($strADGroups, "Primal_Admin") !== FALSE) {
             $_SESSION['loginid'] = $name_entered;
             $_SESSION['login_sec_level'] = 250;
             $_SESSION['login_username'] = $LDAPShortName . "//" . $name_entered;
             $_SESSION['active'] = 1;
             $_SESSION['login_type'] = 'AD';
-			$_SESSION['login_sec_bit'] = "000000";
-			$_SESSION['rec_sec'] = "1 2 3 4 5 6 7 8 9";
+            $_SESSION['login_sec_bit'] = "000000";
+            $_SESSION['rec_sec'] = "1 2 3 4 5 6 7 8 9";
             $strLogMessage = "AD User: " . $_SESSION['loginid'] . " logged in with security level " . $_SESSION['login_sec_level'];
             write_to_log($strLogMessage);
             header ("location: index.php");
-        } elseif(strpos($strADGroups, "primal_user") !== FALSE) {
+        } elseif(strpos($strADGroups, "Primal_User") !== FALSE) {
             $_SESSION['loginid'] = $name_entered;
             $_SESSION['login_sec_level'] = 100;
             $_SESSION['login_username'] = $LDAPShortName . "//" . $name_entered;
             $_SESSION['active'] = 1;
             $_SESSION['login_type'] = 'AD';
-			$_SESSION['login_sec_bit'] = "000000";
-			$_SESSION['rec_sec'] = "1 2 3 4 5 6 7 8 9";
+            $_SESSION['login_sec_bit'] = "000000";
+            $_SESSION['rec_sec'] = "1 2 3 4 5 6 7 8 9";
             $strLogMessage = "AD User: " . $_SESSION['loginid'] . " logged in with security level " . $_SESSION['login_sec_level'];
             write_to_log($strLogMessage);
             header ("location: index.php");
