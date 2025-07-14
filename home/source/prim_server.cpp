@@ -916,38 +916,43 @@ void fSend() {
                                     while ((row3 = mysql_fetch_row(result3))) {
                                         strLocation = row3[0];
                                     }
-                                    //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
-                                    strLogMessage = strPUID + " Sending " + strAccn + " to " + strSendHIP + ".";
-                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                    strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm 2>&1";
-                                    //fWriteLog(strCMD, "/var/log/primal/primal.log");
-                                    strStatus = exec(strCMD.c_str());
-                                    strQuery4 = "UPDATE send SET complete = 1, tendsend = NOW() WHERE id = '" + strID + "';";
-                                    mysql_query(mconnect, strQuery4.c_str());
-                                    if(*mysql_error(mconnect)) {
-                                        strLogMessage="SQL Error: ";
-                                        strLogMessage+=mysql_error(mconnect);
-                                        strLogMessage+="strQuery3 = " + strQuery4 + ".";
+                                    if(strcmp(strOrg.c_str(), strSendOrg.c_str()) != 0) {
+                                        strLogMessage = strPUID + " " + strAccn + " is not for this organization.  Not sending.";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                    }
-                                    strQuery4 = "DELETE FROM send WHERE puid = \"" + strPUID + "\" AND tdest = \"0\" limit 1;";
-                                    mysql_query(mconnect, strQuery4.c_str());
-                                    if(*mysql_error(mconnect)) {
-                                        strLogMessage="SQL Error: ";
-                                        strLogMessage+=mysql_error(mconnect);
-                                        strLogMessage+="strQuery3 = " + strQuery4 + ".";
+                                    } else {
+                                        //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
+                                        strLogMessage = strPUID + " Sending " + strAccn + " to " + strSendHIP + ".";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm 2>&1";
+                                        //fWriteLog(strCMD, "/var/log/primal/primal.log");
+                                        strStatus = exec(strCMD.c_str());
+                                        strQuery4 = "UPDATE send SET complete = 1, tendsend = NOW() WHERE id = '" + strID + "';";
+                                        mysql_query(mconnect, strQuery4.c_str());
+                                        if(*mysql_error(mconnect)) {
+                                            strLogMessage="SQL Error: ";
+                                            strLogMessage+=mysql_error(mconnect);
+                                            strLogMessage+="strQuery3 = " + strQuery4 + ".";
+                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        }
+                                        strQuery4 = "DELETE FROM send WHERE puid = \"" + strPUID + "\" AND tdest = \"0\" limit 1;";
+                                        mysql_query(mconnect, strQuery4.c_str());
+                                        if(*mysql_error(mconnect)) {
+                                            strLogMessage="SQL Error: ";
+                                            strLogMessage+=mysql_error(mconnect);
+                                            strLogMessage+="strQuery3 = " + strQuery4 + ".";
+                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        }
+                                        //fWriteLog(strQuery4, "/var/log/primal/primal.log");
+                                        strQuery4 = "UPDATE rec SET send_status = 1 WHERE id = '" + strMPID + "';";
+                                        mysql_query(mconnect2, strQuery4.c_str());
+                                        if(*mysql_error(mconnect2)) {
+                                            strLogMessage="SQL Error: ";
+                                            strLogMessage+=mysql_error(mconnect2);
+                                            strLogMessage+="strQuery4 = " + strQuery4 + ".";
+                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        }
+                                        //fWriteLog(strQuery4, "/var/log/primal/primal.log");
                                     }
-                                    //fWriteLog(strQuery4, "/var/log/primal/primal.log");
-                                    strQuery4 = "UPDATE rec SET send_status = 1 WHERE id = '" + strMPID + "';";
-                                    mysql_query(mconnect2, strQuery4.c_str());
-                                    if(*mysql_error(mconnect2)) {
-                                        strLogMessage="SQL Error: ";
-                                        strLogMessage+=mysql_error(mconnect2);
-                                        strLogMessage+="strQuery4 = " + strQuery4 + ".";
-                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                    }
-                                    //fWriteLog(strQuery4, "/var/log/primal/primal.log");
                                 }
                             }
                         }
