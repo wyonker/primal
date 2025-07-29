@@ -1,6 +1,6 @@
 #!/bin/bash
-#Version 16
-#2025-03-25
+#Version 17
+#2025-07-29
 # Author:  Will Yonker
 # License GPLv3
 
@@ -517,6 +517,24 @@ echo "Compiling PRIMAL services for this platform"
     systemctl daemon-reload
 	systemctl start prim_process_server.service
 	systemctl enable prim_process_server.service
+
+	if [ -e "/etc/systemd/system/prim_server.service" ]
+	then
+		rm -f /etc/systemd/system/prim_server.service
+	fi
+	echo "[Unit]" > /etc/systemd/system/prim_server.service
+	echo "Description = PRIMAL Server service" >> /etc/systemd/system/prim_server.service
+	echo "After = network.target" >> /etc/systemd/system/prim_server.service
+	echo "" >> /etc/systemd/system/prim_server.service
+	echo "[Service]" >> /etc/systemd/system/prim_server.service
+	echo "ExecStart = /usr/local/bin/prim_server" >> /etc/systemd/system/prim_server.service
+	echo "Restart=always" >> /etc/systemd/system/prim_server.service
+	echo "" >> /etc/systemd/system/prim_server.service
+	echo "[Install]" >> /etc/systemd/system/prim_server.service
+	echo "WantedBy = multi-user.target" >> /etc/systemd/system/prim_server.service
+    systemctl daemon-reload
+	systemctl start prim_server.service
+	systemctl enable prim_server.service
 
     systemctl daemon-reload
 
