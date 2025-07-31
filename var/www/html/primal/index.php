@@ -127,6 +127,9 @@ echo '<button type="submit" name="refresh">Refresh ' . $_SESSION['refresh'] . 's
 unset($_SESSION["result"]);
 unset($studies);
 
+if(!isset($_SESSION['page_size']) || !ctype_digit($_SESSION['page_size'])) {
+	$_SESSION['page_size'] = 30;
+}
 if ($_SESSION['page_size'] < 20) {
 	$tempvar = 30;
 } else {
@@ -156,7 +159,11 @@ $strQuery="select count(*) as total from send;";
 $result=$conn->query($strQuery);
 $qdata=mysqli_fetch_assoc($result);
 $num_rows = $qdata['total'];
-$total_pages = floor($num_rows/$_SESSION['page_size']);
+if($num_rows > 0) {
+	$total_pages = floor($num_rows/$_SESSION['page_size']);
+} else {
+	$total_pages = 1;
+}
 //echo "num_rows = " . $num_rows . " : total_pages = " . $total_pages . "<br>";
 if(!isset($_GET["c"]) || $_GET["c"] == 0) {
 	$sort_column = "r.tstartrec";
