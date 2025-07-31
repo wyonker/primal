@@ -247,7 +247,7 @@ std::size_t fStartReceive(std::string strMessage) {
     strRecNum=strPrimalID.substr(0,intPos);
     strLogMessage =strPrimalID + " RECV  Starting receive for " + strMessage;
     fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
-    strLogMessage = strPrimalID + " RECV " + "message is " + strMessage;
+    strLogMessage = strPrimalID + " RECV  message is " + strMessage;
     fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
     //strAEC=vMessage[3];
     //Needed to get the client ID
@@ -345,11 +345,11 @@ std::size_t fStartReceive(std::string strMessage) {
                 fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
             }
         } else {
-            strQuery="insert into receive (puid, rservername, tstartrec, ttimestamp, rec_images, senderAET, callingAET) values ('";
+            strQuery="insert into receive (puid, rservername, tstartrec, ttimestamp, rec_images, senderAET, callingAET, fullpath) values ('";
             strQuery+=strPrimalID + "', '" + strHostname + "', '";
             strQuery+=pData2.strStartRec + "', ";
             strQuery+=to_string(intTimeStamp);
-            strQuery+=", '1', '" + pData2.calledAETitle + "', '" + pData2.callingAETitle + "');";
+            strQuery+=", '1', '" + pData2.calledAETitle + "', '" + pData2.callingAETitle + "', '" + strMessage + "');";
             mysql_query(mconnect, strQuery.c_str());
             if(*mysql_error(mconnect)) {
                 strLogMessage="SQL Error: ";
@@ -510,7 +510,10 @@ std::size_t fStartReceive(std::string strMessage) {
             //std::cout << "Need to add the SOPIUID" << std::endl;
             strQuery="insert into image set SOPIUID='" + strSopIUID + "', SERIUID='" + strSerIUID + "', puid='";
             strQuery+=strPrimalID + "', iservername='" + strHostname + "', ifilename='" + strFilename;
-            strQuery+="', idate='" + GetDate() + "';";
+            strQuery+="', idate='" + GetDate() + "' ";
+            strQuery+="ON DUPLICATE KEY UPDATE ";
+            strQuery+="SOPIUID='" + strSopIUID + "', SERIUID='" + strSerIUID + "', puid='" + strPrimalID + "', iservername='" + strHostname + "', ifilename='" + strFilename + "', idate='" + GetDate() + "';";
+
             mysql_query(mconnect, strQuery.c_str());
             if(*mysql_error(mconnect)) {
                 strLogMessage="SQL Error: ";
