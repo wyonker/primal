@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-    //Version 1.10.00
-    //2024-09-19
+    //Version 1.10.01
+    //2025-07-31
     //Written by Will Yonker
     
     session_start();
@@ -47,6 +47,8 @@ if(isset($_SESSION['retry'])) {
         $err_msg = "Error:  Database inconsistancy!  Please contact your administrator.";
     } elseif ($_SESSION['retry'] == 4) {
         $err_msg = "Error:  Invalid username or password entered!";
+    } elseif ($_SESSION['retry'] == 5) {
+        $err_msg = "Error:  Not a member of a valid security group!";
     }
     echo '<div style="color:#FF0000;"><blink>' . $err_msg . "</blink></div><br>";
 }
