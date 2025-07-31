@@ -463,7 +463,7 @@ std::size_t fStartReceive(std::string strMessage) {
                     strQuery="insert into study set puid='" + strPrimalID + "', SIUID='" + pData2.strSIUID + "'";
                     strQuery+=", StudyDate='" + strStudyDateTime + "', AccessionNum='" + pData2.strACCN + "'";
                     strQuery+=", sServerName='" + strHostname + "', StudyDesc='" + pData2.strStudyDesc + "'";
-                    strQuery+=", sClientID='" + strClientID2 + ", sRequestedProcedureID='" + pData2.strRequestedProcedureID + "', sClientName='" + strClientName + "';";
+                    strQuery+=", sClientID='" + strClientID2 + "', sRequestedProcedureID='" + pData2.strRequestedProcedureID + "', sClientName='" + strClientName + "';";
                 }
                 mysql_query(mconnect, strQuery.c_str());
                 if(*mysql_error(mconnect)) {
