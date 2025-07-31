@@ -247,13 +247,13 @@ std::size_t fStartReceive(std::string strMessage) {
     strRecNum=strPrimalID.substr(0,intPos);
     strLogMessage =strPrimalID + " RECV  Starting receive for " + strMessage;
     fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
+    strLogMessage = strPrimalID + " RECV " + "message is " + strMessage;
+    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
     //strAEC=vMessage[3];
     //Needed to get the client ID
     strClientID2 = "NULL";
     if(fs::exists("/etc/primal/prim_ae_map.conf")) {
         strLogMessage = strPrimalID + " RECV " + "Searching conf file for client ID of " + strAEC + "...";
-        fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
-        strLogMessage = strPrimalID + " RECV " + "message is " + strMessage;
         fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
         std::cout << strLogMessage << std::endl;
         std::ifstream fpAEMap("/etc/primal/prim_ae_map.conf");
