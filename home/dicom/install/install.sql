@@ -1,14 +1,15 @@
 DROP DATABASE IF EXISTS primal;
 CREATE DATABASE IF NOT EXISTS primal;
 use primal;
-create table patient (puid varchar(24) not null primary key, 
-                      pname varchar(38) not null, 
-                      pid varchar(38) not null,
-                      pdob date,
-					  psex varchar(6),
-					  pclientid varchar(16),
-					  PatientComments varchar(128),
-					  INDEX pname (pname));
+create table patient (id bigint(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
+    puid varchar(24) not null primary key, 
+    pname varchar(38) not null, 
+    pid varchar(38) not null,
+    pdob date,
+    psex varchar(6),
+    pclientid varchar(16),
+    PatientComments varchar(128),
+    INDEX pname (pname));
 create table receive (id bigint(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
 	puid varchar(24) not null,
 	fullpath varchar(256) not null,
@@ -55,20 +56,20 @@ create table user	 (loginid varchar(36) not null primary key,
 					  sec_bit varchar(128),
 					  rec_sec varchar(4096),
 					  access datetime);
-create table study   (DicomCasesID int(10) UNIQUE not null AUTO_INCREMENT,
-					  SIUID varchar(68) not null,
-                      puid varchar(24) not null,
-                      sServerName varchar(64) not null,
-                      StudyDesc varchar(256),
-					  StudyNumImg int(8),
-					  AccessionNum varchar(32),
-					  StudyDate datetime,
-					  StudyModType varchar(16),
-					  sClientID varchar(16),
-					  sClientName varchar(256),
-					  sCaseID varchar(16) DEFAULT "0",
-					  sRequestedProcedureID varchar(66),
-					  primary key (puid, SIUID));
+create table study   (ID bigint(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
+    SIUID varchar(68) not null,
+    puid varchar(24) not null,
+    sServerName varchar(64) not null,
+    StudyDesc varchar(256),
+    StudyNumImg int(8),
+    AccessionNum varchar(32),
+    StudyDate datetime,
+    StudyModType varchar(16),
+    sClientID varchar(16),
+    sClientName varchar(256),
+    sCaseID varchar(16) DEFAULT "0",
+    sRequestedProcedureID varchar(66),
+    primary key (puid, SIUID));
 create table series  (SIUID varchar(68) not null,
                       SERIUID varchar(68),
                       puid varchar(24) not null,
@@ -268,3 +269,4 @@ create table rec (id bigint(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
     send_status int not null default 0,
     INDEX accn (accn));
 grant all privileges on mirth_primal.* to 'primal'@'localhost' identified by 'primal' with grant option;
+grant all privileges on mirth_primal.* to 'mirth'@'localhost' with grant option;
