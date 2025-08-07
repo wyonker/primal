@@ -63,8 +63,8 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.20";
-const std::string strVersionDate = "2025-04-18";
+const std::string strVersionNum = "4.00.21";
+const std::string strVersionDate = "2025-08-07";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -751,6 +751,16 @@ void fSend() {
 
     mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
+    strLogMessage="mainDB.DBTYPE = " + mainDB.DBTYPE;
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    strLogMessage="mainDB.DBNAME = " + mainDB.DBNAME;
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    strLogMessage="mainDB.DBUSER = " + mainDB.DBUSER;
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    strLogMessage="mainDB.DBHOST = " + mainDB.DBHOST;
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    strLogMessage="mainDB.intDBPORT = " + std::to_string(mainDB.intDBPORT);
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     MYSQL_ROW row;
     MYSQL_ROW row2;
@@ -923,7 +933,9 @@ void fSend() {
                                         //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
                                         strLogMessage = strPUID + " Sending " + strAccn + " to " + strSendHIP + ".";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                        strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm 2>&1";
+                                        strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm > /var/log/primal/primal.log 2>&1";
+                                        strLogMessage = strPUID + " Finished sending " + strAccn + " to " + strSendHIP + ".";
+                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                         //fWriteLog(strCMD, "/var/log/primal/primal.log");
                                         strStatus = exec(strCMD.c_str());
                                         strQuery4 = "UPDATE send SET complete = 1, tendsend = NOW() WHERE id = '" + strID + "';";
