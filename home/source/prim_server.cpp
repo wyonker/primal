@@ -63,7 +63,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.22";
+const std::string strVersionNum = "4.00.23";
 const std::string strVersionDate = "2025-08-07";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -933,7 +933,7 @@ void fSend() {
                                         //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
                                         strLogMessage = strPUID + " Sending " + strAccn + " to " + strSendHIP + ".";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                        strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm > /var/log/primal/prim_server_out.log 2>&1";
+                                        strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
                                         strLogMessage = strPUID + " Finished sending " + strAccn + " to " + strSendHIP + ".";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                         //fWriteLog(strCMD, "/var/log/primal/primal.log");
