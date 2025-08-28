@@ -741,13 +741,13 @@ void signal_handler(int signal) {
 }
 
 void fSend() {
-    std::string strRecNum, strAET, strFileExt, strHostName, strDateTime, strFullPath, strCmd, strSendType, strPrimalID, strReturn;
+    std::string strRecNum, strAET, strFileExt, strHostName, strDateTime, strFullPath, strCmd, strSendType, strPrimalID, strReturn, strDate;
     std::string strLogMessage, strCMD, strID, strPUID, strServerName, strDestNum, strDest, strOrg, strStartSend, strEndSend, strImages, strError, strRetry, strComplete;
     std::string strQuery, strQuery2, strQuery3, strQuery4, strLocation, strSendPort, strSendHIP, strSendAEC, strSendAET, strStatus;
     std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId;
     std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn, strTime;
 
-    int intNumRows, intStartSec, intNowSec, intSend=0;
+    int intNumRows, intStartSec, intNowSec, intDateCheck, intSend=0;
 
     mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
@@ -830,7 +830,16 @@ void fSend() {
                         strNewAccn = strAccn.substr(0, strAccn.size()-3);
                     }
                     strCMD = "date +\%s -d \"" + strStartSend + "\"";
-                    intStartSec = stoi(exec(strCMD.c_str()));
+                    strDate = exec(strCMD.c_str());
+                    intDateCheck = !strDate.empty() && std::all_of(strDate.begin(), strDate.end(), ::isdigit);
+                    if (intDateCheck) {
+                        intStartSec = stoi(strDate.c_str());
+                    } else {
+                        strLogMessage = strPUID + " WARN: Unable to determine start time.  Skipping...";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        continue;
+                    }
+                    //intStartSec = stoi(exec(strCMD.c_str()));
                     strCMD = "date +\%s";
                     intNowSec = stoi(exec(strCMD.c_str()));
                     strTime = fSecToTime(intNowSec - intStartSec);
