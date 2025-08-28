@@ -63,8 +63,8 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.23";
-const std::string strVersionDate = "2025-08-07";
+const std::string strVersionNum = "4.00.24";
+const std::string strVersionDate = "2025-08-28";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -832,7 +832,7 @@ void fSend() {
                     strCMD = "date +\%s -d \"" + strStartSend + "\"";
                     strDate = exec(strCMD.c_str());
                     intDateCheck = !strDate.empty() && std::all_of(strDate.begin(), strDate.end(), ::isdigit);
-                    if (intDateCheck) {
+                    if (intDateCheck == 0) {
                         intStartSec = stoi(strDate.c_str());
                     } else {
                         strLogMessage = strPUID + " WARN: Unable to determine start time.  Skipping...";
