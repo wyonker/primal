@@ -63,7 +63,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.06";
+const std::string strVersionNum = "4.01.07";
 const std::string strVersionDate = "2025-09-02";
 
 //const std::string strProcChainType = "PRIMRCSEND";
