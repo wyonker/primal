@@ -63,7 +63,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.07";
+const std::string strVersionNum = "4.01.08";
 const std::string strVersionDate = "2025-09-02";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -412,7 +412,7 @@ int fStartReceivers() {
                     strCMD += " -ss " + strDir + " -xf /home/dicom/bin/storescp.cfg Default " + strPort + " -fe \".dcm\" -xcr \"/home/dicom/rec.bash " + strRecID + "\" #p #a #c >> " + strLog + " 2>&1 &";
                     strLogMessage = strCMD;
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                    strStatus = exec(strCMD.c_str());
+                    strStatus = system(strCMD.c_str());
                 }
             }
         }
