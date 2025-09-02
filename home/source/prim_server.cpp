@@ -63,7 +63,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.00";
+const std::string strVersionNum = "4.01.01";
 const std::string strVersionDate = "2025-09-02";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -182,6 +182,33 @@ std::string fSecToTime(int intSec) {
         strReturn = std::to_string(intDay) + "d " + std::to_string(intHour) + "h " + std::to_string(intMin) + "m " + std::to_string(intSec) + "s";
     }
     return strReturn;
+}
+
+std::string exec(const char* cmd) {
+    std::array<char, 256> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
+}
+
+void signal_handler(int signal) {
+    std::cout << "Rereading configuration files." << std::endl;
+    //Need to reload configuration files
+    mainDB.DBHOST.clear();
+    mainDB.DBUSER.clear();
+    mainDB.DBPASS.clear();
+    mainDB.DBNAME.clear();
+    mainDB.intDBPORT=0;
+    ReadDBConfFile();
+ 
+    std::cout << signal << std::endl;
+    return;
 }
 
 std::string fDcmDump(std::string strTemp) {
@@ -724,33 +751,6 @@ void fProcess() {
             }
         }
     }
-}
-
-std::string exec(const char* cmd) {
-    std::array<char, 256> buffer;
-    std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-    if (!pipe) {
-        throw std::runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-    return result;
-}
-
-void signal_handler(int signal) {
-    std::cout << "Rereading configuration files." << std::endl;
-    //Need to reload configuration files
-    mainDB.DBHOST.clear();
-    mainDB.DBUSER.clear();
-    mainDB.DBPASS.clear();
-    mainDB.DBNAME.clear();
-    mainDB.intDBPORT=0;
-    ReadDBConfFile();
- 
-    std::cout << signal << std::endl;
-    return;
 }
 
 void fSend() {
