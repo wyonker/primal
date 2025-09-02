@@ -63,7 +63,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.01";
+const std::string strVersionNum = "4.01.02";
 const std::string strVersionDate = "2025-09-02";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -197,20 +197,6 @@ std::string exec(const char* cmd) {
     return result;
 }
 
-void signal_handler(int signal) {
-    std::cout << "Rereading configuration files." << std::endl;
-    //Need to reload configuration files
-    mainDB.DBHOST.clear();
-    mainDB.DBUSER.clear();
-    mainDB.DBPASS.clear();
-    mainDB.DBNAME.clear();
-    mainDB.intDBPORT=0;
-    ReadDBConfFile();
- 
-    std::cout << signal << std::endl;
-    return;
-}
-
 std::string fDcmDump(std::string strTemp) {
     std::string strCMD, strReturn, strReadLine;
 
@@ -326,7 +312,21 @@ int ReadDBConfFile() {
     infile.close();
 
     return 0;
-};
+}
+
+void signal_handler(int signal) {
+    std::cout << "Rereading configuration files." << std::endl;
+    //Need to reload configuration files
+    mainDB.DBHOST.clear();
+    mainDB.DBUSER.clear();
+    mainDB.DBPASS.clear();
+    mainDB.DBNAME.clear();
+    mainDB.intDBPORT=0;
+    ReadDBConfFile();
+ 
+    std::cout << signal << std::endl;
+    return;
+}
 
 int fStartReceivers() {
     std::string strLogMessage, strQuery, strRecID, strRecNum, strServer, strType, strPort, strDir, strLog, strLL, strAET, strTO, strProcDir, strProcLog, strOutDir, strRecCompLevel, strOutLog, strSentDir;
