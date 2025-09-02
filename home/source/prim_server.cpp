@@ -63,8 +63,8 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.00.24";
-const std::string strVersionDate = "2025-08-28";
+const std::string strVersionNum = "4.01.00";
+const std::string strVersionDate = "2025-09-02";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -302,7 +302,8 @@ int ReadDBConfFile() {
 };
 
 int fStartReceivers() {
-    std::string strLogMessage, strQuery, strRecID, strRecNum, strServer, strType, strPort, strDir, strLog, strLL, strAET, strTO, strProcDir, strProcLog, strOutDir, strRecCompLevel, strOutLog, strSentDir, strHoldDir, strErrorDir, strDupe, strPassThr, strRetry, strCMD;
+    std::string strLogMessage, strQuery, strRecID, strRecNum, strServer, strType, strPort, strDir, strLog, strLL, strAET, strTO, strProcDir, strProcLog, strOutDir, strRecCompLevel, strOutLog, strSentDir;
+    std::string strHoldDir, strErrorDir, strDupe, strPassThr, strRetry, strCMD, strStatus;
     int intNumRows;
 
     mysql_library_init(0, NULL, NULL);
@@ -327,7 +328,7 @@ int fStartReceivers() {
         return -1;
     }
 
-    strQuery="SELECT * FROM conf_rec WHERE active = 1;";
+    strQuery="SELECT * FROM conf_rec WHERE active = 1 AND conf_name NOT LIKE '!%';";
     mysql_query(mconnect, strQuery.c_str());
     if(*mysql_error(mconnect)) {
         strLogMessage="SQL Error: ";
@@ -367,6 +368,9 @@ int fStartReceivers() {
                 if(strType == "DICOM") {
                     strCMD = "/home/dicom/bin/storescp --fork +cl " + strRecCompLevel + " -aet " + strAET + " -tos " + strTO + " -ll " + strLL + " -od " + strDir;
                     strCMD += " -ss " + strDir + " -xf /home/dicom/bin/storescp.cfg Default -fe \".dcm\" -xcr \"/home/dicom/rec.bash \"" + strRecID + " #p #a #c\"" + strPort + ">> " + strLog + " 2>&1 &";
+                    strLogMessage = strCMD;
+                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    strStatus = exec(strCMD.c_str());
                 }
             }
         }
