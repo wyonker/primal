@@ -308,6 +308,9 @@ int fStartReceivers() {
     MYSQL_ROW row;
     MYSQL_RES *result;
 
+    strLogMessage="Starting the receive process.";
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+
     mconnect=mysql_init(NULL);
     mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
     if (!mconnect) {
@@ -366,6 +369,10 @@ int fStartReceivers() {
             }
         }
     }
+
+    strLogMessage="Finished the receive process.";
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+
     return 0;
 }
 
