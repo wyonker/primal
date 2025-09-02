@@ -63,7 +63,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.02";
+const std::string strVersionNum = "4.01.03";
 const std::string strVersionDate = "2025-09-02";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -392,7 +392,7 @@ int fStartReceivers() {
                 strLogMessage = "Starting to receive " + strRecNum + " from " + strServer + ".";
                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                 //Need to start the receive process.
-                if(strType == "DICOM") {
+                if(strType == "1") {
                     strCMD = "/home/dicom/bin/storescp --fork +cl " + strRecCompLevel + " -aet " + strAET + " -tos " + strTO + " -ll " + strLL + " -od " + strDir;
                     strCMD += " -ss " + strDir + " -xf /home/dicom/bin/storescp.cfg Default -fe \".dcm\" -xcr \"/home/dicom/rec.bash \"" + strRecID + " #p #a #c\"" + strPort + ">> " + strLog + " 2>&1 &";
                     strLogMessage = strCMD;
@@ -813,8 +813,6 @@ void fSend() {
     }
 
     strRecNum = "1";
-    strLogMessage = "Starting prim_server version " + strVersionNum + ".";
-    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     while (1) {
         strQuery = "SELECT send.id, send.puid, send.sservername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete > 4;";
@@ -1005,10 +1003,14 @@ void fSend() {
 }
 
 int main() {
+    std::string strLogMessage;
 
     std::signal(SIGHUP, signal_handler);
 
-    //fStartReceivers();
+    strLogMessage = "Starting prim_server version " + strVersionNum + ".";
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+
+    fStartReceivers();
     //DCMTK will get the DICOM, just need to start working on it when it's done.
     std::thread receive(fEndReceive);
     std::thread process(fProcess);
