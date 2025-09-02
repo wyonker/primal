@@ -305,6 +305,8 @@ int fStartReceivers() {
     std::string strLogMessage, strQuery, strRecID, strRecNum, strServer, strType, strPort, strDir, strLog, strLL, strAET, strTO, strProcDir, strProcLog, strOutDir, strRecCompLevel, strOutLog, strSentDir, strHoldDir, strErrorDir, strDupe, strPassThr, strRetry, strCMD;
     int intNumRows;
 
+    mysql_library_init(0, NULL, NULL);
+    ReadDBConfFile();
     MYSQL_ROW row;
     MYSQL_RES *result;
 
