@@ -316,20 +316,6 @@ int ReadDBConfFile() {
     return 0;
 }
 
-void signal_handler(int signal) {
-    std::cout << "Rereading configuration files." << std::endl;
-    //Need to reload configuration files
-    mainDB.DBHOST.clear();
-    mainDB.DBUSER.clear();
-    mainDB.DBPASS.clear();
-    mainDB.DBNAME.clear();
-    mainDB.intDBPORT=0;
-    ReadDBConfFile();
- 
-    std::cout << signal << std::endl;
-    return;
-}
-
 int fStartReceivers() {
     std::string strLogMessage, strQuery, strRecID, strRecNum, strServer, strType, strPort, strDir, strLog, strLL, strAET, strTO, strProcDir, strProcLog, strOutDir, strRecCompLevel, strOutLog, strSentDir;
     std::string strHoldDir, strErrorDir, strDupe, strPassThr, strRetry, strCMD, strStatus, strReturn, strLine;
@@ -1064,10 +1050,31 @@ void fSend() {
     return;
 }
 
+void signal_handler(int signal) {
+    std::cout << "Rereading configuration files." << std::endl;
+    //Need to reload configuration files
+    mainDB.DBHOST.clear();
+    mainDB.DBUSER.clear();
+    mainDB.DBPASS.clear();
+    mainDB.DBNAME.clear();
+    mainDB.intDBPORT=0;
+    ReadDBConfFile();
+ 
+    std::cout << signal << std::endl;
+    return;
+}
+
+void signal_handler2(int signal) {
+    std::cout << "Stopping all processes." << std::endl;
+    fRecShutdown();
+    return;
+}   
+
 int main() {
     std::string strLogMessage;
 
     std::signal(SIGHUP, signal_handler);
+    std::signal(SIGTERM, signal_handler2);
 
     strLogMessage = "Starting prim_server version " + strVersionNum + ".";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -1081,7 +1088,6 @@ int main() {
     receive.join();
     process.join();
     send.join();
-    fRecShutdown();
     
     return 0;
 }
