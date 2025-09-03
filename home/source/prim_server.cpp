@@ -70,6 +70,8 @@ const std::string strVersionDate = "2025-09-02";
 
 //#include "prim_functions.h"
 
+std::vector<int> vecPIDs;
+
 struct my_msgbuf {
     long mtype;
     char mtext[200];
@@ -330,8 +332,9 @@ void signal_handler(int signal) {
 
 int fStartReceivers() {
     std::string strLogMessage, strQuery, strRecID, strRecNum, strServer, strType, strPort, strDir, strLog, strLL, strAET, strTO, strProcDir, strProcLog, strOutDir, strRecCompLevel, strOutLog, strSentDir;
-    std::string strHoldDir, strErrorDir, strDupe, strPassThr, strRetry, strCMD, strStatus;
+    std::string strHoldDir, strErrorDir, strDupe, strPassThr, strRetry, strCMD, strStatus, strReturn, strLine;
     int intNumRows;
+    std::vector<int> vecTemp;
 
     mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
@@ -340,6 +343,16 @@ int fStartReceivers() {
 
     strLogMessage="Starting the receive process.";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+
+    //Get list of running storescp processes before we start
+    strCMD = "ps -ef|grep /home/dicom/bin/storescp|grep -v grep|tr -s \" \"|cut -d \" \" -f2";
+    strReturn = exec(strCMD.c_str());
+    std::istringstream isLine(strReturn);
+    while (std::getline(isLine, strLine)) {
+        if(!strLine.empty()) {
+            vecTemp.push_back(atoi(strLine.c_str()));
+        }
+    }
 
     mconnect=mysql_init(NULL);
     mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
@@ -409,16 +422,50 @@ int fStartReceivers() {
                 //Need to start the receive process.
                 if(strType == "1") {
                     strCMD = "/home/dicom/bin/storescp --fork +cl " + strRecCompLevel + " -aet " + strAET + " -tos " + strTO + " -ll " + strLL + " -od " + strDir;
-                    strCMD += " -ss " + strDir + " -xf /home/dicom/bin/storescp.cfg Default -fe \".dcm\" -xcr \"/home/dicom/rec.bash \\\"#p " + strRecNum + " #a #c\\\"\" " + strPort + " >> " + strLog + " 2>&1 &";
+                    strCMD += " -ss " + strRecID + " -xf /home/dicom/bin/storescp.cfg Default -fe \".dcm\" -xcr \"/home/dicom/rec.bash \\\"#p " + strRecID + " #a #c\\\"\" " + strPort + " >> " + strLog + " 2>&1 &";
                     strLogMessage = strCMD;
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                    strStatus = system(strCMD.c_str());
+                    strStatus = exec(strCMD.c_str());
+                    //Get list of running storescp processes now
+                    strCMD = "ps -ef|grep /home/dicom/bin/storescp|grep -v grep|tr -s \" \"|cut -d \" \" -f2";
+                    strReturn = exec(strCMD.c_str());
+                    std::istringstream isLine2(strReturn);
+                    while (std::getline(isLine2, strLine)) {
+                        if(!strLine.empty()) {
+                            auto it = std::find(vecTemp.begin(), vecTemp.end(), atoi(strLine.c_str()));
+                            if(it == vecTemp.end()) {
+                                //PID not found must be the one we just started
+                                vecPIDs.push_back(atoi(strLine.c_str()));
+                                strLogMessage = "Started new storescp process with PID: " + strLine;
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
     strLogMessage="Finished the receive process.";
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+
+    return 0;
+}
+
+int fRecShutdown() {
+    std::string strLogMessage;
+
+    strLogMessage="Stopping the receive process.";
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+
+    //Now kill all the storescp processes we started
+    for (auto pid : vecPIDs) {
+        strCMD = "kill -9 " + std::to_string(pid);
+        strLogMessage = "Killing storescp process with PID: " + std::to_string(pid);
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        exec(strCMD.c_str());
+    }
+    strLogMessage="Finished stopping the processes.";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     return 0;
@@ -1034,6 +1081,7 @@ int main() {
     receive.join();
     process.join();
     send.join();
+    fRecShutdown();
     
     return 0;
 }
