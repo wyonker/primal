@@ -63,7 +63,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.14";
+const std::string strVersionNum = "4.01.15";
 const std::string strVersionDate = "2025-09-03";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -1065,7 +1065,6 @@ void signal_handler(int signal) {
 }
 
 void signal_handler2(int signal) {
-    std::cout << "Stopping all processes." << std::endl;
     fRecShutdown();
     return;
 }   
