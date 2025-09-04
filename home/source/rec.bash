@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Should get path, rec_id, aet, aec
-#REV 8
+#REV 9
 
 FULLPATH=`echo "$1"|cut -d " " -f1`
 RECID=`echo "$1"|cut -d " " -f2`
@@ -40,12 +40,12 @@ fi
 #First check to see if we inserted this study already
 NUMSTUDIES=`echo "SELECT COUNT(*) FROM study WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\";" | mysql -N -u root primal`
 if [ "$NUMSTUDIES" -eq 0 ]; then
-    echo "INSERT INTO study SET puid=\"$PUID\", SIUID=\"$SIUID\", sServerName=\"$HOSTNAME\", studyDesc=\"$STUDYDESC\", AccessionNum=\"$ACCN\", StudyDate=\"$STUDYDATE $STUDYTIME\", StudyModType=\"$MODALITY\", sClientID=\"$ORG\", StudyNumImg=1;" | mysql -N -u root primal
+    echo "INSERT INTO study SET puid=\"$PUID\", SIUID=\"$SIUID\", sServerName=\"$HOSTNAME\", studyDesc=\"$STUDYDESC\", AccessionNum=\"$ACCN\", StudyDate=\"$STUDYDATETIME\", StudyModType=\"$MODALITY\", sClientID=\"$ORG\", StudyNumImg=1;" | mysql -N -u root primal
 else
     `echo "UPDATE study SET StudyNumImg = StudyNumImg + 1 WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\" limit 1;" | mysql -N -u root primal`
 fi
 #First check to see if we inserted this series already
-NUMSERIES=`echo "SELECT COUNT(*) FROM series WHERE puid = \"$PUID\" AND seruid = \"$SERUID\";" | mysql -N -u root primal`
+NUMSERIES=`echo "SELECT COUNT(*) FROM series WHERE puid = \"$PUID\" AND SERIUID = \"$SERUID\";" | mysql -N -u root primal`
 if [ "$NUMSERIES" -eq 0 ]; then
     echo "INSERT INTO series SET puid = \"$PUID\", seruid = \"$SERUID\", iservername = \"$HOSTNAME\", ifilename = \"$FILENAME\", idate = NOW(), ilocation = \"$FULLPATH\", SeriesNumImg=1;" | mysql -N -u root primal
 else
