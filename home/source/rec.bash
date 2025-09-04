@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Should get path, rec_id, aet, aec
-#REV 10
+#REV 11
 
 FULLPATH=`echo "$1"|cut -d " " -f1`
 RECID=`echo "$1"|cut -d " " -f2`
@@ -15,17 +15,22 @@ STUDYDESC=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,1030"|head -1|cut -d "[
 ACCN=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0050"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 STUDYDATE=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0020"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 STUDYTIME=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0030"|head -1|cut -d "[" -f2|cut -d "]" -f1|cut -d "." -f1`
-STUDYDATETIME=`echo "$STUDYDATE"|cut -c1-2`
+STUDYDATETIME=`echo "$STUDYDATE"|cut -c1-4`
 STUDYDATETIME=`echo "$STUDYDATETIME"-`
-STUDYDATETIME=`echo "$STUDYDATE"|cut -c3-4`
+TEMP=`echo "$STUDYDATE"|cut -c5-6`
+STUDYDATETIME=`echo "$STUDYDATETIME"$TEMP`
 STUDYDATETIME=`echo "$STUDYDATETIME"-`
-STUDYDATETIME=`echo "$STUDYDATE"|cut -c5-6`
+TEMP=`echo "$STUDYDATE"|cut -c7-8`
+STUDYDATETIME=`echo "$STUDYDATETIME"$TEMP`
 STUDYDATETIME=`echo "$STUDYDATETIME "`
-STUDYDATETIME=`echo "$STUDYTIME"|cut -c1-2`
+TEMP=`echo "$STUDYTIME"|cut -c1-2`
+STUDYDATETIME=`echo "$STUDYDATETIME"$TEMP`
 STUDYDATETIME=`echo "$STUDYDATETIME":`
-STUDYDATETIME=`echo "$STUDYTIME"|cut -c3-4`
+TEMP=`echo "$STUDYTIME"|cut -c3-4`
+STUDYDATETIME=`echo "$STUDYDATETIME"$TEMP`
 STUDYDATETIME=`echo "$STUDYDATETIME":`
-STUDYDATETIME=`echo "$STUDYTIME"|cut -c5-6`
+TEMP=`echo "$STUDYTIME"|cut -c5-6`
+STUDYDATETIME=`echo "$STUDYDATETIME"$TEMP`
 MODALITY=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0060"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 ORG=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0050"|head -1|cut -d "[" -f2|cut -d "]" -f1|rev|cut -c 1-3|rev`
 HOSTNAME=`hostname`
