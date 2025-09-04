@@ -63,8 +63,8 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.15";
-const std::string strVersionDate = "2025-09-03";
+const std::string strVersionNum = "4.01.16";
+const std::string strVersionDate = "2025-09-04";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -408,7 +408,7 @@ int fStartReceivers() {
                 //Need to start the receive process.
                 if(strType == "1") {
                     strCMD = "/home/dicom/bin/storescp --fork +cl " + strRecCompLevel + " -aet " + strAET + " -tos " + strTO + " -ll " + strLL + " -od " + strDir;
-                    strCMD += " -ss " + strRecID + " -xf /home/dicom/bin/storescp.cfg Default -fe \".dcm\" -xcr \"/home/dicom/rec.bash \\\"#p " + strRecID + " #a #c\\\"\" " + strPort + " >> " + strLog + " 2>&1 &";
+                    strCMD += " -ss " + strRecID + " -xf /home/dicom/bin/storescp.cfg Default -fe \".dcm\" -xcr \"/home/dicom/rec.bash \\\"#p " + strRecID + " #a #c #f\\\" >> /var/log/primal/rec.log 2>&1\" " + strPort + " >> " + strLog + " 2>&1 &";
                     strLogMessage = strCMD;
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     strStatus = exec(strCMD.c_str());
