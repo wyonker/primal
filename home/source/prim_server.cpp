@@ -64,7 +64,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.16";
+const std::string strVersionNum = "4.01.17";
 const std::string strVersionDate = "2025-09-04";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -460,14 +460,14 @@ int fRecShutdown() {
 
 void fEndReceive() {
     std::string strLogMessage, strQuery, strID, strPUID, strFullPath, strServerName, strRecID, strDateTime, strThisFilename, strTemp3, strRawDCMdump, strSerIUID, strSerDesc, strModality, strSopIUID, strStudyDateTime;
-    std::string strQuery2;
+    std::string strQuery2, strRecTimeout, strQuery3, strQuery4;
     int intNumRows;
     std::size_t intPOS;
     std::vector<std::string> filenames;
     struct PatientData pData2;
 
-    MYSQL_ROW row;
-    MYSQL_RES *result;
+    MYSQL_ROW row, row2;
+    MYSQL_RES *result, *result2;
 
     strQuery = "SELECT id, puid, fullpath, rservername, rec_id, tstartrec FROM receive WHERE complete = 0;";
     mysql_query(mconnect, strQuery.c_str());
