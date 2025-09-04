@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Should get path, rec_id, aet, aec
-#REV 13
+#REV 14
 
 FULLPATH=`echo "$1"|cut -d " " -f1`
 RECID=`echo "$1"|cut -d " " -f2`
@@ -41,7 +41,9 @@ PUID=`echo "$FULLPATH"|rev|cut -d '/' -f1|rev`
 #First check to see if we inserted this study already in the receive
 NUMSTUDIES=`echo "SELECT COUNT(*) FROM receive WHERE puid = \"$PUID\" AND rservername = \"$HOSTNAME\";" | mysql -N -u root primal`
 if [ "$NUMSTUDIES" -eq 0 ]; then
-    echo "INSERT INTO receive SET puid = \"$PUID\", fullpath = \"$FULLPATH\", rservername = \"$HOSTNAME\", rec_id = $RECID, tstartrec = NOW(), senderAET = \"$SENDERAET\", callingAET = \"$CALLINGAET\";" | mysql -N -u root primal
+    echo "INSERT INTO receive SET puid = \"$PUID\", fullpath = \"$FULLPATH\", rservername = \"$HOSTNAME\", rec_id = $RECID, tstartrec = NOW(), senderAET = \"$SENDERAET\", callingAET = \"$CALLINGAET\", rec_images=1;" | mysql -N -u root primal
+else
+    `echo "UPDATE receive SET rec_images = rec_images + 1 WHERE puid = \"$PUID\" AND rservername = \"$HOSTNAME\" limit 1;" | mysql -N -u root primal`
 fi
 #First check to see if we inserted this study already
 NUMSTUDIES=`echo "SELECT COUNT(*) FROM study WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\";" | mysql -N -u root primal`
