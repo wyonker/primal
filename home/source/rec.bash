@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Should get path, rec_id, aet, aec
-#REV 9
+#REV 10
 
 FULLPATH=`echo "$1"|cut -d " " -f1`
 RECID=`echo "$1"|cut -d " " -f2`
@@ -47,9 +47,9 @@ fi
 #First check to see if we inserted this series already
 NUMSERIES=`echo "SELECT COUNT(*) FROM series WHERE puid = \"$PUID\" AND SERIUID = \"$SERUID\";" | mysql -N -u root primal`
 if [ "$NUMSERIES" -eq 0 ]; then
-    echo "INSERT INTO series SET puid = \"$PUID\", seruid = \"$SERUID\", iservername = \"$HOSTNAME\", ifilename = \"$FILENAME\", idate = NOW(), ilocation = \"$FULLPATH\", SeriesNumImg=1;" | mysql -N -u root primal
+    echo "INSERT INTO series SET puid = \"$PUID\", SERIUID = \"$SERUID\", iservername = \"$HOSTNAME\", ifilename = \"$FILENAME\", idate = NOW(), ilocation = \"$FULLPATH\", SeriesNumImg=1;" | mysql -N -u root primal
 else
-    `echo "UPDATE series SET SeriesNumImg = SeriesNumImg + 1 WHERE puid=\"$PUID\" AND seruid=\"$SERUID\" limit 1;" | mysql -N -u root primal`
+    `echo "UPDATE series SET SeriesNumImg = SeriesNumImg + 1 WHERE puid=\"$PUID\" AND SERIUID=\"$SERUID\" limit 1;" | mysql -N -u root primal`
 fi
 #add to image table
 echo "INSERT INTO image SET puid=\"$PUID\", SOPIUID=\"$SOPIUID\", iservername=\"$HOSTNAME\", ifilename=\"$FILENAME\", idate=NOW(), ilocation=\"$FULLPATH\";" | mysql -N -u root primal
