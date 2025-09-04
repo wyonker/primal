@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Should get path, rec_id, aet, aec
-#REV 12
+#REV 13
 
 FULLPATH=`echo "$1"|cut -d " " -f1`
 RECID=`echo "$1"|cut -d " " -f2`
@@ -53,7 +53,7 @@ fi
 #First check to see if we inserted this series already
 NUMSERIES=`echo "SELECT COUNT(*) FROM series WHERE puid = \"$PUID\" AND SERIUID = \"$SERUID\";" | mysql -N -u root primal`
 if [ "$NUMSERIES" -eq 0 ]; then
-    echo "INSERT INTO series SET puid = \"$PUID\", SERIUID = \"$SERUID\", SIUID=\`$SIUID\", SeriesDesc=\"$SERIESDESC\", SeriesNumImg=1;" | mysql -N -u root primal
+    echo "INSERT INTO series SET puid = \"$PUID\", SERIUID = \"$SERUID\", SIUID=\"$SIUID\", SeriesDesc=\"$SERIESDESC\", SeriesNumImg=1;" | mysql -N -u root primal
 else
     `echo "UPDATE series SET SeriesNumImg = SeriesNumImg + 1 WHERE puid=\"$PUID\" AND SERIUID=\"$SERUID\" limit 1;" | mysql -N -u root primal`
 fi
