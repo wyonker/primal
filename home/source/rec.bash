@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Should get path, rec_id, aet, aec
-#REV 11
+#REV 12
 
 FULLPATH=`echo "$1"|cut -d " " -f1`
 RECID=`echo "$1"|cut -d " " -f2`
@@ -13,6 +13,7 @@ SERUID=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0020,000e"|head -1|cut -d "[" -
 SOPIUID=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0018"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 STUDYDESC=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,1030"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 ACCN=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0050"|head -1|cut -d "[" -f2|cut -d "]" -f1`
+SERIESDESC=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,103e"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 STUDYDATE=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0020"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 STUDYTIME=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0030"|head -1|cut -d "[" -f2|cut -d "]" -f1|cut -d "." -f1`
 STUDYDATETIME=`echo "$STUDYDATE"|cut -c1-4`
@@ -52,7 +53,7 @@ fi
 #First check to see if we inserted this series already
 NUMSERIES=`echo "SELECT COUNT(*) FROM series WHERE puid = \"$PUID\" AND SERIUID = \"$SERUID\";" | mysql -N -u root primal`
 if [ "$NUMSERIES" -eq 0 ]; then
-    echo "INSERT INTO series SET puid = \"$PUID\", SERIUID = \"$SERUID\", iservername = \"$HOSTNAME\", ifilename = \"$FILENAME\", idate = NOW(), ilocation = \"$FULLPATH\", SeriesNumImg=1;" | mysql -N -u root primal
+    echo "INSERT INTO series SET puid = \"$PUID\", SERIUID = \"$SERUID\", SIUID=\`$SIUID\", SeriesDesc=\"$SERIESDESC\", SeriesNumImg=1;" | mysql -N -u root primal
 else
     `echo "UPDATE series SET SeriesNumImg = SeriesNumImg + 1 WHERE puid=\"$PUID\" AND SERIUID=\"$SERUID\" limit 1;" | mysql -N -u root primal`
 fi
