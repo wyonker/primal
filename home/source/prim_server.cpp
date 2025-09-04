@@ -64,7 +64,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.17";
+const std::string strVersionNum = "4.01.18";
 const std::string strVersionDate = "2025-09-04";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -467,7 +467,7 @@ void fEndReceive() {
     struct PatientData pData2;
 
     MYSQL_ROW row, row2;
-    MYSQL_RES *result, *result2;
+    MYSQL_RES *result, result2;
 
     strQuery = "SELECT id, puid, fullpath, rservername, rec_id, tstartrec FROM receive WHERE complete = 0;";
     mysql_query(mconnect, strQuery.c_str());
