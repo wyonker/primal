@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Should get path, rec_id, aet, aec
-#REV 14
+#REV 15
 
 FULLPATH=`echo "$1"|cut -d " " -f1`
 RECID=`echo "$1"|cut -d " " -f2`
@@ -60,5 +60,5 @@ else
     `echo "UPDATE series SET SeriesNumImg = SeriesNumImg + 1 WHERE puid=\"$PUID\" AND SERIUID=\"$SERUID\" limit 1;" | mysql -N -u root primal`
 fi
 #add to image table
-echo "INSERT INTO image SET puid=\"$PUID\", SOPIUID=\"$SOPIUID\", iservername=\"$HOSTNAME\", ifilename=\"$FILENAME\", idate=NOW(), ilocation=\"$FULLPATH\";" | mysql -N -u root primal
+echo "INSERT INTO image SET puid=\"$PUID\", SOPIUID=\"$SOPIUID\", SERIUID=\"$SERUID\", iservername=\"$HOSTNAME\", ifilename=\"$FILENAME\", idate=NOW(), ilocation=\"$FULLPATH\";" | mysql -N -u root primal
 
