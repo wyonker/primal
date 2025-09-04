@@ -54,6 +54,7 @@ With a large chunck of stuff now being in the DB, let work needs to be done here
 
 std::mutex mtx;
 using namespace std;
+using file_time_type = std::chrono::time_point<std::chrono::file_clock>;
 namespace fs = std::filesystem;
 std::vector<std::string > vecRCcon1;
 std::vector<std::string > vecRCopt1;
@@ -465,9 +466,6 @@ void fEndReceive() {
     std::vector<std::string> filenames;
     struct PatientData pData2;
 
-    //Not ready yet.
-    return;
-
     MYSQL_ROW row;
     MYSQL_RES *result;
 
@@ -490,173 +488,37 @@ void fEndReceive() {
                 strServerName = row[3];
                 strRecID = row[4];
                 strDateTime = row[5];
-            }
-            //First let's see if the time out has been reached.
-
-            const std::filesystem::path study{strFullPath};
-            fs::directory_entry d1(strFullPath);
-            if(d1.is_directory()) {
-                strLogMessage = GetDate() + "   " + strPUID + " RECV  Ending receive";
-                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                for (auto const& dir_entry : std::filesystem::directory_iterator{strFullPath}) {
-                    intPOS=dir_entry.path().string().find_last_of("/");
-                    if(intPOS != std::string::npos) {
-                        strThisFilename = dir_entry.path().string().substr(intPOS+1);
-                        intPOS=strThisFilename.find_last_of(".");
-                        if(intPOS != std::string::npos) {
-                            strTemp3=strThisFilename.substr(intPOS);
-                        }
-                        if(strTemp3 == ".dcm") {
-                            strLogMessage = GetDate() + "   " + strPUID + " Getting tags from " + dir_entry.path().string();
-                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                            //strRawDCMdump=fDcmDump(strFullPath.path().string());
-                            pData2.strPName=fGetTagValue("0010,0010", strRawDCMdump, 0, 0);
-                            pData2.strMRN=fGetTagValue("0010,0020", strRawDCMdump, 0, 0);
-                            pData2.strDOB=fGetTagValue("0010,0030", strRawDCMdump, 0, 0);
-                            strSerIUID=fGetTagValue("0020,000e", strRawDCMdump, 0, 0);
-                            strSerDesc=fGetTagValue("0008,103e", strRawDCMdump, 0, 0);
-                            strModality=fGetTagValue("0008,0060", strRawDCMdump, 0, 0);
-                            strSopIUID=fGetTagValue("0008,0018", strRawDCMdump, 0, 0);
-                            pData2.strSIUID=fGetTagValue("0020,000d", strRawDCMdump, 0, 0);
-                            pData2.strStudyDate=fGetTagValue("0008,0020", strRawDCMdump, 0, 0);
-                            pData2.strStudyTime=fGetTagValue("0008,0030", strRawDCMdump, 0, 0);
-                            strStudyDateTime = pData2.strStudyDate + " " + pData2.strStudyTime;
-                            pData2.strACCN=fGetTagValue("0008,0050", strRawDCMdump, 0, 0);
-                            pData2.strStudyDesc=fGetTagValue("0008,1030", strRawDCMdump, 0, 0);
-                            pData2.strPatientComments=fGetTagValue("0010,4000", strRawDCMdump, 0, 0);
-                            pData2.strRequestedProcedureID=fGetTagValue("0040,1001", strRawDCMdump, 0, 1);
-
-                            //write to image
-                        }
+                //Get the timeout
+                strQuery2="SELECT rec_time_out FROM conf_rec WHERE conf_rec_id = " + strRecID + ";";
+                mysql_query(mconnect, strQuery2.c_str());
+                if(*mysql_error(mconnect)) {
+                    strLogMessage="SQL Error: ";
+                    strLogMessage+=mysql_error(mconnect);
+                    strLogMessage+="\nQuery: " + strQuery2 + "\n";
+                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                }
+                result2 = mysql_store_result(mconnect);
+                if(result2) {
+                    while((row2 = mysql_fetch_row(result2))) {
+                        strRecTimeout = row2[0];
                     }
                 }
-                //write to study
-                //strQuery2="INSERT INTO study SET puid = '" + strPUID + "', fullpath = '" + strFullPath + "', rservername = '" + hostname + "', rec_id = " + strRecID;
-                //strQuery2+= ", tstartrec = '" + strDateTime + "', tendrec = '" + getDate() + "', senderAET = '" + strAET + "', callingAET = '" + strServerName + "', complete = 1;";
-                //write to series
-                //write to patient
-                //write to receive
+                //First let's see if the time out has been reached.
+                auto temp = std::filesystem::path(strFullPath);
+                auto ftime = fs::last_write_time(temp);
+                //need to compare ftime to now and get the difference
+                auto now = fs::file_time_type::clock::now();
+                if (now - ftime > std::chrono::seconds(strRecTimeout)) {
+                    strLogMessage = GetDate() + "   " + strPUID + " RECV  Ending receive";
+                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    strQuery3="UPDATE receive SET complete=1, tendrec=NOW() WHERE puid = " + strPUID + ";";
+                    mysql_query(mconnect, strQuery3.c_str());
+                    strQuery4="INSERT INTO process SET pud=\"" + strPUID + "\", pservername=\"" + strServerName + "\", tstartproc=NOW(), complete=0;";
+                    mysql_query(mconnect, strQuery4.c_str());
+                }
             }
         }
     }
-    
-    /*
-    std::string strLogMessage, strTemp2, strFilename, strTemp3, strRawDCMdump, strSerIUID, strSerDesc, strModality, strSopIUID;
-    std::string strStudyDateTime, strPrimalID, strQuery, strRecNum, strDBREturn, strAEC, strClientID2, strClientID, strClientAET;
-    std::string strClientName, strPrefetchNode, strCmd, strResult, strTemp, strFullPath, strTempPath;
-    std::size_t intLC2, intTemp, intPos, intImgNum, intFound;
-    std::size_t intDone2, intLC;
-    std::vector<std::string> vMessage;
-    struct stat st;
-    struct PatientData pData2;
-    time_t t2 = time(0);   // get time now
-    struct tm * now2 = localtime( & t2 );
-    
-    intLC2=0;
-    fs::directory_entry d1(strMessage);
-    while(! d1.is_directory() && intLC2 < 10) {
-        //Let's wait up to 10 seconds for it to appear.
-        intLC2++;
-        std::this_thread::sleep_for (std::chrono::seconds(1));
-        d1.refresh();
-    }
-    if(! d1.is_directory()) {
-        //Directory never appeared.  Disgard message
-        return -1;
-    }
-    //Remove the last character if it's a /
-    if(strMessage.back() == '/') {
-        strMessage.pop_back();
-    }
-    intFound = strMessage.find_last_of("/");
-    if(intFound != std::string::npos) {
-        strPrimalID=strMessage.substr(intFound + 1);
-    } else {
-        strPrimalID=strMessage;
-    }
-    //Make sure last character is a /
-    if(strMessage.back() != '/') {
-        strMessage.push_back('/');
-    }
-
-    intPos = strPrimalID.find("_");
-    strRecNum=strPrimalID.substr(0,intPos);
-    //This is the end of receive
-    strLogMessage =strPrimalID+" RECV  Ending receive";
-    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
-    intDone2 = 0;
-    intLC = 0;
-    while (intDone2 == 0) {
-        strTempPath="/tmp/" + strPrimalID;
-        if(stat(strTempPath.c_str(), &st) == 0) {
-            fs::remove(strTempPath);
-            intDone2 = 1;
-        } else if(intLC >= 100) {
-            intDone2 = 1;
-        } else {
-            std::this_thread::sleep_for (std::chrono::milliseconds(100));
-            intLC++;
-        }
-    }
-    pData2.strEndRec=std::to_string(now2->tm_year + 1900);
-    pData2.strEndRec.append("-");
-    pData2.strEndRec+=std::to_string(now2->tm_mon + 1);
-    pData2.strEndRec.append("-");
-    pData2.strEndRec+=std::to_string(now2->tm_mday);
-    pData2.strEndRec.append(" ");
-    pData2.strEndRec+=std::to_string(now2->tm_hour);
-    pData2.strEndRec.append(":");
-    pData2.strEndRec+=std::to_string(now2->tm_min);
-    pData2.strEndRec.append(":");
-    pData2.strEndRec+=std::to_string(now2->tm_sec);
-    strLogMessage = "Updating JSON and creating PKG for " + strPrimalID + ".";
-    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
-    system(strCmd.c_str());
-    intImgNum=0;
-    for (const auto & entry : fs::directory_iterator(strMessage)) {
-        strTemp2=entry.path().string();
-        intTemp = strTemp2.find_last_of("/");
-        strFilename=strTemp2.substr(intTemp+1);
-        intPos=strFilename.find_last_of(".");
-        if(intPos != std::string::npos) {
-            strTemp3=strFilename.substr(intPos);
-        }
-        if(strTemp3 == ".dcm") {
-            intImgNum++;
-        }
-    }
-    //std::cout << "fEndReceive Found " << to_string(intImgNum) << " files in " << strMessage << std::endl;
-    strQuery="update receive set tendrec = '" + pData2.strEndRec + "', rec_images = " + to_string(intImgNum) + " where puid = '" + strPrimalID + "';";
-    mysql_query(mconnect, strQuery.c_str());
-    if(*mysql_error(mconnect)) {
-        strLogMessage="SQL Error: ";
-        strLogMessage+=mysql_error(mconnect);
-        strLogMessage+="\nstrQuery = " + strQuery;
-        fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
-    }
-    if(strMessage.back() == '/') {
-        strMessage.pop_back();
-    }
-    if(conf1.primConf[strRecNum + "_PRIJSON"] == "1") {
-        strTemp=strMessage + "/payload.json";
-        while(stat(strTemp.c_str(),&st) != 0 && intLC < 20) {
-            strLogMessage = "Waiting for " + strTemp + " to appear.";
-            fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
-            std::this_thread::sleep_for (std::chrono::seconds(3));
-            intLC++;
-        }
-    }
-    strCmd="mv " + strMessage + " " + conf1.primConf[strRecNum + "_PRIPROC"] + "/";
-    strLogMessage + "Moving study to " + strCmd;
-    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
-    system(strCmd.c_str());
-    strFullPath=conf1.primConf[strRecNum + "_PRIPROC"] + "/" + strPrimalID;
-    //strCmd = "/usr/local/bin/mq send /prim_process \"" + strFullPath + " 2\" &";
-    strCmd = strFullPath + " 2";
-    fWriteMessage(strCmd, "/prim_process");
-    strLogMessage =strPrimalID + " RECV  Passing to the processing process.";
-    fWriteLog(strLogMessage, conf1.primConf[strRecNum + "_PRILOGDIR"] + "/" + conf1.primConf[strRecNum + "_PRILFIN"]);
-    */
     
     return;
 }
