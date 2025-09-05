@@ -64,7 +64,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.21";
+const std::string strVersionNum = "4.01.22";
 const std::string strVersionDate = "2025-09-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -404,13 +404,13 @@ int fStartReceivers() {
                 strDupe = row[18];
                 strPassThr = row[19];
                 strRetry = row[20];
-                strLogMessage = "Starting to receive " + strRecNum + " from " + strServer + ".";
+                strLogMessage = "SRECV  Starting to receive " + strRecNum + " from " + strServer + ".";
                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                 //Need to start the receive process.
                 if(strType == "1") {
                     strCMD = "/home/dicom/bin/storescp --fork +cl " + strRecCompLevel + " -aet " + strAET + " -tos " + strTO + " -ll " + strLL + " -od " + strDir;
                     strCMD += " -ss " + strRecID + " -xf /home/dicom/bin/storescp.cfg Default -fe \".dcm\" -xcr \"/home/dicom/rec.bash \\\"#p " + strRecID + " #a #c #f\\\" >> /var/log/primal/rec.log 2>&1\" " + strPort + " >> " + strLog + " 2>&1 &";
-                    strLogMessage = strCMD;
+                    strLogMessage = "SRECV  " + strCMD;
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     strStatus = exec(strCMD.c_str());
                     //Get list of running storescp processes now
@@ -423,7 +423,7 @@ int fStartReceivers() {
                             if(it == vecTemp.end()) {
                                 //PID not found must be the one we just started
                                 vecPIDs.push_back(atoi(strLine.c_str()));
-                                strLogMessage = "Started new storescp process with PID: " + strLine;
+                                strLogMessage = "SRECV  Started new storescp process with PID: " + strLine;
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                             }
                         }
@@ -509,15 +509,15 @@ void fEndReceive() {
                     try {
                         intRecTimeout = stoi(strRecTimeout);
                     } catch (...) {
-                        strLogMessage = GetDate() + "   " + strPUID + " RECV  Invalid timeout value, using default of 30 seconds.";
+                        strLogMessage = strPUID + " RECV  Invalid timeout value, using default of 30 seconds.";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                        strLogMessage = GetDate() + "   " + strPUID + " RECV  Query: " + strQuery2;
+                        strLogMessage = strPUID + " RECV  Query: " + strQuery2;
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         intRecTimeout = 30;
                     }
                     //Let's see if the directory exists
                     if (!std::filesystem::exists(std::filesystem::path(strFullPath))) {
-                        strLogMessage = GetDate() + "   " + strPUID + " RECV  Directory does not exist.  Setting receive to complete.";
+                        strLogMessage = strPUID + " RECV  Directory does not exist.  Setting receive to complete.";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         strQuery3="UPDATE receive SET complete=1, tendrec=NOW(), rerror=1 WHERE puid = \"" + strPUID + "\";";
                         mysql_query(mconnect, strQuery3.c_str());
@@ -530,14 +530,14 @@ void fEndReceive() {
                     //need to compare ftime to now and get the difference
                     std::chrono::seconds duration(intRecTimeout);
                     if ((now - ftime) > duration) {
-                        strLogMessage = GetDate() + "   " + strPUID + " RECV  Ending receive";
+                        strLogMessage = strPUID + " RECV  Ending receive";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         strQuery3="UPDATE receive SET complete=1, tendrec=NOW() WHERE puid = " + strPUID + ";";
                         mysql_query(mconnect, strQuery3.c_str());
                         strQuery4="INSERT INTO process SET pud=\"" + strPUID + "\", pservername=\"" + strServerName + "\", tstartproc=NOW(), complete=0;";
                         mysql_query(mconnect, strQuery4.c_str());
                     } else {
-                        strLogMessage = GetDate() + "   " + strPUID + " RECV  Not yet time to end receive.";
+                        strLogMessage = strPUID + " RECV  Not yet time to end receive.";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     }
                 }
@@ -701,6 +701,7 @@ void fSend() {
 
     mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
+    /*
     strLogMessage="mainDB.DBTYPE = " + mainDB.DBTYPE;
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
     strLogMessage="mainDB.DBNAME = " + mainDB.DBNAME;
@@ -711,6 +712,7 @@ void fSend() {
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
     strLogMessage="mainDB.intDBPORT = " + std::to_string(mainDB.intDBPORT);
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    */
 
     MYSQL_ROW row;
     MYSQL_ROW row2;
@@ -725,26 +727,26 @@ void fSend() {
     mconnect=mysql_init(NULL);
     mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
     if (!mconnect) {
-        strLogMessage="MySQL Initilization failed.";
+        strLogMessage="SEND  MySQL Initilization failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         return;
     }
     mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
     if (!mconnect) {
-        strLogMessage="MySQL connection failed.";
+        strLogMessage="SEND  MySQL connection failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         return;
     }
     mconnect2=mysql_init(NULL);
     mysql_options(mconnect2,MYSQL_OPT_RECONNECT,"1");
     if (!mconnect2) {
-        strLogMessage="MySQL 2nd Initilization failed.";
+        strLogMessage="SEND  MySQL 2nd Initilization failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         return;
     }
     mconnect2=mysql_real_connect(mconnect2, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), "mirth_primal", mainDB.intDBPORT,NULL,0);
     if (!mconnect2) {
-        strLogMessage="MySQL 2nd connection failed.";
+        strLogMessage="SEND  MySQL 2nd connection failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         return;
     }
@@ -755,7 +757,7 @@ void fSend() {
         strQuery = "SELECT send.id, send.puid, send.sservername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete > 4;";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
-            strLogMessage="SQL Error: ";
+            strLogMessage="SEND  SQL Error: ";
             strLogMessage+=mysql_error(mconnect);
             strLogMessage+="strQuery = " + strQuery + ".";
             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -783,7 +785,7 @@ void fSend() {
                     if (intDateCheck == 0) {
                         intStartSec = stoi(strDate.c_str());
                     } else {
-                        strLogMessage = strPUID + " WARN: Unable to determine start time.  Skipping...";
+                        strLogMessage = strPUID + " SEND  WARN: Unable to determine start time.  Skipping...";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         continue;
                     }
@@ -791,12 +793,12 @@ void fSend() {
                     strCMD = "date +\%s";
                     intNowSec = stoi(exec(strCMD.c_str()));
                     strTime = fSecToTime(intNowSec - intStartSec);
-                    strLogMessage = strPUID + " Found " + strAccn + " truncated to " + strNewAccn + ", has been waiting to send for " + strTime + ".";
+                    strLogMessage = strPUID + " SEND  Found " + strAccn + " truncated to " + strNewAccn + ", has been waiting to send for " + strTime + ".";
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     strQuery5="SELECT * FROM rec WHERE accn = '" + strNewAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
                     mysql_query(mconnect2, strQuery5.c_str());
                     if(*mysql_error(mconnect2)) {
-                        strLogMessage="SQL Error: ";
+                        strLogMessage="SEND  SQL Error: ";
                         strLogMessage+=mysql_error(mconnect);
                         strLogMessage+="strQuery5 = " + strQuery5 + ".";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -809,7 +811,7 @@ void fSend() {
                                 //We have an unsent match in primal and mirth_primal.  Let's send it.
                                 strMPID = row5[0];
                                 strMPAccn = row5[2];
-                                strLogMessage = strPUID + " Found " + strMPAccn + " HL7 message.  Sending...";
+                                strLogMessage = strPUID + " SEND  Found " + strMPAccn + " HL7 message.  Sending...";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 intSend=1;
                             }
@@ -820,12 +822,12 @@ void fSend() {
                             //strCMD = "date +\%s";
                             //intNowSec = stoi(exec(strCMD.c_str()));
                             if ((intNowSec - intStartSec) > 432000) {
-                                strLogMessage = strPUID + " " + strAccn + " has been waiting to send for more than 5 days.  Let's send";
+                                strLogMessage = strPUID + " SEND  " + strAccn + " has been waiting to send for more than 5 days.  Let's send";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 intSend = 2;
                             }
                             if (strComplete == "6") {
-                                strLogMessage = strPUID + " " + strAccn + " has been manually queued to send.  Let's send";
+                                strLogMessage = strPUID + " SEND  " + strAccn + " has been manually queued to send.  Let's send";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 intSend = 3;
                             }
@@ -834,7 +836,7 @@ void fSend() {
                             strQuery2="SELECT * FROM conf_send WHERE conf_send_id = " + strDestNum + " limit 1;";
                             mysql_query(mconnect, strQuery2.c_str());
                             if(*mysql_error(mconnect)) {
-                                strLogMessage="SQL Error: ";
+                                strLogMessage="SEND  SQL Error: ";
                                 strLogMessage+=mysql_error(mconnect);
                                 strLogMessage+="strQuery2 = " + strQuery2 + ".";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -864,14 +866,14 @@ void fSend() {
                                 }
                             }
                             if(strSendActive == "0") {
-                                strLogMessage = strPUID + " " + strAccn + " " + strSendName + " is not active.  Not sending.";
+                                strLogMessage = strPUID + " SEND  " + strAccn + " " + strSendName + " is not active.  Not sending.";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 continue;
                             }
                             strQuery3 = "SELECT DISTINCT ilocation FROM image WHERE puid = '" + strPUID + "';";
                             mysql_query(mconnect, strQuery3.c_str());
                             if(*mysql_error(mconnect)) {
-                                strLogMessage="SQL Error: ";
+                                strLogMessage="SEND  SQL Error: ";
                                 strLogMessage+=mysql_error(mconnect);
                                 strLogMessage+="strQuery3 = " + strQuery3 + ".";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -884,21 +886,21 @@ void fSend() {
                                         strLocation = row3[0];
                                     }
                                     if(strcmp(strOrg.c_str(), strSendOrg.c_str()) != 0) {
-                                        strLogMessage = strPUID + " " + strAccn + " is not for this organization.  Not sending.";
+                                        strLogMessage = strPUID + " SEND  " + strAccn + " is not for this organization.  Not sending.";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                     } else {
                                         //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
-                                        strLogMessage = strPUID + " Sending " + strAccn + " to " + strSendHIP + ".";
+                                        strLogMessage = strPUID + " SEND  Sending " + strAccn + " to " + strSendHIP + ".";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                         strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
-                                        strLogMessage = strPUID + " Finished sending " + strAccn + " to " + strSendHIP + ".";
+                                        strLogMessage = strPUID + " SEND  Finished sending " + strAccn + " to " + strSendHIP + ".";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                         //fWriteLog(strCMD, "/var/log/primal/primal.log");
                                         strStatus = exec(strCMD.c_str());
                                         strQuery4 = "UPDATE send SET complete = 1, tendsend = NOW() WHERE id = '" + strID + "';";
                                         mysql_query(mconnect, strQuery4.c_str());
                                         if(*mysql_error(mconnect)) {
-                                            strLogMessage="SQL Error: ";
+                                            strLogMessage="SEND  SQL Error: ";
                                             strLogMessage+=mysql_error(mconnect);
                                             strLogMessage+="strQuery3 = " + strQuery4 + ".";
                                             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -906,7 +908,7 @@ void fSend() {
                                         strQuery4 = "DELETE FROM send WHERE puid = \"" + strPUID + "\" AND tdest = \"0\" limit 1;";
                                         mysql_query(mconnect, strQuery4.c_str());
                                         if(*mysql_error(mconnect)) {
-                                            strLogMessage="SQL Error: ";
+                                            strLogMessage="SEND  SQL Error: ";
                                             strLogMessage+=mysql_error(mconnect);
                                             strLogMessage+="strQuery3 = " + strQuery4 + ".";
                                             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -915,7 +917,7 @@ void fSend() {
                                         strQuery4 = "UPDATE rec SET send_status = 1 WHERE id = '" + strMPID + "';";
                                         mysql_query(mconnect2, strQuery4.c_str());
                                         if(*mysql_error(mconnect2)) {
-                                            strLogMessage="SQL Error: ";
+                                            strLogMessage="SEND  SQL Error: ";
                                             strLogMessage+=mysql_error(mconnect2);
                                             strLogMessage+="strQuery4 = " + strQuery4 + ".";
                                             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -930,7 +932,7 @@ void fSend() {
             }
         }
         intSend=0;
-        strLogMessage = "Sleeping for 5 minutes.";
+        strLogMessage = "SEND  Sleeping for 5 minutes.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         std::this_thread::sleep_for (std::chrono::seconds(300));
     }
