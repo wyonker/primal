@@ -64,7 +64,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.24";
+const std::string strVersionNum = "4.01.25";
 const std::string strVersionDate = "2025-09-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -532,7 +532,7 @@ void fEndReceive() {
                     if ((now - ftime) > duration) {
                         strLogMessage = strPUID + " RECV  Ending receive";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                        strQuery3="UPDATE receive SET complete=1, tendrec=NOW() WHERE puid = " + strPUID + ";";
+                        strQuery3="UPDATE receive SET complete=1, tendrec=NOW() WHERE puid = \"" + strPUID + "\";";
                         mysql_query(mconnect, strQuery3.c_str());
                         strQuery4="INSERT INTO process SET pud=\"" + strPUID + "\", pservername=\"" + strServerName + "\", tstartproc=NOW(), complete=0;";
                         mysql_query(mconnect, strQuery4.c_str());
