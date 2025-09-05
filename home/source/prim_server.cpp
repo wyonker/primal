@@ -64,7 +64,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.25";
+const std::string strVersionNum = "4.01.26";
 const std::string strVersionDate = "2025-09-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -495,7 +495,7 @@ void fEndReceive() {
                     strQuery2="SELECT rec_time_out FROM conf_rec WHERE conf_rec_id = \"" + strRecID + "\" limit 1;";
                     mysql_query(mconnect, strQuery2.c_str());
                     if(*mysql_error(mconnect)) {
-                        strLogMessage="SQL Error: ";
+                        strLogMessage="RECV  SQL Error: ";
                         strLogMessage+=mysql_error(mconnect);
                         strLogMessage+="\nQuery: " + strQuery2 + "\n";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -697,7 +697,7 @@ void fSend() {
     std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId;
     std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn, strTime;
 
-    int intNumRows, intStartSec, intNowSec, intDateCheck, intSend=0;
+    int intNumRows, intStartSec, intNowSec, intDateCheck, intLC, intSend=0;
 
     mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
@@ -753,6 +753,7 @@ void fSend() {
 
     strRecNum = "1";
 
+    intLC=1;
     while (1) {
         strQuery = "SELECT send.id, send.puid, send.sservername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete > 4;";
         mysql_query(mconnect, strQuery.c_str());
@@ -793,8 +794,11 @@ void fSend() {
                     strCMD = "date +\%s";
                     intNowSec = stoi(exec(strCMD.c_str()));
                     strTime = fSecToTime(intNowSec - intStartSec);
-                    strLogMessage = strPUID + " SEND  Found " + strAccn + " truncated to " + strNewAccn + ", has been waiting to send for " + strTime + ".";
-                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    if(intLC == 100) {
+                        //Limit log message to every 5 minutes or whatever 100 loops adds up to.
+                        strLogMessage = strPUID + " SEND  Found " + strAccn + " truncated to " + strNewAccn + ", has been waiting to send for " + strTime + ".";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
                     strQuery5="SELECT * FROM rec WHERE accn = '" + strNewAccn + "' AND send_status=0 ORDER BY rec_date DESC;";
                     mysql_query(mconnect2, strQuery5.c_str());
                     if(*mysql_error(mconnect2)) {
@@ -893,10 +897,10 @@ void fSend() {
                                         strLogMessage = strPUID + " SEND  Sending " + strAccn + " to " + strSendHIP + ".";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                         strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
-                                        strLogMessage = strPUID + " SEND  Finished sending " + strAccn + " to " + strSendHIP + ".";
-                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                         //fWriteLog(strCMD, "/var/log/primal/primal.log");
                                         strStatus = exec(strCMD.c_str());
+                                        strLogMessage = strPUID + " SEND  Finished sending " + strAccn + " to " + strSendHIP + ".";
+                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                         strQuery4 = "UPDATE send SET complete = 1, tendsend = NOW() WHERE id = '" + strID + "';";
                                         mysql_query(mconnect, strQuery4.c_str());
                                         if(*mysql_error(mconnect)) {
@@ -934,7 +938,12 @@ void fSend() {
         intSend=0;
         strLogMessage = "SEND  Sleeping for 5 minutes.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        std::this_thread::sleep_for (std::chrono::seconds(300));
+        std::this_thread::sleep_for (std::chrono::seconds(3));
+        if(intLC > 99) {
+            intLC=1;
+        } else {
+            intLC++;
+        }
     }
 
     mysql_library_end();
