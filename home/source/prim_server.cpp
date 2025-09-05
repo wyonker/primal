@@ -516,7 +516,7 @@ void fEndReceive() {
                     if (!std::filesystem::exists(std::filesystem::path(strFullPath))) {
                         strLogMessage = GetDate() + "   " + strPUID + " RECV  Directory does not exist.  Setting receive to complete.";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                        strQuery3="UPDATE receive SET complete=1, tendrec=NOW() WHERE puid = \"" + strPUID + "\";";
+                        strQuery3="UPDATE receive SET complete=1, tendrec=NOW(), rerror=1 WHERE puid = \"" + strPUID + "\";";
                         mysql_query(mconnect, strQuery3.c_str());
                         continue;
                     }
