@@ -64,7 +64,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.26";
+const std::string strVersionNum = "4.01.27";
 const std::string strVersionDate = "2025-09-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -966,7 +966,7 @@ void signal_handler(int signal) {
 
 void signal_handler2([[maybe_unused]] int signal) {
     fRecShutdown();
-    return;
+    exit();
 }   
 
 int main() {
