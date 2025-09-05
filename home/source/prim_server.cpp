@@ -64,7 +64,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.19";
+const std::string strVersionNum = "4.01.20";
 const std::string strVersionDate = "2025-09-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -506,9 +506,10 @@ void fEndReceive() {
                             strRecTimeout = row2[0];
                         }
                     }
-                    intRecTimeout = stoi(strRecTimeout);
-                    if (intRecTimeout < 1 || intRecTimeout > 600) {
-                        strLogMessage = GetDate() + "   " + strPUID + " RECV  No timeout found or is invalid, using default of 30 seconds.";
+                    try {
+                        intRecTimeout = stoi(strRecTimeout);
+                    } catch (...) {
+                        strLogMessage = GetDate() + "   " + strPUID + " RECV  Invalid timeout value, using default of 30 seconds.";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         intRecTimeout = 30;
                     }
