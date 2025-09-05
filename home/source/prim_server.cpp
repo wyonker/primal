@@ -64,7 +64,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.22";
+const std::string strVersionNum = "4.01.23";
 const std::string strVersionDate = "2025-09-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -965,6 +965,7 @@ int main() {
 
     std::signal(SIGHUP, signal_handler);
     std::signal(SIGTERM, signal_handler2);
+    std::signal(SIGINT, signal_handler2);
 
     strLogMessage = "Starting prim_server version " + strVersionNum + ".";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
