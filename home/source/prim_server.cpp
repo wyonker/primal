@@ -64,7 +64,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.23";
+const std::string strVersionNum = "4.01.24";
 const std::string strVersionDate = "2025-09-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -433,7 +433,7 @@ int fStartReceivers() {
         }
     }
 
-    strLogMessage="Finished the receive process.";
+    strLogMessage="SRECV  Finished the receive process.";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     return 0;
