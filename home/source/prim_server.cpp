@@ -460,7 +460,7 @@ int fRecShutdown() {
 
 void fEndReceive() {
     std::string strLogMessage, strQuery, strID, strPUID, strFullPath, strServerName, strRecID, strDateTime, strThisFilename, strTemp3, strRawDCMdump, strSerIUID, strSerDesc, strModality, strSopIUID, strStudyDateTime;
-    std::string strQuery2, strRecTimeout, strQuery3, strQuery4;
+    std::string strQuery2, strRecTimeout, strQuery3, strQuery4, strThisServerName;
     int intNumRows, intRecTimeout;
     std::vector<std::string> filenames;
     struct PatientData pData2;
@@ -468,8 +468,11 @@ void fEndReceive() {
     MYSQL_ROW row, row2;
     MYSQL_RES *result, *result2;
 
+    strThisServerName = exec("hostname");
+    strThisServerName.pop_back(); // Remove trailing newline
+
     while(1) {
-        strQuery = "SELECT id, puid, fullpath, rservername, rec_id, tstartrec FROM receive WHERE complete = 0;";
+        strQuery = "SELECT id, puid, fullpath, rservername, rec_id, tstartrec FROM receive WHERE complete = 0 AND rservername = '" + strThisServerName + "';";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
             strLogMessage="SQL Error: ";
@@ -489,7 +492,7 @@ void fEndReceive() {
                     strRecID = row[4];
                     strDateTime = row[5];
                     //Get the timeout
-                    strQuery2="SELECT rec_time_out FROM conf_rec WHERE conf_rec_id = " + strRecID + ";";
+                    strQuery2="SELECT rec_time_out FROM conf_rec WHERE conf_rec_id = \"" + strRecID + "\" limit 1;";
                     mysql_query(mconnect, strQuery2.c_str());
                     if(*mysql_error(mconnect)) {
                         strLogMessage="SQL Error: ";
@@ -508,6 +511,12 @@ void fEndReceive() {
                         strLogMessage = GetDate() + "   " + strPUID + " RECV  No timeout found or is invalid, using default of 30 seconds.";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         intRecTimeout = 30;
+                    }
+                    //Let's see if the directory exists
+                    if (!std::filesystem::exists(std::filesystem::path(strFullPath))) {
+                        strLogMessage = GetDate() + "   " + strPUID + " RECV  Directory does not exist.";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        continue;
                     }
                     //First let's see if the time out has been reached.
                     auto temp = std::filesystem::path(strFullPath);
