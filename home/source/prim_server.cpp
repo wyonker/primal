@@ -64,8 +64,8 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.18";
-const std::string strVersionDate = "2025-09-04";
+const std::string strVersionNum = "4.01.19";
+const std::string strVersionDate = "2025-09-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -461,63 +461,75 @@ int fRecShutdown() {
 void fEndReceive() {
     std::string strLogMessage, strQuery, strID, strPUID, strFullPath, strServerName, strRecID, strDateTime, strThisFilename, strTemp3, strRawDCMdump, strSerIUID, strSerDesc, strModality, strSopIUID, strStudyDateTime;
     std::string strQuery2, strRecTimeout, strQuery3, strQuery4;
-    int intNumRows;
-    std::size_t intPOS;
+    int intNumRows, intRecTimeout;
     std::vector<std::string> filenames;
     struct PatientData pData2;
 
     MYSQL_ROW row, row2;
-    MYSQL_RES *result, result2;
+    MYSQL_RES *result, *result2;
 
-    strQuery = "SELECT id, puid, fullpath, rservername, rec_id, tstartrec FROM receive WHERE complete = 0;";
-    mysql_query(mconnect, strQuery.c_str());
-    if(*mysql_error(mconnect)) {
-        strLogMessage="SQL Error: ";
-        strLogMessage+=mysql_error(mconnect);
-        strLogMessage+="\nQuery: " + strQuery + "\n";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-    }
-    result = mysql_store_result(mconnect);
-    if(result) {
-        intNumRows=mysql_num_rows(result);
-        if(intNumRows > 0) {
-            while((row = mysql_fetch_row(result))) {
-                strID = row[0];
-                strPUID = row[1];
-                strFullPath = row[2];
-                strServerName = row[3];
-                strRecID = row[4];
-                strDateTime = row[5];
-                //Get the timeout
-                strQuery2="SELECT rec_time_out FROM conf_rec WHERE conf_rec_id = " + strRecID + ";";
-                mysql_query(mconnect, strQuery2.c_str());
-                if(*mysql_error(mconnect)) {
-                    strLogMessage="SQL Error: ";
-                    strLogMessage+=mysql_error(mconnect);
-                    strLogMessage+="\nQuery: " + strQuery2 + "\n";
-                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                }
-                result2 = mysql_store_result(mconnect);
-                if(result2) {
-                    while((row2 = mysql_fetch_row(result2))) {
-                        strRecTimeout = row2[0];
+    while(1) {
+        strQuery = "SELECT id, puid, fullpath, rservername, rec_id, tstartrec FROM receive WHERE complete = 0;";
+        mysql_query(mconnect, strQuery.c_str());
+        if(*mysql_error(mconnect)) {
+            strLogMessage="SQL Error: ";
+            strLogMessage+=mysql_error(mconnect);
+            strLogMessage+="\nQuery: " + strQuery + "\n";
+            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        }
+        result = mysql_store_result(mconnect);
+        if(result) {
+            intNumRows=mysql_num_rows(result);
+            if(intNumRows > 0) {
+                while((row = mysql_fetch_row(result))) {
+                    strID = row[0];
+                    strPUID = row[1];
+                    strFullPath = row[2];
+                    strServerName = row[3];
+                    strRecID = row[4];
+                    strDateTime = row[5];
+                    //Get the timeout
+                    strQuery2="SELECT rec_time_out FROM conf_rec WHERE conf_rec_id = " + strRecID + ";";
+                    mysql_query(mconnect, strQuery2.c_str());
+                    if(*mysql_error(mconnect)) {
+                        strLogMessage="SQL Error: ";
+                        strLogMessage+=mysql_error(mconnect);
+                        strLogMessage+="\nQuery: " + strQuery2 + "\n";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     }
-                }
-                //First let's see if the time out has been reached.
-                auto temp = std::filesystem::path(strFullPath);
-                auto ftime = fs::last_write_time(temp);
-                //need to compare ftime to now and get the difference
-                auto now = fs::file_time_type::clock::now();
-                if (now - ftime > std::chrono::seconds(strRecTimeout)) {
-                    strLogMessage = GetDate() + "   " + strPUID + " RECV  Ending receive";
-                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                    strQuery3="UPDATE receive SET complete=1, tendrec=NOW() WHERE puid = " + strPUID + ";";
-                    mysql_query(mconnect, strQuery3.c_str());
-                    strQuery4="INSERT INTO process SET pud=\"" + strPUID + "\", pservername=\"" + strServerName + "\", tstartproc=NOW(), complete=0;";
-                    mysql_query(mconnect, strQuery4.c_str());
+                    result2 = mysql_store_result(mconnect);
+                    if(result2) {
+                        while((row2 = mysql_fetch_row(result2))) {
+                            strRecTimeout = row2[0];
+                        }
+                    }
+                    intRecTimeout = stoi(strRecTimeout);
+                    if (intRecTimeout < 1 || intRecTimeout > 600) {
+                        strLogMessage = GetDate() + "   " + strPUID + " RECV  No timeout found or is invalid, using default of 30 seconds.";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        intRecTimeout = 30;
+                    }
+                    //First let's see if the time out has been reached.
+                    auto temp = std::filesystem::path(strFullPath);
+                    auto ftime = fs::last_write_time(temp);
+                    auto now = fs::file_time_type::clock::now();
+                    //need to compare ftime to now and get the difference
+                    std::chrono::seconds duration(intRecTimeout);
+                    if ((now - ftime) > duration) {
+                        strLogMessage = GetDate() + "   " + strPUID + " RECV  Ending receive";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        strQuery3="UPDATE receive SET complete=1, tendrec=NOW() WHERE puid = " + strPUID + ";";
+                        mysql_query(mconnect, strQuery3.c_str());
+                        strQuery4="INSERT INTO process SET pud=\"" + strPUID + "\", pservername=\"" + strServerName + "\", tstartproc=NOW(), complete=0;";
+                        mysql_query(mconnect, strQuery4.c_str());
+                    } else {
+                        strLogMessage = GetDate() + "   " + strPUID + " RECV  Not yet time to end receive.";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
                 }
             }
         }
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
     
     return;
@@ -563,7 +575,8 @@ int fRuleHL7(std::string strPUID, int intConf_proc_id) {
 void fProcess() {
     std::string strQuery, strQuery2, strQuery3, strLogMessage, strPUID, strID, strPservername, strTstartproc, strRecID, strConf_proc_id, strConf_rec_id, strProc_name, strProc_type;
     std::string strProc_tag, strProc_operator, strProc_cond, strProc_action, strProc_order, strProc_dest, strProc_active;
-    int intProc_type, intNumRows, intConf_proc_id, intReturn;
+    int intProc_type, intNumRows, intConf_proc_id;
+    [[maybe_unused]] int intReturn;
 
     //Not ready yet.
     return;
@@ -926,7 +939,7 @@ void signal_handler(int signal) {
     return;
 }
 
-void signal_handler2(int signal) {
+void signal_handler2([[maybe_unused]] int signal) {
     fRecShutdown();
     return;
 }   
