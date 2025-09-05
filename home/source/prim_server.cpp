@@ -64,7 +64,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.28";
+const std::string strVersionNum = "4.01.29";
 const std::string strVersionDate = "2025-09-05";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -936,8 +936,10 @@ void fSend() {
             }
         }
         intSend=0;
-        strLogMessage = "SEND  Sleeping for 5 minutes.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        if(intLC == 100) {
+            strLogMessage = "SEND  Sleeping for 5 minutes.";
+            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        }
         std::this_thread::sleep_for (std::chrono::seconds(3));
         if(intLC > 99) {
             intLC=1;
