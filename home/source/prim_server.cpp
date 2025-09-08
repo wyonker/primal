@@ -418,6 +418,7 @@ int fStartReceivers() {
                     strReturn = exec(strCMD.c_str());
                     std::istringstream isLine2(strReturn);
                     while (std::getline(isLine2, strLine)) {
+                        strLine.erase(std::remove(strLine.begin(), strLine.end(), ' '), strLine.end());
                         if(!strLine.empty()) {
                             //auto it = std::find(vecTemp.begin(), vecTemp.end(), atoi(strLine.c_str()));
                             //if(it == vecTemp.end()) {
@@ -479,7 +480,7 @@ void fEndReceive() {
         strQuery = "SELECT id, puid, fullpath, rservername, rec_id, tstartrec FROM receive WHERE complete = 0 AND rservername = '" + strThisServerName + "';";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
-            strLogMessage="SQL Error: ";
+            strLogMessage="RECV  SQL Error: ";
             strLogMessage+=mysql_error(mconnect);
             strLogMessage+="\nQuery: " + strQuery + "\n";
             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
