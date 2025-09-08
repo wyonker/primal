@@ -23,6 +23,7 @@ With a large chunck of stuff now being in the DB, let work needs to be done here
 #undef min
 #undef max
 #include <algorithm>
+#include <atomic>
 #include <map>
 #include <glob.h>
 #include <list>
@@ -32,6 +33,7 @@ With a large chunck of stuff now being in the DB, let work needs to be done here
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <chrono>
 #include <pstreams/pstream.h>
 //#include <mysql/my_global.h>
 #include <mysql/mysql.h>
@@ -47,10 +49,17 @@ With a large chunck of stuff now being in the DB, let work needs to be done here
 #include <string.h>
 #include <errno.h>
 #include <mqueue.h>
-#include <csignal>
+#include <signal.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
+#include <unistd.h>
+
+namespace {
+    volatile sig_atomic_t do_shutdown = 0;
+    std::atomic<bool> shutdown_requested = false;
+    static_assert( std::atomic<bool>::is_always_lock_free );
+}
 
 std::mutex mtx;
 using namespace std;
@@ -972,16 +981,23 @@ void signal_handler(int signal) {
 }
 
 void signal_handler2([[maybe_unused]] int signal) {
-    fRecShutdown();
-    exit(signal);
+    do_shutdown = 1;
+    shutdown_requested = true;
+    const char str[] = "received signal\n";
+    write(STDERR_FILENO, str, sizeof(str) - 1);
+
 }
 
 int main() {
     std::string strLogMessage;
 
-    std::signal(SIGHUP, signal_handler);
-    std::signal(SIGTERM, signal_handler2);
-    std::signal(SIGINT, signal_handler2);
+    {
+        struct sigaction action;
+        action.sa_handler = signal_handler2;
+        sigemptyset(&action.sa_mask);
+        action.sa_flags = 0;
+        sigaction(SIGINT, &action, NULL);
+    }
 
     strLogMessage = "Starting prim_server version " + strVersionNum + ".";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -992,6 +1008,11 @@ int main() {
     std::thread process(fProcess);
     std::thread send(fSend);
 
+    while( !do_shutdown ) {
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+    }
+
+    fRecShutdown();
     receive.join();
     process.join();
     send.join();
