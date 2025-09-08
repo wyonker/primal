@@ -73,7 +73,7 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.32";
+const std::string strVersionNum = "4.02.00";
 const std::string strVersionDate = "2025-09-08";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -557,6 +557,9 @@ void fEndReceive() {
                 }
             }
         }
+        if(do_shutdown) {
+            return;
+        }
         std::this_thread::sleep_for(std::chrono::seconds(3));
     }
     
@@ -948,6 +951,9 @@ void fSend() {
                     }
                 }
             }
+        }
+        if(do_shutdown) {
+            return;
         }
         intSend=0;
         if(intLC == 100) {
