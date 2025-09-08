@@ -70,10 +70,7 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
-MYSQL *mconnect;
-MYSQL *mconnect2;
-
-const std::string strVersionNum = "4.02.00";
+const std::string strVersionNum = "4.02.02";
 const std::string strVersionDate = "2025-09-08";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -332,10 +329,40 @@ int fStartReceivers() {
     int intNumRows;
     std::vector<int> vecTemp;
 
+    MYSQL *mconnect;
+    MYSQL *mconnect2;
     mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
-    MYSQL_ROW row;
-    MYSQL_RES *result;
+
+    MYSQL_ROW row, row2;
+    MYSQL_RES *result, *result2;
+
+    mconnect=mysql_init(NULL);
+    mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
+    if (!mconnect) {
+        strLogMessage="SRECV  MySQL Initilization failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return -1;
+    }
+    mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
+    if (!mconnect) {
+        strLogMessage="SRECV  MySQL connection failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return -1;
+    }
+    mconnect2=mysql_init(NULL);
+    mysql_options(mconnect2,MYSQL_OPT_RECONNECT,"1");
+    if (!mconnect2) {
+        strLogMessage="SRECV  MySQL 2nd Initilization failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return -1;
+    }
+    mconnect2=mysql_real_connect(mconnect2, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), "mirth_primal", mainDB.intDBPORT,NULL,0);
+    if (!mconnect2) {
+        strLogMessage="SRECV  MySQL 2nd connection failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return -1;
+    }
 
     strLogMessage="Starting the receive process.";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -350,24 +377,10 @@ int fStartReceivers() {
         }
     }
 
-    mconnect=mysql_init(NULL);
-    mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
-    if (!mconnect) {
-        strLogMessage="MySQL Initilization failed.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return -1;
-    }
-    mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
-    if (!mconnect) {
-        strLogMessage="MySQL connection failed.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return -1;
-    }
-
     strQuery="SELECT * FROM conf_rec WHERE active = 1 AND conf_name NOT LIKE '!%';";
     mysql_query(mconnect, strQuery.c_str());
     if(*mysql_error(mconnect)) {
-        strLogMessage="SQL Error: ";
+        strLogMessage="SRECV SQL Error: ";
         strLogMessage+=mysql_error(mconnect);
         strLogMessage+="\nQuery: " + strQuery + "\n";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -432,12 +445,12 @@ int fStartReceivers() {
                             //auto it = std::find(vecTemp.begin(), vecTemp.end(), atoi(strLine.c_str()));
                             //if(it == vecTemp.end()) {
                             if(std::find(vecTemp.begin(), vecTemp.end(), atoi(strLine.c_str())) != vecTemp.end()) {
+                                strLogMessage = "SRECV  WARN did not find a new PID.";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            } else {
                                 //PID not found must be the one we just started
                                 vecPIDs.push_back(atoi(strLine.c_str()));
                                 strLogMessage = "SRECV  Started new storescp process with PID: " + strLine;
-                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                            } else {
-                                strLogMessage = "SRECV  WARN did not find a new PID.";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                             }
                         }
@@ -450,6 +463,7 @@ int fStartReceivers() {
     strLogMessage="SRECV  Finished the receive process.";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
+    mysql_library_end();
     return 0;
 }
 
@@ -479,8 +493,40 @@ void fEndReceive() {
     std::vector<std::string> filenames;
     struct PatientData pData2;
 
+    MYSQL *mconnect;
+    MYSQL *mconnect2;
+    mysql_library_init(0, NULL, NULL);
+    ReadDBConfFile();
+
     MYSQL_ROW row, row2;
     MYSQL_RES *result, *result2;
+
+    mconnect=mysql_init(NULL);
+    mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
+    if (!mconnect) {
+        strLogMessage="RECV  MySQL Initilization failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return;
+    }
+    mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
+    if (!mconnect) {
+        strLogMessage="RECV  MySQL connection failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return;
+    }
+    mconnect2=mysql_init(NULL);
+    mysql_options(mconnect2,MYSQL_OPT_RECONNECT,"1");
+    if (!mconnect2) {
+        strLogMessage="RECV  MySQL 2nd Initilization failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return;
+    }
+    mconnect2=mysql_real_connect(mconnect2, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), "mirth_primal", mainDB.intDBPORT,NULL,0);
+    if (!mconnect2) {
+        strLogMessage="RECV  MySQL 2nd connection failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return;
+    }
 
     strThisServerName = exec("hostname");
     strThisServerName.pop_back(); // Remove trailing newline
@@ -558,11 +604,13 @@ void fEndReceive() {
             }
         }
         if(do_shutdown) {
+            mysql_library_end();
             return;
         }
         std::this_thread::sleep_for(std::chrono::seconds(3));
     }
     
+    mysql_library_end();
     return;
 }
 
@@ -611,6 +659,9 @@ void fProcess() {
 
     //Not ready yet.
     return;
+
+    MYSQL *mconnect;
+    MYSQL *mconnect2;
 
     MYSQL_ROW row, row2, row3;
     MYSQL_RES *result, *result2, *result3;
@@ -715,6 +766,9 @@ void fSend() {
     std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn, strTime;
 
     int intNumRows, intStartSec, intNowSec, intDateCheck, intLC, intSend=0;
+
+    MYSQL *mconnect;
+    MYSQL *mconnect2;
 
     mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
@@ -953,6 +1007,7 @@ void fSend() {
             }
         }
         if(do_shutdown) {
+            mysql_library_end();
             return;
         }
         intSend=0;
