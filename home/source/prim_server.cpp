@@ -64,8 +64,8 @@ std::vector<std::string > vecRCact1;
 MYSQL *mconnect;
 MYSQL *mconnect2;
 
-const std::string strVersionNum = "4.01.29";
-const std::string strVersionDate = "2025-09-05";
+const std::string strVersionNum = "4.01.30";
+const std::string strVersionDate = "2025-09-08";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -419,11 +419,15 @@ int fStartReceivers() {
                     std::istringstream isLine2(strReturn);
                     while (std::getline(isLine2, strLine)) {
                         if(!strLine.empty()) {
-                            auto it = std::find(vecTemp.begin(), vecTemp.end(), atoi(strLine.c_str()));
-                            if(it == vecTemp.end()) {
+                            //auto it = std::find(vecTemp.begin(), vecTemp.end(), atoi(strLine.c_str()));
+                            //if(it == vecTemp.end()) {
+                            if(std::find(vecTemp.begin(), vecTemp.end(), atoi(strLine.c_str())) != vecTemp.end()) {
                                 //PID not found must be the one we just started
                                 vecPIDs.push_back(atoi(strLine.c_str()));
                                 strLogMessage = "SRECV  Started new storescp process with PID: " + strLine;
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            } else {
+                                strLogMessage = "SRECV  WARN did not find a new PID.";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                             }
                         }
