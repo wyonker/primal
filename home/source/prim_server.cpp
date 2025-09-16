@@ -70,8 +70,8 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
-const std::string strVersionNum = "4.02.02";
-const std::string strVersionDate = "2025-09-08";
+const std::string strVersionNum = "4.02.03";
+const std::string strVersionDate = "2025-09-16";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -938,10 +938,23 @@ void fSend() {
                                         strSendActive = row2[15];
                                     }
                                     mysql_free_result(result2);
+                                } else {
+                                    strLogMessage = strPUID + " SEND  " + strAccn + " No destination found.  Not sending.";
+                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                    continue;
                                 }
+                            } else {
+                                strLogMessage = strPUID + " SEND  " + strAccn + " No results found for destination query.  Not sending.";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                continue;                               
                             }
                             if(strSendActive == "0") {
                                 strLogMessage = strPUID + " SEND  " + strAccn + " " + strSendName + " is not active.  Not sending.";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                continue;
+                            }
+                            if(strRecId.empty()) {
+                                strLogMessage = strPUID + " SEND  " + strAccn + " No receiving configuration assigned.  Not sending.";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 continue;
                             }
@@ -999,7 +1012,14 @@ void fSend() {
                                         }
                                         //fWriteLog(strQuery4, "/var/log/primal/primal.log");
                                     }
+                                } else {
+                                    strLogMessage = strPUID + " SEND  " + strAccn + " No images found.  Not sending.";
+                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 }
+                            } else {
+                                strLogMessage = strPUID + " SEND  " + strAccn + " No results found for image query.  Not sending.";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                continue;
                             }
                         }
                     }
