@@ -329,7 +329,6 @@ int fStartReceivers() {
     int intNumRows;
     std::vector<int> vecTemp;
 
-    mysql_init();
     MYSQL *mconnect;
     MYSQL *mconnect2;
     ReadDBConfFile();
@@ -493,7 +492,6 @@ void fEndReceive() {
     std::vector<std::string> filenames;
     struct PatientData pData2;
 
-    mysql_init();
     MYSQL *mconnect;
     MYSQL *mconnect2;
     ReadDBConfFile();
@@ -660,13 +658,26 @@ void fProcess() {
     //Not ready yet.
     return;
 
-    mysql_init();
     MYSQL *mconnect;
     MYSQL *mconnect2;
     ReadDBConfFile();
 
     MYSQL_ROW row, row2, row3;
     MYSQL_RES *result, *result2, *result3;
+
+    mconnect=mysql_init(NULL);
+    mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
+    if (!mconnect) {
+        strLogMessage="SEND  MySQL Initilization failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return;
+    }
+    mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
+    if (!mconnect) {
+        strLogMessage="SEND  MySQL connection failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return;
+    }
 
     strQuery="SELECT * FROM process WHERE complete = 0;";
     mysql_query(mconnect, strQuery.c_str());
@@ -771,7 +782,6 @@ void fSend() {
 
     int intNumRows, intStartSec, intNowSec, intDateCheck, intLC, intSend=0;
 
-    mysql_init();
     MYSQL *mconnect;
     MYSQL *mconnect2;
     ReadDBConfFile();
@@ -1107,3 +1117,4 @@ int main() {
     mysql_library_end();
     return 0;
 }
+
