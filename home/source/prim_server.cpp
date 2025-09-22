@@ -329,9 +329,9 @@ int fStartReceivers() {
     int intNumRows;
     std::vector<int> vecTemp;
 
+    mysql_init();
     MYSQL *mconnect;
     MYSQL *mconnect2;
-    mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
 
     MYSQL_ROW row, row2;
@@ -463,7 +463,7 @@ int fStartReceivers() {
     strLogMessage="SRECV  Finished the receive process.";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
-    mysql_library_end();
+    mysql_thread_end();
     return 0;
 }
 
@@ -493,9 +493,9 @@ void fEndReceive() {
     std::vector<std::string> filenames;
     struct PatientData pData2;
 
+    mysql_init();
     MYSQL *mconnect;
     MYSQL *mconnect2;
-    mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
 
     MYSQL_ROW row, row2;
@@ -610,7 +610,7 @@ void fEndReceive() {
         std::this_thread::sleep_for(std::chrono::seconds(3));
     }
     
-    mysql_library_end();
+    mysql_thread_end();
     return;
 }
 
@@ -660,8 +660,10 @@ void fProcess() {
     //Not ready yet.
     return;
 
+    mysql_init();
     MYSQL *mconnect;
     MYSQL *mconnect2;
+    ReadDBConfFile();
 
     MYSQL_ROW row, row2, row3;
     MYSQL_RES *result, *result2, *result3;
@@ -756,6 +758,8 @@ void fProcess() {
             }
         }
     }
+    mysql_thread_end();
+
 }
 
 void fSend() {
@@ -767,11 +771,11 @@ void fSend() {
 
     int intNumRows, intStartSec, intNowSec, intDateCheck, intLC, intSend=0;
 
+    mysql_init();
     MYSQL *mconnect;
     MYSQL *mconnect2;
-
-    mysql_library_init(0, NULL, NULL);
     ReadDBConfFile();
+
     /*
     strLogMessage="mainDB.DBTYPE = " + mainDB.DBTYPE;
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -1043,7 +1047,7 @@ void fSend() {
         }
     }
 
-    mysql_library_end();
+    mysql_thread_end();
     return;
 }
 
@@ -1083,6 +1087,8 @@ int main() {
     strLogMessage = "Starting prim_server version " + strVersionNum + ".";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
+    mysql_library_init(0, NULL, NULL);
+    
     fStartReceivers();
     //DCMTK will get the DICOM, just need to start working on it when it's done.
     std::thread receive(fEndReceive);
@@ -1097,6 +1103,7 @@ int main() {
     receive.join();
     process.join();
     send.join();
-    
+
+    mysql_library_end();
     return 0;
 }
