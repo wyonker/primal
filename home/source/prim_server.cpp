@@ -780,7 +780,7 @@ void fSend() {
     std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId;
     std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn, strTime;
 
-    int intNumRows, intStartSec, intNowSec, intDateCheck, intLC, intSend=0;
+    int intNumRows, intStartSec, intNowSec, intDateCheck, intLC, intDone, intSend=0;
 
     MYSQL *mconnect;
     MYSQL *mconnect2;
@@ -816,11 +816,23 @@ void fSend() {
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         return;
     }
-    mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
-    if (!mconnect) {
-        strLogMessage="SEND  MySQL connection failed.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return;
+    intLC=0;
+    intDone=0;
+    while (intLC <= 5  && intDone = 0) {
+        mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
+        if (!mconnect) {
+            if(intLC <= 5) {
+                strLogMessage="SEND  MySQL connection failed.  'Trying again...";
+            } else {
+                strLogMessage="SEND  MySQL connection failed.  'Out of retries!";
+                return;
+            }
+            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+            std::this_thread::sleep_for (std::chrono::seconds(3));
+        } else {
+            intDone=1;
+        }
+        intLC++;
     }
     mconnect2=mysql_init(NULL);
     mysql_options(mconnect2,MYSQL_OPT_RECONNECT,"1");
@@ -1117,4 +1129,5 @@ int main() {
     mysql_library_end();
     return 0;
 }
+
 
