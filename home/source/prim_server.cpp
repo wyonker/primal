@@ -70,7 +70,7 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
-const std::string strVersionNum = "4.02.04";
+const std::string strVersionNum = "4.02.05";
 const std::string strVersionDate = "2025-09-25";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -818,17 +818,19 @@ void fSend() {
     }
     intLC=0;
     intDone=0;
+    mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
     while ((intLC <= 5)  && (intDone = 0)) {
-        mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
         if (!mconnect) {
             if(intLC <= 5) {
                 strLogMessage="SEND  MySQL connection failed.  'Trying again...";
+                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
             } else {
                 strLogMessage="SEND  MySQL connection failed.  'Out of retries!";
+                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                 return;
             }
-            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
             std::this_thread::sleep_for (std::chrono::seconds(3));
+            mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
         } else {
             intDone=1;
         }
@@ -1129,6 +1131,7 @@ int main() {
     mysql_library_end();
     return 0;
 }
+
 
 
 
