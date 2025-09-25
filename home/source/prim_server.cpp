@@ -70,8 +70,8 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
-const std::string strVersionNum = "4.02.03";
-const std::string strVersionDate = "2025-09-16";
+const std::string strVersionNum = "4.02.04";
+const std::string strVersionDate = "2025-09-25";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -818,7 +818,7 @@ void fSend() {
     }
     intLC=0;
     intDone=0;
-    while (intLC <= 5  && intDone = 0) {
+    while ((intLC <= 5)  && (intDone = 0)) {
         mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
         if (!mconnect) {
             if(intLC <= 5) {
@@ -1129,5 +1129,6 @@ int main() {
     mysql_library_end();
     return 0;
 }
+
 
 
