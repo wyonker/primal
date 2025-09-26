@@ -964,6 +964,8 @@ void fSend() {
                                         strSendPass = row2[13];
                                         strSendOrder = row2[14];
                                         strSendActive = row2[15];
+                                        strLogMessage = strPUID + " SEND  " + strAccn + " Sending to AET " + strSendAET;
+                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                     }
                                     //mysql_free_result(result2);
                                 } else {
@@ -1131,6 +1133,7 @@ int main() {
     mysql_library_end();
     return 0;
 }
+
 
 
 
