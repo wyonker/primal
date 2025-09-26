@@ -70,8 +70,8 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
-const std::string strVersionNum = "4.02.05";
-const std::string strVersionDate = "2025-09-25";
+const std::string strVersionNum = "4.02.06";
+const std::string strVersionDate = "2025-09-26";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -965,7 +965,7 @@ void fSend() {
                                         strSendOrder = row2[14];
                                         strSendActive = row2[15];
                                     }
-                                    mysql_free_result(result2);
+                                    //mysql_free_result(result2);
                                 } else {
                                     strLogMessage = strPUID + " SEND  " + strAccn + " No destination found.  Not sending.";
                                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -1131,6 +1131,7 @@ int main() {
     mysql_library_end();
     return 0;
 }
+
 
 
 
