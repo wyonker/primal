@@ -70,8 +70,8 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
-const std::string strVersionNum = "4.02.06";
-const std::string strVersionDate = "2025-09-26";
+const std::string strVersionNum = "4.02.07";
+const std::string strVersionDate = "2025-09-30";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -1008,8 +1008,9 @@ void fSend() {
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                     } else {
                                         //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
-                                        strLogMessage = strPUID + " SEND  Sending " + strAccn + " to " + strSendHIP + ".";
+                                        strLogMessage = strPUID + " SEND  Sending " + strAccn + " to " + strSendHIP + " at location " + strLocation + ".";
                                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        fWriteLog(strLogMessage, "/var/log/primal/prim_server_out.log");
                                         strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
                                         //fWriteLog(strCMD, "/var/log/primal/primal.log");
                                         strStatus = exec(strCMD.c_str());
