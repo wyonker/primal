@@ -138,6 +138,9 @@ int main () {
                             }
                         }
                     }
+                } else {
+                    strLogMessage = "Sent directory " + strSentDir + " for config " + strConfName + " does not exist or is not a directory. Skipping.";
+                    fWriteLog(strLogMessage, strLogFile);
                 }
             }
         }
