@@ -59,6 +59,50 @@ With a large chunck of stuff now being in the DB, let work needs to be done here
 namespace fs = std::filesystem;
 std::string strLogFile = "/var/log/primal/primal_age.log";
 
+std::string GetDate() {
+    time_t t = time(0);
+    struct tm * now = localtime( & t );
+    std::string strDate;
+
+    strDate = std::to_string(now->tm_year + 1900);
+    strDate += "-";
+    if ((now->tm_mon + 1) < 10) {
+        strDate += "0";
+        strDate += to_string(now->tm_mon + 1);
+    } else {
+        strDate += to_string(now->tm_mon + 1);
+    }
+    strDate += "-";
+    if ((now->tm_mday) < 10) {
+        strDate += "0";
+        strDate += to_string(now->tm_mday);
+    } else {
+        strDate += to_string(now->tm_mday);
+    }
+    strDate += " ";
+    if (now->tm_hour < 10) {
+        strDate += "0";
+        strDate += to_string(now->tm_hour);
+    } else {
+        strDate += to_string(now->tm_hour);
+    }
+    strDate += ":";
+    if (now->tm_min < 10) {
+        strDate += "0";
+        strDate += to_string(now->tm_min);
+    } else {
+        strDate += to_string(now->tm_min);
+    }
+    strDate += ":";
+    if (now->tm_sec < 10) {
+        strDate += "0";
+        strDate += to_string(now->tm_sec);
+    } else {
+        strDate += to_string(now->tm_sec);
+    }
+    return strDate;
+}
+
 std::size_t fWriteLog(std::string strLogMessage, std::string strLogFile) {
     std::ofstream fpLogFile;
     std::string strLogDate=GetDate();
