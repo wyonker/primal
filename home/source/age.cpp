@@ -99,16 +99,9 @@ int main () {
 
     mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
     if (!mconnect) {
-        if(intLC <= 5) {
-            strLogMessage="SEND  MySQL connection failed.  'Trying again...";
-            fWriteLog(strLogMessage, strLogFile);
-        } else {
-            strLogMessage="SEND  MySQL connection failed.  'Out of retries!";
-            fWriteLog(strLogMessage, strLogFile);
-            return;
-        }
-        std::this_thread::sleep_for (std::chrono::seconds(3));
-        mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
+        strLogMessage="SEND  MySQL connection failed.  'Out of retries!";
+        fWriteLog(strLogMessage, strLogFile);
+        return;
     }
 
     //Create log directory if it does not exist
