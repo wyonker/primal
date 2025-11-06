@@ -54,9 +54,22 @@ With a large chunck of stuff now being in the DB, let work needs to be done here
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdexcept>
 
 namespace fs = std::filesystem;
 std::string strLogFile = "/var/log/primal/primal_age.log";
+
+bool isIntegerWithStoi(const std::string& s) {
+    std::size_t pos;
+    try {
+        std::stoi(s, &pos);
+    } catch (const std::invalid_argument& e) {
+        return false; // Not a valid number
+    } catch (const std::out_of_range& e) {
+        return false; // Number is too large or too small for int
+    }
+    return pos == s.length(); // Entire string was converted
+}
 
 int main () {
     std::string strQuery, strLogMessage;
@@ -103,23 +116,24 @@ int main () {
                 strConfName = row[0];
                 strRetPeriod = row[1];
                 strSentDir = row[2];
+                if (!isIntegerWithStoi(strRetPeriod)) {
+                    strLogMessage = "Retention period for config " + strConfName + " is not a valid integer: " + strRetPeriod + ". Skipping.";
+                    fWriteLog(strLogMessage, strLogFile);
+                    continue;
+                }
                 // Now we have a sent dir, lets clean up files older than X days
 
                 fs::path pathSentDir(strSentDir);
-                if (fs::exists(pathSentDir) && fs::is_directory(pathSentDir))
-                {
+                if (fs::exists(pathSentDir) && fs::is_directory(pathSentDir)) {
                     auto now = std::chrono::system_clock::now();
-                    for (const auto& entry : fs::directory_iterator(pathSentDir))
-                    {
-                        if (fs::is_regular_file(entry.status()))
-                        {
+                    for (const auto& entry : fs::directory_iterator(pathSentDir)){
+                        if (fs::is_regular_file(entry.status())) {
                             auto ftime = fs::last_write_time(entry);
                             auto age = now - ftime;
-                            auto age_in_days = std::chrono::duration_cast<std::chrono::hours>(age).count() / 24;
-                            if (age_in_days > std::stoi(strRetPeriod))
-                            {
+                            auto age_in_minutes = std::chrono::duration_cast<std::chrono::minutes>(age).count();
+                            if (age_in_minutes > std::stoi(strRetPeriod)) {
                                 fs::remove(entry.path());
-                                strLogMessage = "Deleted file: " + entry.path().string() + " from sent directory as it is older than " + strRetPeriod + " days.";
+                                strLogMessage = "Deleted file: " + entry.path().string() + " from sent directory as it is older than " + strRetPeriod + " minutes.";
                                 fWriteLog(strLogMessage, strLogFile);
                             }
                         }
