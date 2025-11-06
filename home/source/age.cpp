@@ -60,6 +60,11 @@ using namespace std;
 namespace fs = std::filesystem;
 std::string strLogFile = "/var/log/primal/primal_age.log";
 
+struct DataBase {
+    std::string DBTYPE, DBNAME, DBUSER, DBPASS, DBHOST;
+    int intDBPORT;
+} mainDB;
+
 std::string GetDate() {
     time_t t = time(0);
     struct tm * now = localtime( & t );
@@ -139,14 +144,14 @@ int main () {
     if (!mconnect) {
         strLogMessage="SEND  MySQL Initilization failed.";
         fWriteLog(strLogMessage, strLogFile);
-        return;
+        return -1;
     }
 
     mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
     if (!mconnect) {
         strLogMessage="SEND  MySQL connection failed.  'Out of retries!";
         fWriteLog(strLogMessage, strLogFile);
-        return;
+        return -1;
     }
 
     //Create log directory if it does not exist
