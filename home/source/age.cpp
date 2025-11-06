@@ -59,6 +59,17 @@ With a large chunck of stuff now being in the DB, let work needs to be done here
 namespace fs = std::filesystem;
 std::string strLogFile = "/var/log/primal/primal_age.log";
 
+std::size_t fWriteLog(std::string strLogMessage, std::string strLogFile) {
+    std::ofstream fpLogFile;
+    std::string strLogDate=GetDate();
+    fpLogFile.open(strLogFile, std::ios_base::app);
+    //std::cout << strLogDate << "   " << strLogMessage << std::endl;
+    fpLogFile << strLogDate << "   " << strLogMessage << std::endl;
+    fpLogFile << std::flush;
+    fpLogFile.close();
+    return 0;
+}
+
 bool isIntegerWithStoi(const std::string& s) {
     std::size_t pos;
     try {
@@ -99,6 +110,15 @@ int main () {
         std::this_thread::sleep_for (std::chrono::seconds(3));
         mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
     }
+
+    //Create log directory if it does not exist
+    fs::path pathLogFile(strLogFile);
+    if (!fs::exists(pathLogFile.parent_path())) {
+        fs::create_directories(pathLogFile.parent_path());
+    }
+
+    strLogMessage="Starting age process to clean up sent directories based on retention periods.";
+    fWriteLog(strLogMessage, strLogFile);
 
     strQuery = "SELECT conf_name, ret_period, sent_dir FROM conf_rec WHERE conf_name != '!Global!;";
     mysql_query(mconnect, strQuery.c_str());
