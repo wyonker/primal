@@ -56,6 +56,7 @@ With a large chunck of stuff now being in the DB, let work needs to be done here
 #include <unistd.h>
 #include <stdexcept>
 
+using namespace std;
 namespace fs = std::filesystem;
 std::string strLogFile = "/var/log/primal/primal_age.log";
 
@@ -68,37 +69,37 @@ std::string GetDate() {
     strDate += "-";
     if ((now->tm_mon + 1) < 10) {
         strDate += "0";
-        strDate += to_string(now->tm_mon + 1);
+        strDate += std::to_string(now->tm_mon + 1);
     } else {
-        strDate += to_string(now->tm_mon + 1);
+        strDate += std::to_string(now->tm_mon + 1);
     }
     strDate += "-";
     if ((now->tm_mday) < 10) {
         strDate += "0";
-        strDate += to_string(now->tm_mday);
+        strDate += std::to_string(now->tm_mday);
     } else {
-        strDate += to_string(now->tm_mday);
+        strDate += std::to_string(now->tm_mday);
     }
     strDate += " ";
     if (now->tm_hour < 10) {
         strDate += "0";
-        strDate += to_string(now->tm_hour);
+        strDate += std::to_string(now->tm_hour);
     } else {
-        strDate += to_string(now->tm_hour);
+        strDate += std::to_string(now->tm_hour);
     }
     strDate += ":";
     if (now->tm_min < 10) {
         strDate += "0";
-        strDate += to_string(now->tm_min);
+        strDate += std::to_string(now->tm_min);
     } else {
-        strDate += to_string(now->tm_min);
+        strDate += std::to_string(now->tm_min);
     }
     strDate += ":";
     if (now->tm_sec < 10) {
         strDate += "0";
-        strDate += to_string(now->tm_sec);
+        strDate += std::to_string(now->tm_sec);
     } else {
-        strDate += to_string(now->tm_sec);
+        strDate += std::to_string(now->tm_sec);
     }
     return strDate;
 }
