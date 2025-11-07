@@ -193,7 +193,8 @@ int main () {
                     for (const auto& entry : fs::directory_iterator(pathSentDir)){
                         if (fs::is_regular_file(entry.status())) {
                             auto ftime = fs::last_write_time(entry);
-                            auto age = now - ftime;
+                            auto age2 = now;
+                            auto age = age2 - ftime;
                             auto age_in_minutes = std::chrono::duration_cast<std::chrono::minutes>(age).count();
                             if (age_in_minutes > std::stoi(strRetPeriod)) {
                                 fs::remove(entry.path());
