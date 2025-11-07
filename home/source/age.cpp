@@ -134,6 +134,7 @@ bool isIntegerWithStoi(const std::string& s) {
 
 int main () {
     std::string strQuery, strLogMessage, strConfName, strRetPeriod, strSentDir;
+    int intNumRows;
 
     MYSQL *mconnect;
     MYSQL_ROW row;
