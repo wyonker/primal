@@ -13,6 +13,9 @@ SERUID=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0020,000e"|head -1|cut -d "[" -
 SOPIUID=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0018"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 STUDYDESC=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,1030"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 ACCN=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0050"|head -1|cut -d "[" -f2|cut -d "]" -f1`
+PNAME=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0010,0010"|head -1|cut -d "[" -f2|cut -d "]" -f1`
+MRN=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0010,0020"|head -1|cut -d "[" -f2|cut -d "]" -f1`
+DOB=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0010,0030"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 SERIESDESC=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,103e"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 STUDYDATE=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0020"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 STUDYTIME=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0030"|head -1|cut -d "[" -f2|cut -d "]" -f1|cut -d "." -f1`
@@ -38,17 +41,26 @@ HOSTNAME=`hostname`
 
 PUID=`echo "$FULLPATH"|rev|cut -d '/' -f1|rev`
 
+#see if the patient exists
+UPID=0
+UPID=`echo "SELECT upid FROM patient WHERE pname=\"$PNAME\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
+if [ -z "$UPID" ]; then
+    #insert patient
+    echo "INSERT INTO patient SET pname=\"$PNAME\", org=\"$ORG\", pid=\"$MRN\", dob=\"$DOB\";" | mysql -N -u root primal
+    UPID=`echo "SELECT upid FROM patient WHERE pname=\"$PNAME\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
+fi
+
 #First check to see if we inserted this study already in the receive
 NUMSTUDIES=`echo "SELECT COUNT(*) FROM receive WHERE puid = \"$PUID\" AND rservername = \"$HOSTNAME\";" | mysql -N -u root primal`
 if [ "$NUMSTUDIES" -eq 0 ]; then
-    echo "INSERT INTO receive SET puid = \"$PUID\", fullpath = \"$FULLPATH\", rservername = \"$HOSTNAME\", rec_id = $RECID, tstartrec = NOW(), senderAET = \"$SENDERAET\", callingAET = \"$CALLINGAET\", rec_images=1;" | mysql -N -u root primal
+    echo "INSERT INTO receive SET puid = \"$PUID\", fullpath = \"$FULLPATH\", rservername = \"$HOSTNAME\", SIUID=\"$SIUID\", tstartrec = NOW(), senderAET = \"$SENDERAET\", callingAET = \"$CALLINGAET\", rec_images=1;" | mysql -N -u root primal
 else
     `echo "UPDATE receive SET rec_images = rec_images + 1 WHERE puid = \"$PUID\" AND rservername = \"$HOSTNAME\" limit 1;" | mysql -N -u root primal`
 fi
 #First check to see if we inserted this study already
 NUMSTUDIES=`echo "SELECT COUNT(*) FROM study WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\";" | mysql -N -u root primal`
 if [ "$NUMSTUDIES" -eq 0 ]; then
-    echo "INSERT INTO study SET puid=\"$PUID\", SIUID=\"$SIUID\", sServerName=\"$HOSTNAME\", studyDesc=\"$STUDYDESC\", AccessionNum=\"$ACCN\", StudyDate=\"$STUDYDATETIME\", StudyModType=\"$MODALITY\", sClientID=\"$ORG\", StudyNumImg=1;" | mysql -N -u root primal
+    echo "INSERT INTO study SET puid=\"$PUID\", upid=\"$UPID\", SIUID=\"$SIUID\", sServerName=\"$HOSTNAME\", studyDesc=\"$STUDYDESC\", AccessionNum=\"$ACCN\", StudyDate=\"$STUDYDATETIME\", StudyModType=\"$MODALITY\", sClientID=\"$ORG\", StudyNumImg=1;" | mysql -N -u root primal
 else
     `echo "UPDATE study SET StudyNumImg = StudyNumImg + 1 WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\" limit 1;" | mysql -N -u root primal`
 fi
