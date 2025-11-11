@@ -65,6 +65,51 @@ struct DataBase {
     int intDBPORT;
 } mainDB;
 
+int ReadDBConfFile() {
+    std::string strLine, strKey, strValue;
+    std::size_t intPOS, intStartPOS, intEndConf=0;
+    std::ifstream infile("/etc/primal/primal.db", std::ifstream::in);
+
+    while(!infile.eof() && intEndConf != 1)
+    {
+        getline(infile,strLine); // Saves the line in STRING.
+        intPOS=strLine.find("=");
+        if(intPOS!=std::string::npos) {
+            strKey=strLine.substr(0,intPOS);
+            strValue=strLine.substr(intPOS+1);
+            //Remove leading space and tabs
+            intStartPOS = strKey.find_first_not_of(" \t");
+            if( string::npos != intStartPOS )
+                strKey = strKey.substr( intStartPOS );
+            intStartPOS = strKey.find_last_not_of(" \t");
+            if( string::npos != intStartPOS )
+                strKey = strKey.substr(0, intStartPOS + 1 );
+            intStartPOS = strValue.find_first_not_of(" \t");
+            if( string::npos != intStartPOS )
+                strValue = strValue.substr( intStartPOS );
+            intStartPOS = strValue.find_last_not_of(" \t");
+            if( string::npos != intStartPOS )
+                strValue = strValue.substr(0, intStartPOS + 1 );
+            if (strKey.compare("DBTYPE") == 0) {
+                mainDB.DBTYPE=strValue;
+            } else if (strKey.compare("DBNAME") == 0) {
+                mainDB.DBNAME=strValue;
+            } else if (strKey.compare("DBUSER") == 0) {
+                mainDB.DBUSER=strValue;
+            } else if (strKey.compare("DBPASS") == 0) {
+                mainDB.DBPASS=strValue;
+            } else if (strKey.compare("DBHOST") == 0) {
+                mainDB.DBHOST=strValue;
+            } else if (strKey.compare("DBPORT") == 0) {
+                mainDB.intDBPORT=atoi(strValue.c_str());
+            }
+        }
+    }
+    infile.close();
+
+    return 0;
+}
+
 std::string GetDate() {
     time_t t = time(0);
     struct tm * now = localtime( & t );
