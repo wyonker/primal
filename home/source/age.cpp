@@ -193,8 +193,12 @@ int main () {
                     for (const auto& entry : fs::directory_iterator(pathSentDir)){
                         if (fs::is_regular_file(entry.status())) {
                             auto ftime = fs::last_write_time(entry);
-                            auto age2 = now;
-                            auto age = age2 - ftime;
+                            // Convert file_time_type to system_clock::time_point
+                            auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+                                ftime - fs::file_time_type::clock::now()
+                                + std::chrono::system_clock::now()
+                            );
+                            auto age = now - sctp;
                             auto age_in_minutes = std::chrono::duration_cast<std::chrono::minutes>(age).count();
                             if (age_in_minutes > std::stoi(strRetPeriod)) {
                                 fs::remove(entry.path());
