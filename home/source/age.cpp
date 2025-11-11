@@ -184,6 +184,7 @@ int main () {
     MYSQL *mconnect;
     MYSQL_ROW row;
     MYSQL_RES *result;
+    ReadDBConfFile();
 
     mconnect=mysql_init(NULL);
     mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
