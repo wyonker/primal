@@ -210,7 +210,7 @@ int main () {
     strLogMessage="Starting age process to clean up sent directories based on retention periods.";
     fWriteLog(strLogMessage, strLogFile);
 
-    strQuery = "SELECT conf_name, ret_period, sent_dir FROM conf_rec WHERE conf_name != '!Global!;";
+    strQuery = "SELECT conf_name, ret_period, sent_dir FROM conf_rec WHERE conf_name != '!Global!';";
     mysql_query(mconnect, strQuery.c_str());
     if(*mysql_error(mconnect)) {
         strLogMessage="SQL Error: ";
@@ -230,6 +230,9 @@ int main () {
                     strLogMessage = "Retention period for config " + strConfName + " is not a valid integer: " + strRetPeriod + ". Skipping.";
                     fWriteLog(strLogMessage, strLogFile);
                     continue;
+                } else {
+                    strLogMessage = "Processing sent directory " + strSentDir + " for config " + strConfName + " with retention period of " + strRetPeriod + " minutes.";
+                    fWriteLog(strLogMessage, strLogFile);
                 }
                 // Now we have a sent dir, lets clean up files older than X days
 
@@ -261,5 +264,8 @@ int main () {
         }
         mysql_free_result(result);
     }
-
+    mysql_close(mconnect);
+    strLogMessage="Age process completed.";
+    fWriteLog(strLogMessage, strLogFile);
+    return 0;
 }
