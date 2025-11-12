@@ -464,7 +464,11 @@ if((!isset($_GET['rec'])) && (!isset($_GET['rule'])) && (!isset($_GET['dest'])))
 }
 if($_GET['action'] == 'Rec') {
 	if(isset($_GET['rec'])) {
-		$strQuery = "SELECT * FROM conf_rec WHERE conf_rec_id = " . $_GET['rec'] . " limit 1;";
+		if($_GET['rec'] == "0") {
+			$strQuery = "SELECT * FROM conf_rec WHERE conf_name = \"!Global!\" limit 1;";
+		} else {
+			$strQuery = "SELECT * FROM conf_rec WHERE conf_rec_id = " . $_GET['rec'] . " limit 1;";
+		}
 		$result = mysqli_query($conn, $strQuery);
 		$row = mysqli_fetch_assoc($result);
 		echo '<form action="setup.php?action=save" method="post">';
