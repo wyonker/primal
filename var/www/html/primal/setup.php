@@ -475,7 +475,11 @@ if($_GET['action'] == 'Rec') {
 		echo '<input type="hidden" name="conf_rec_id" value ="' . $row["conf_rec_id"] . '" />';
 		echo '<table border="1">';
 		echo '<tr><td>' . 'Config Name:</td>';
-		echo '<td><input type="text" name="conf_name" value ="' . $row["conf_name"] . '" /></td></tr>';
+		if($_GET['rec'] == "0") {
+			echo '<td><input type="text" name="conf_name" value ="New Receiver" /></td></tr>';
+		} else {
+			echo '<td><input type="text" name="conf_name" value ="' . $row["conf_name"] . '" /></td></tr>';
+		}
 		echo '<tr><td>' . 'Server FQDN or IP' . '</td>';
 		echo '<td><input type="text" name="conf_server" value ="' . $row["conf_server"] . '" /></td></tr>';
 		echo '<tr><td>' . '<label for="rec_type">Receiver Type:</label></td><td>';
@@ -484,7 +488,11 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="2">Directory</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Port number to listen on (not used for directory type)' . '</td>';
-		echo '<td><input type="text" name="rec_port" value ="' . $row["rec_port"] . '" /></td></tr>';
+		if($_GET['rec'] == "0") {
+			echo '<td><input type="text" name="rec_port" value ="0" /></td></tr>';
+		} else {
+			echo '<td><input type="text" name="rec_port" value ="' . $row["rec_port"] . '" /></td></tr>';
+		}
 		echo '<tr><td>' . 'Absolute directory path for receiver data' . '</td>';
 		echo '<td><input type="text" name="rec_dir" value ="' . $row["rec_dir"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Absolute directory path for receiver logs' . '</td>';
