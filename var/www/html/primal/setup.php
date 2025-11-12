@@ -1297,7 +1297,7 @@ function fValidateInput($intType, $strUserInput) {
 		if(!is_numeric($strUserInput)) {
 			return 1;
 		} else {
-			if($strUserInput < 1 || $strUserInput > 5256000) {
+			if($strUserInput < -1 || $strUserInput > 5256000) {
 				return 1;
 			} else {
 				return 0;
