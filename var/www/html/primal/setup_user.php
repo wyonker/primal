@@ -256,8 +256,8 @@ foreach($users as $u) {
     if($users[$lc1]['login_sec_level'] <= $_SESSION['login_sec_level']) {
         echo '<tr>';
         echo '<td>' . $users[$lc1]['login_sec_level'] . '</td>';
-        echo '<td><a href="setup_user.php?e=' . $users[$lc1]['loginid'] . '">' . $users[$lc1]['loginid'] . '</a></td>';
-        echo '<td><a href="setup_user.php?e=' . $users[$lc1]['loginid'] . '">' . $users[$lc1]['username'] . '</a></td>';
+        echo '<td><a href="update_user.php?e=' . $users[$lc1]['loginid'] . '">' . $users[$lc1]['loginid'] . '</a></td>';
+        echo '<td><a href="update_user.php?e=' . $users[$lc1]['loginid'] . '">' . $users[$lc1]['username'] . '</a></td>';
         echo '<td>' . $users[$lc1]['active'] . '</td>';
         echo '</tr>';
     }
