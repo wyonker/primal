@@ -43,11 +43,11 @@ PUID=`echo "$FULLPATH"|rev|cut -d '/' -f1|rev`
 
 #see if the patient exists
 UPID=0
-UPID=`echo "SELECT upid FROM patient WHERE pname=\"$PNAME\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
+UPID=`echo "SELECT id FROM patient WHERE pname=\"$PNAME\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
 if [ -z "$UPID" ]; then
     #insert patient
     echo "INSERT INTO patient SET pname=\"$PNAME\", org=\"$ORG\", pid=\"$MRN\", dob=\"$DOB\";" | mysql -N -u root primal
-    UPID=`echo "SELECT upid FROM patient WHERE pname=\"$PNAME\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
+    UPID=`echo "SELECT id FROM patient WHERE pname=\"$PNAME\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
 fi
 
 #First check to see if we inserted this study already in the receive
