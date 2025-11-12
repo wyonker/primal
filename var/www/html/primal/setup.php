@@ -435,7 +435,7 @@ if((!isset($_GET['rec'])) && (!isset($_GET['rule'])) && (!isset($_GET['dest'])))
 		echo '<td><div id="rec"><br><br><a href="/primal/setup.php?action=Rec&rec=' . $row['conf_rec_id'] . '">' . $row['conf_name'] . '</a></div></td>';
 	}
 	array_push($arrRec, "0");
-	echo '<td><div id="rec"><br><br><a href="/primal/setup.php?action=Rec&rec=0">Add Receiver</a></div></td></tr>';
+	echo '<td><div id="rec"><br><br><a href="/primal/setup.php?action=Rec&rec=-1">Add Receiver</a></div></td></tr>';
 	//Now let's show the routes.
 	echo "<tr>";
 	foreach($arrRec as &$rec) {
@@ -464,7 +464,7 @@ if((!isset($_GET['rec'])) && (!isset($_GET['rule'])) && (!isset($_GET['dest'])))
 }
 if($_GET['action'] == 'Rec') {
 	if(isset($_GET['rec'])) {
-		if($_GET['rec'] == "0") {
+		if($_GET['rec'] == "-1") {
 			$strQuery = "SELECT * FROM conf_rec WHERE conf_name = \"!Global!\" limit 1;";
 		} else {
 			$strQuery = "SELECT * FROM conf_rec WHERE conf_rec_id = " . $_GET['rec'] . " limit 1;";
@@ -472,10 +472,14 @@ if($_GET['action'] == 'Rec') {
 		$result = mysqli_query($conn, $strQuery);
 		$row = mysqli_fetch_assoc($result);
 		echo '<form action="setup.php?action=save" method="post">';
-		echo '<input type="hidden" name="conf_rec_id" value ="' . $row["conf_rec_id"] . '" />';
+		if($_GET['rec'] == "-1") {
+			echo '<input type="hidden" name="conf_rec_id" value ="-1" />';
+		} else {
+			echo '<input type="hidden" name="conf_rec_id" value ="' . $row["conf_rec_id"] . '" />';
+		}
 		echo '<table border="1">';
 		echo '<tr><td>' . 'Config Name:</td>';
-		if($_GET['rec'] == "0") {
+		if($_GET['rec'] == "-1") {
 			echo '<td><input type="text" name="conf_name" value ="New Receiver" /></td></tr>';
 		} else {
 			echo '<td><input type="text" name="conf_name" value ="' . $row["conf_name"] . '" /></td></tr>';
@@ -488,7 +492,7 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="2">Directory</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Port number to listen on (not used for directory type)' . '</td>';
-		if($_GET['rec'] == "0") {
+		if($_GET['rec'] == "-1") {
 			echo '<td><input type="text" name="rec_port" value ="0" /></td></tr>';
 		} else {
 			echo '<td><input type="text" name="rec_port" value ="' . $row["rec_port"] . '" /></td></tr>';
@@ -555,7 +559,11 @@ if($_GET['action'] == 'Rec') {
 		echo '</select></td></tr>';
 		echo '</table>';
 		echo '<br><div class="btn-group">';
-		echo '<button type="submit" id="btnUpdate" name="btnUpdate">Update</button>';
+		if($_GET['rec'] == "-1") {
+			echo '<button type="submit" id="btnAdd" name="btnAdd">Add</button>';
+		} else {
+			echo '<button type="submit" id="btnUpdate" name="btnUpdate">Update</button>';
+		}
 		echo '<button type="submit" id="btnReset" name="btnReset">Clear</button>';
 		echo '<button type="submit" id="btnCancel" name="btnCancel">Cancel</button>';
 		echo '<input type="button" onClick="jsDelete()" id="btnDelete" name="btnCancel" value=" Delete" size="3">';
