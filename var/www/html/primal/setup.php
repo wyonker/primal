@@ -550,7 +550,7 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="1">Yes</option>';
 		echo '<option value="2" selected><b>No</b></option>';
 		echo '</select></td></tr>';
-		echo '<tr><td>' . 'Store sent files (minutes)' . '</td>';
+		echo '<tr><td>' . 'Store sent files (minutes, 0=dont store, -1=store forever)' . '</td>';
 		echo '<td><input type="text" name="ret_period" value ="' . $row["ret_period"] . '" /></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
 		echo '<select name="active" id="active" default=1>';
@@ -645,7 +645,7 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="1">Yes</option>';
 		echo '<option value="2" selected><b>No</b></option>';
 		echo '</select></td></tr>';
-		echo '<tr><td>' . 'Store sent files (minutes)' . '</td>';
+		echo '<tr><td>' . 'Store sent files (minutes, 0=dont store, -1=store forever)' . '</td>';
 		echo '<td><input type="text" name="ret_period" value="10800" /></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
 		echo '<select name="active" id="active" default=1>';
