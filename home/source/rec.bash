@@ -42,9 +42,8 @@ PUID=`echo "$FULLPATH"|rev|cut -d '/' -f1|rev`
 echo "`date +"%Y-%m-%d %H:%M:%S"`  " $PUID "Saving " $PNAMESEARCH " Study:" $SIUID " Series:" $SERUID " Image:" $SOPIUID
 #see if the patient exists
 echo "SELECT id FROM patient WHERE pname=\"$PNAMESEARCH\" AND dob=\"$DOBSEARCH\" AND pid=\"$MRN\" AND org=\"$ORG\";"
-UPID=0
 UPID=`echo "SELECT id FROM patient WHERE pname like \"$PNAMESEARCH%\" AND dob=\"$DOBSEARCH\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
-if [ $UPID -ME 0 ]; then
+if ! [[ $UPID =~ '^[0-9]+$' ]];  then
     #insert patient
     echo "INSERT INTO patient SET pname=\"$PNAMESEARCH\", org=\"$ORG\", pid=\"$MRN\", dob=\"$DOB\";" | mysql -N -u root primal
     UPID=`echo "SELECT id FROM patient WHERE pname=\"$PNAMESEARCH\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
