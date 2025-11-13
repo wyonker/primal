@@ -35,16 +35,17 @@ HOSTNAME=`hostname`
 
 PUID=`echo "$FULLPATH"|rev|cut -d '/' -f1|rev`
 
-echo "`date +%Y-%m-%d %H:%M:%S`  " $PUID "Saving " $PNAMESEARCH " Study:" $SIUID " Series:" $SERUID " Image:" $SOPIUID
+echo "`date +"%Y-%m-%d %H:%M:%S"`  " $PUID "Saving " $PNAMESEARCH " Study:" $SIUID " Series:" $SERUID " Image:" $SOPIUID
 #see if the patient exists
+echo "SELECT id FROM patient WHERE pname=\"$PNAMESEARCH\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";"
 UPID=0
 UPID=`echo "SELECT id FROM patient WHERE pname=\"$PNAMESEARCH\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
-if [ -z "$UPID" ]; then
+if [ $UPID -ME 0 ]; then
     #insert patient
     echo "INSERT INTO patient SET pname=\"$PNAMESEARCH\", org=\"$ORG\", pid=\"$MRN\", dob=\"$DOB\";" | mysql -N -u root primal
     UPID=`echo "SELECT id FROM patient WHERE pname=\"$PNAMESEARCH\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
 fi
-echo "`date +%Y-%m-%d %H:%M:%S`  " $PUID " Patient ID: " $UPID
+echo "`date +"%Y-%m-%d %H:%M:%S"`  " $PUID " Patient ID: " $UPID
 
 #First check to see if we inserted this study already in the receive
 NUMSTUDIES=`echo "SELECT COUNT(*) FROM receive WHERE puid = \"$PUID\" AND rservername = \"$HOSTNAME\";" | mysql -N -u root primal`
@@ -69,5 +70,5 @@ else
 fi
 #add to image table
 echo "INSERT INTO image SET puid=\"$PUID\", SOPIUID=\"$SOPIUID\", SERIUID=\"$SERUID\", iservername=\"$HOSTNAME\", ifilename=\"$FILENAME\", idate=NOW(), ilocation=\"$FULLPATH\";" | mysql -N -u root primal
-echo "`date +%Y-%m-%d %H:%M:%S`  " $PUID " Finished Saving."
+echo "`date +"%Y-%m-%d %H:%M:%S"`  " $PUID " Finished Saving."
 exit 0
