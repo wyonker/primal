@@ -42,8 +42,10 @@ PUID=`echo "$FULLPATH"|rev|cut -d '/' -f1|rev`
 echo "`date +"%Y-%m-%d %H:%M:%S"`  " $PUID "Saving " $PNAMESEARCH " Study:" $SIUID " Series:" $SERUID " Image:" $SOPIUID
 #see if the patient exists
 echo "SELECT id FROM patient WHERE pname like \"$PNAMESEARCH%\" AND dob=\"$DOBSEARCH\" AND pid=\"$MRN\" AND org=\"$ORG\";"
-UPID=`echo "SELECT id FROM patient WHERE pname like \"$PNAMESEARCH%\" AND dob=\"$DOBSEARCH\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
-if ! [[ $UPID =~ '^[0-9]+$' ]];  then
+TEMPT=`echo "SELECT id FROM patient WHERE pname like \"$PNAMESEARCH%\" AND dob=\"$DOBSEARCH\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
+UPID=`echo "$TEMPT"|grep "^[0-9]*$"`
+if ! [ "$UPID" == "" ] || [ "$UPID" == " " ]  
+then
     #insert patient
     echo "INSERT INTO patient SET pname=\"$PNAMESEARCH\", org=\"$ORG\", pid=\"$MRN\", dob=\"$DOB\";" | mysql -N -u root primal
     UPID=`echo "SELECT id FROM patient WHERE pname=\"$PNAMESEARCH\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
@@ -55,22 +57,25 @@ NUMSTUDIES=`echo "SELECT COUNT(*) FROM receive WHERE puid = \"$PUID\" AND rserve
 if [ "$NUMSTUDIES" -eq 0 ]; then
     echo "INSERT INTO receive SET puid = \"$PUID\", fullpath = \"$FULLPATH\", rservername = \"$HOSTNAME\", SIUID=\"$SIUID\", tstartrec = NOW(), senderAET = \"$SENDERAET\", callingAET = \"$CALLINGAET\", rec_images=1;" | mysql -N -u root primal
 else
-    `echo "UPDATE receive SET rec_images = rec_images + 1 WHERE puid = \"$PUID\" AND rservername = \"$HOSTNAME\" limit 1;" | mysql -N -u root primal`
+    echo "UPDATE receive SET rec_images = rec_images + 1 WHERE puid = \"$PUID\" AND rservername = \"$HOSTNAME\" limit 1;" | mysql -N -u root primal
 fi
+
 #First check to see if we inserted this study already
 NUMSTUDIES=`echo "SELECT COUNT(*) FROM study WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\";" | mysql -N -u root primal`
 if [ "$NUMSTUDIES" -eq 0 ]; then
     echo "INSERT INTO study SET puid=\"$PUID\", upid=\"$UPID\", SIUID=\"$SIUID\", sServerName=\"$HOSTNAME\", studyDesc=\"$STUDYDESC\", AccessionNum=\"$ACCN\", StudyDate=\"$STUDYDATETIME\", StudyModType=\"$MODALITY\", sClientID=\"$ORG\", StudyNumImg=1;" | mysql -N -u root primal
 else
-    `echo "UPDATE study SET StudyNumImg = StudyNumImg + 1 WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\" limit 1;" | mysql -N -u root primal`
+    echo "UPDATE study SET StudyNumImg = StudyNumImg + 1 WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\" limit 1;" | mysql -N -u root primal
 fi
+
 #First check to see if we inserted this series already
 NUMSERIES=`echo "SELECT COUNT(*) FROM series WHERE puid = \"$PUID\" AND SERIUID = \"$SERUID\";" | mysql -N -u root primal`
 if [ "$NUMSERIES" -eq 0 ]; then
-    echo "INSERT INTO series SET puid = \"$PUID\", SERIUID = \"$SERUID\", SIUID=\"$SIUID\", SeriesDesc=\"$SERIESDESC\", SeriesNumImg=1;" | mysql -N -u root primal
+    echo "INSERT INTO series SET puid = \"$PUID\", SERIUID = \"$SERUID\", SIUID=\"$SIUID\", SeriesDesc=\"$SERIESDESC\", Modality=\"$MODALITY\", SeriesNumImg=1;" | mysql -N -u root primal
 else
-    `echo "UPDATE series SET SeriesNumImg = SeriesNumImg + 1 WHERE puid=\"$PUID\" AND SERIUID=\"$SERUID\" limit 1;" | mysql -N -u root primal`
+    echo "UPDATE series SET SeriesNumImg = SeriesNumImg + 1 WHERE puid=\"$PUID\" AND SERIUID=\"$SERUID\" limit 1;" | mysql -N -u root primal
 fi
+
 #add to image table
 echo "INSERT INTO image SET puid=\"$PUID\", SOPIUID=\"$SOPIUID\", SERIUID=\"$SERUID\", iservername=\"$HOSTNAME\", ifilename=\"$FILENAME\", idate=NOW(), ilocation=\"$FULLPATH\";" | mysql -N -u root primal
 echo "`date +"%Y-%m-%d %H:%M:%S"`  " $PUID " Finished Saving."
