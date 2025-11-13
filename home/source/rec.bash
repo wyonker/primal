@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Should get path, rec_id, aet, aec
-#REV 15
+#REV 16
 
 FULLPATH=`echo "$1"|cut -d " " -f1`
 RECID=`echo "$1"|cut -d " " -f2`
@@ -41,10 +41,10 @@ PUID=`echo "$FULLPATH"|rev|cut -d '/' -f1|rev`
 
 echo "`date +"%Y-%m-%d %H:%M:%S"`  " $PUID "Saving " $PNAMESEARCH " Study:" $SIUID " Series:" $SERUID " Image:" $SOPIUID
 #see if the patient exists
-echo "SELECT id FROM patient WHERE pname like \"$PNAMESEARCH%\" AND dob=\"$DOBSEARCH\" AND pid=\"$MRN\" AND org=\"$ORG\";"
+#echo "SELECT id FROM patient WHERE pname like \"$PNAMESEARCH%\" AND dob=\"$DOBSEARCH\" AND pid=\"$MRN\" AND org=\"$ORG\";"
 TEMPT=`echo "SELECT id FROM patient WHERE pname like \"$PNAMESEARCH%\" AND dob=\"$DOBSEARCH\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
 UPID=`echo "$TEMPT"|grep "^[0-9]*$"`
-if ! [ "$UPID" == "" ] || [ "$UPID" == " " ]  
+if [ "$UPID" == "" ] || [ "$UPID" == " " ]  
 then
     #insert patient
     echo "INSERT INTO patient SET pname=\"$PNAMESEARCH\", org=\"$ORG\", pid=\"$MRN\", dob=\"$DOB\";" | mysql -N -u root primal
