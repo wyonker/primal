@@ -19,6 +19,10 @@ TEMP2=`echo "$PNAME"|cut -d "^" -f2`
 PNAMESEARCH=`echo "$TEMP1"^"$TEMP2"`
 MRN=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0010,0020"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 DOB=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0010,0030"|head -1|cut -d "[" -f2|cut -d "]" -f1`
+TEMP1=`echo "$DOB"|cut -c1-4`
+TEMP2=`echo "$DOB"|cut -c5-6`
+TEMP3=`echo "$DOB"|cut -c7-8`
+DOBSEARCH=`echo "$TEMP1"-"$TEMP2"-"$TEMP3"`
 SERIESDESC=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,103e"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 STUDYDATE=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0020"|head -1|cut -d "[" -f2|cut -d "]" -f1`
 STUDYTIME=`dcmdump "$FULLPATH/$FILENAME" 2>&1|grep "0008,0030"|head -1|cut -d "[" -f2|cut -d "]" -f1|cut -d "." -f1`
@@ -37,9 +41,9 @@ PUID=`echo "$FULLPATH"|rev|cut -d '/' -f1|rev`
 
 echo "`date +"%Y-%m-%d %H:%M:%S"`  " $PUID "Saving " $PNAMESEARCH " Study:" $SIUID " Series:" $SERUID " Image:" $SOPIUID
 #see if the patient exists
-echo "SELECT id FROM patient WHERE pname=\"$PNAMESEARCH\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";"
+echo "SELECT id FROM patient WHERE pname=\"$PNAMESEARCH\" AND dob=\"$DOBSEARCH\" AND pid=\"$MRN\" AND org=\"$ORG\";"
 UPID=0
-UPID=`echo "SELECT id FROM patient WHERE pname=\"$PNAMESEARCH\" AND dob=\"$DOB\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
+UPID=`echo "SELECT id FROM patient WHERE pname like \"$PNAMESEARCH%\" AND dob=\"$DOBSEARCH\" AND pid=\"$MRN\" AND org=\"$ORG\";" | mysql -N -u root primal`
 if [ $UPID -ME 0 ]; then
     #insert patient
     echo "INSERT INTO patient SET pname=\"$PNAMESEARCH\", org=\"$ORG\", pid=\"$MRN\", dob=\"$DOB\";" | mysql -N -u root primal
