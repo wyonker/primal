@@ -9,7 +9,7 @@ create table patient (id bigint(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
     sex varchar(6),
     PatientComments varchar(128),
     INDEX pname (pname),
-	primary key (pid, org));
+	primary key (pname, dob, pid, org));
 create table receive (id bigint(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
 	puid varchar(24) not null,
 	fullpath varchar(256) not null,
