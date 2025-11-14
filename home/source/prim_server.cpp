@@ -670,9 +670,6 @@ void fProcess() {
     int intProc_type, intNumRows, intConf_proc_id;
     [[maybe_unused]] int intReturn;
 
-    //Not ready yet.
-    return;
-
     MYSQL *mconnect;
     MYSQL *mconnect2;
     ReadDBConfFile();
