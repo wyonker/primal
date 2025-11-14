@@ -529,6 +529,9 @@ void fEndReceive() {
     strThisServerName = exec("hostname");
     strThisServerName.pop_back(); // Remove trailing newline
 
+    strLogMessage="Starting the end receive process.";
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+
     while(1) {
         strQuery = "SELECT id, puid, fullpath, rservername, rec_id, tstartrec FROM receive WHERE complete = 0 AND rservername = '" + strThisServerName + "';";
         mysql_query(mconnect, strQuery.c_str());
@@ -592,8 +595,20 @@ void fEndReceive() {
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         strQuery3="UPDATE receive SET complete=1, tendrec=NOW() WHERE puid = \"" + strPUID + "\";";
                         mysql_query(mconnect, strQuery3.c_str());
+                        if(*mysql_error(mconnect)) {
+                            strLogMessage="RECV  SQL Error: ";
+                            strLogMessage+=mysql_error(mconnect);
+                            strLogMessage+="\nQuery: " + strQuery3 + "\n";
+                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        }
                         strQuery4="INSERT INTO process SET pud=\"" + strPUID + "\", pservername=\"" + strServerName + "\", tstartproc=NOW(), complete=0;";
                         mysql_query(mconnect, strQuery4.c_str());
+                        if(*mysql_error(mconnect)) {
+                            strLogMessage="RECV  SQL Error: ";
+                            strLogMessage+=mysql_error(mconnect);
+                            strLogMessage+="\nQuery: " + strQuery4 + "\n";
+                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        }
                     } else {
                         strLogMessage = strPUID + " RECV  Not yet time to end receive.";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
