@@ -55,7 +55,7 @@ echo "`date +"%Y-%m-%d %H:%M:%S"`  " $PUID " Patient ID: " $UPID
 #First check to see if we inserted this study already in the receive
 NUMSTUDIES=`echo "SELECT COUNT(*) FROM receive WHERE puid = \"$PUID\" AND servername = \"$HOSTNAME\";" | mysql -N -u root primal`
 if [ "$NUMSTUDIES" -eq 0 ]; then
-    echo "INSERT INTO receive SET puid = \"$PUID\", fullpath = \"$FULLPATH\", servername = \"$HOSTNAME\", SIUID=\"$SIUID\", tstartrec = NOW(), senderAET = \"$SENDERAET\", callingAET = \"$CALLINGAET\", rec_images=1;" | mysql -N -u root primal
+    echo "INSERT INTO receive SET puid = \"$PUID\", rec_id = \"$RECID\", fullpath = \"$FULLPATH\", servername = \"$HOSTNAME\", SIUID=\"$SIUID\", tstartrec = NOW(), senderAET = \"$SENDERAET\", callingAET = \"$CALLINGAET\", rec_images=1;" | mysql -N -u root primal
 else
     echo "UPDATE receive SET rec_images = rec_images + 1 WHERE puid = \"$PUID\" AND servername = \"$HOSTNAME\" limit 1;" | mysql -N -u root primal
 fi
