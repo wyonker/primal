@@ -694,135 +694,138 @@ void fProcess() {
     strLogMessage="Starting the processing thread.";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
-    strQuery="SELECT * FROM process WHERE complete = 0;";
-    mysql_query(mconnect, strQuery.c_str());
-    if(*mysql_error(mconnect)) {
-        strLogMessage="SQL Error: ";
-        strLogMessage+=mysql_error(mconnect);
-        strLogMessage+="\nQuery: " + strQuery + "\n";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-    }
-    result = mysql_store_result(mconnect);
-    if(result) {
-        intNumRows=mysql_num_rows(result);
-        if(intNumRows > 0) {
-            while((row = mysql_fetch_row(result))) {
-                strID = row[0];
-                strPUID = row[1];
-                strPservername = row[2];
-                strTstartproc = row[3];
+    while(1) {
+        strQuery="SELECT * FROM process WHERE complete = 0;";
+        mysql_query(mconnect, strQuery.c_str());
+        if(*mysql_error(mconnect)) {
+            strLogMessage="SQL Error: ";
+            strLogMessage+=mysql_error(mconnect);
+            strLogMessage+="\nQuery: " + strQuery + "\n";
+            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        }
+        result = mysql_store_result(mconnect);
+        if(result) {
+            intNumRows=mysql_num_rows(result);
+            if(intNumRows > 0) {
+                while((row = mysql_fetch_row(result))) {
+                    strID = row[0];
+                    strPUID = row[1];
+                    strPservername = row[2];
+                    strTstartproc = row[3];
 
-                strLogMessage="Processing PUID: " + strPUID;
-                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-
-                strQuery2="SELECT rec_id FROM receive WHERE puid = '" + strPUID + "';";
-                mysql_query(mconnect, strQuery2.c_str());
-                if(*mysql_error(mconnect)) {
-                    strLogMessage="SQL Error: ";
-                    strLogMessage+=mysql_error(mconnect);
-                    strLogMessage+="\nQuery: " + strQuery2 + "\n";
+                    strLogMessage="Processing PUID: " + strPUID;
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                }
-                result2 = mysql_store_result(mconnect);
-                if(result2) {
-                    intNumRows=mysql_num_rows(result2);
-                    if(intNumRows > 0) {
-                        while((row2 = mysql_fetch_row(result2))) {
-                            strRecID = row2[0];
-                        }
+
+                    strQuery2="SELECT rec_id FROM receive WHERE puid = '" + strPUID + "';";
+                    mysql_query(mconnect, strQuery2.c_str());
+                    if(*mysql_error(mconnect)) {
+                        strLogMessage="SQL Error: ";
+                        strLogMessage+=mysql_error(mconnect);
+                        strLogMessage+="\nQuery: " + strQuery2 + "\n";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     }
-                    mysql_free_result(result2);
-                }
-
-                strQuery3="SELECT * FROM conf_proc WHERE conf_rec_id = " + strRecID + " ORDER BY proc_order;";
-                mysql_query(mconnect, strQuery3.c_str());
-                if(*mysql_error(mconnect)) {
-                    strLogMessage="SQL Error: ";
-                    strLogMessage+=mysql_error(mconnect);
-                    strLogMessage+="\nQuery: " + strQuery3 + "\n";
-                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                }
-                result3 = mysql_store_result(mconnect);
-                if(result3) {
-                    intNumRows=mysql_num_rows(result3);
-                    if(intNumRows > 0) {
-                        while((row3 = mysql_fetch_row(result3))) {
-                            strConf_proc_id = row3[0];
-                            intConf_proc_id = stoi(row3[0]);
-                            strConf_rec_id = row3[1];
-                            strProc_name = row3[2];
-                            strProc_type = row3[3];
-                            intProc_type = stoi(strProc_type);
-                            strProc_tag = row3[4];
-                            strProc_operator = row3[5];
-                            strProc_cond = row3[6];
-                            strProc_action = row3[7];
-                            strProc_order = row3[8];
-                            strProc_dest = row3[9];
-                            strProc_active = row3[10];
-
-                            if(intProc_type == 1) {
-                                //Tag modification
-                                intReturn = fRuleTag(strPUID, intConf_proc_id);
-                            } else if(intProc_type == 2) {
-                                //Date
-                                intReturn = fRuleDate(strPUID, intConf_proc_id);
-                            } else if(intProc_type == 3) {
-                                //Time
-                                intReturn = fRuleTime(strPUID, intConf_proc_id);
-                            } else if(intProc_type == 4) {
-                                //Date-Time
-                                intReturn = fRuleDateTime(strPUID, intConf_proc_id);
-                            } else if(intProc_type == 5) {
-                                //Script
-                                intReturn = fRuleScript(strPUID, intConf_proc_id);
-                            } else if(intProc_type == 6) {
-                                //HL7
-                                intReturn = fRuleHL7(strPUID, intConf_proc_id);
+                    result2 = mysql_store_result(mconnect);
+                    if(result2) {
+                        intNumRows=mysql_num_rows(result2);
+                        if(intNumRows > 0) {
+                            while((row2 = mysql_fetch_row(result2))) {
+                                strRecID = row2[0];
                             }
                         }
-                        strLogMessage="Processing done, ending processing.";
-                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                        strQuery = "UPDATE process SET complete=1, tendproc=NOW() WHERE PUID=\"" + strPUID + "\" limit 1;";
-                        mysql_query(mconnect, strQuery.c_str());
-                        if(*mysql_error(mconnect)) {
-                            strLogMessage="SQL Error: ";
-                            strLogMessage+=mysql_error(mconnect);
-                            strLogMessage+="\nQuery: " + strQuery + "\n";
-                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                        }
-                        strQuery = "INSERT INTO send SET puid=\"" + strPUID + "\", servername=\"" + strPservername + "\", tstartsend=NOW(), complete=0;";
-                        mysql_query(mconnect, strQuery.c_str());
-                        if(*mysql_error(mconnect)) {
-                            strLogMessage="SQL Error: ";
-                            strLogMessage+=mysql_error(mconnect);
-                            strLogMessage+="\nQuery: " + strQuery + "\n";
-                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                        }    
-                    } else {
-                        strLogMessage="No processing to be done, ending processing.";
-                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                        strQuery = "UPDATE process SET complete=1, tendproc=NOW() WHERE PUID=\"" + strPUID + "\" limit 1;";
-                        mysql_query(mconnect, strQuery.c_str());
-                        if(*mysql_error(mconnect)) {
-                            strLogMessage="SQL Error: ";
-                            strLogMessage+=mysql_error(mconnect);
-                            strLogMessage+="\nQuery: " + strQuery + "\n";
-                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                        }
-                        strQuery = "INSERT INTO send SET puid=\"" + strPUID + "\", servername=\"" + strPservername + "\", tstartsend=NOW(), complete=0;";
-                        mysql_query(mconnect, strQuery.c_str());
-                        if(*mysql_error(mconnect)) {
-                            strLogMessage="SQL Error: ";
-                            strLogMessage+=mysql_error(mconnect);
-                            strLogMessage+="\nQuery: " + strQuery + "\n";
-                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                        }
+                        mysql_free_result(result2);
                     }
-                    mysql_free_result(result3);
+
+                    strQuery3="SELECT * FROM conf_proc WHERE conf_rec_id = " + strRecID + " ORDER BY proc_order;";
+                    mysql_query(mconnect, strQuery3.c_str());
+                    if(*mysql_error(mconnect)) {
+                        strLogMessage="SQL Error: ";
+                        strLogMessage+=mysql_error(mconnect);
+                        strLogMessage+="\nQuery: " + strQuery3 + "\n";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
+                    result3 = mysql_store_result(mconnect);
+                    if(result3) {
+                        intNumRows=mysql_num_rows(result3);
+                        if(intNumRows > 0) {
+                            while((row3 = mysql_fetch_row(result3))) {
+                                strConf_proc_id = row3[0];
+                                intConf_proc_id = stoi(row3[0]);
+                                strConf_rec_id = row3[1];
+                                strProc_name = row3[2];
+                                strProc_type = row3[3];
+                                intProc_type = stoi(strProc_type);
+                                strProc_tag = row3[4];
+                                strProc_operator = row3[5];
+                                strProc_cond = row3[6];
+                                strProc_action = row3[7];
+                                strProc_order = row3[8];
+                                strProc_dest = row3[9];
+                                strProc_active = row3[10];
+
+                                if(intProc_type == 1) {
+                                    //Tag modification
+                                    intReturn = fRuleTag(strPUID, intConf_proc_id);
+                                } else if(intProc_type == 2) {
+                                    //Date
+                                    intReturn = fRuleDate(strPUID, intConf_proc_id);
+                                } else if(intProc_type == 3) {
+                                    //Time
+                                    intReturn = fRuleTime(strPUID, intConf_proc_id);
+                                } else if(intProc_type == 4) {
+                                    //Date-Time
+                                    intReturn = fRuleDateTime(strPUID, intConf_proc_id);
+                                } else if(intProc_type == 5) {
+                                    //Script
+                                    intReturn = fRuleScript(strPUID, intConf_proc_id);
+                                } else if(intProc_type == 6) {
+                                    //HL7
+                                    intReturn = fRuleHL7(strPUID, intConf_proc_id);
+                                }
+                            }
+                            strLogMessage="Processing done, ending processing.";
+                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            strQuery = "UPDATE process SET complete=1, tendproc=NOW() WHERE PUID=\"" + strPUID + "\" limit 1;";
+                            mysql_query(mconnect, strQuery.c_str());
+                            if(*mysql_error(mconnect)) {
+                                strLogMessage="SQL Error: ";
+                                strLogMessage+=mysql_error(mconnect);
+                                strLogMessage+="\nQuery: " + strQuery + "\n";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            }
+                            strQuery = "INSERT INTO send SET puid=\"" + strPUID + "\", servername=\"" + strPservername + "\", tstartsend=NOW(), complete=0;";
+                            mysql_query(mconnect, strQuery.c_str());
+                            if(*mysql_error(mconnect)) {
+                                strLogMessage="SQL Error: ";
+                                strLogMessage+=mysql_error(mconnect);
+                                strLogMessage+="\nQuery: " + strQuery + "\n";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            }    
+                        } else {
+                            strLogMessage="No processing to be done, ending processing.";
+                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            strQuery = "UPDATE process SET complete=1, tendproc=NOW() WHERE PUID=\"" + strPUID + "\" limit 1;";
+                            mysql_query(mconnect, strQuery.c_str());
+                            if(*mysql_error(mconnect)) {
+                                strLogMessage="SQL Error: ";
+                                strLogMessage+=mysql_error(mconnect);
+                                strLogMessage+="\nQuery: " + strQuery + "\n";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            }
+                            strQuery = "INSERT INTO send SET puid=\"" + strPUID + "\", servername=\"" + strPservername + "\", tstartsend=NOW(), complete=0;";
+                            mysql_query(mconnect, strQuery.c_str());
+                            if(*mysql_error(mconnect)) {
+                                strLogMessage="SQL Error: ";
+                                strLogMessage+=mysql_error(mconnect);
+                                strLogMessage+="\nQuery: " + strQuery + "\n";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            }
+                        }
+                        mysql_free_result(result3);
+                    }
                 }
             }
         }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     mysql_thread_end();
 
