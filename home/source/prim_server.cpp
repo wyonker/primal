@@ -782,6 +782,43 @@ void fProcess() {
                     mysql_free_result(result3);
                 }
             }
+            strLogMessage="Processing done, ending processing.";
+            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+            strQuery = "UPDATE process SET complete=1, tendproc=NOW() WHERE PUID=\"" + strPUID + "\" limit 1;";
+            mysql_query(mconnect, strQuery.c_str());
+            if(*mysql_error(mconnect)) {
+                strLogMessage="SQL Error: ";
+                strLogMessage+=mysql_error(mconnect);
+                strLogMessage+="\nQuery: " + strQuery + "\n";
+                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+            }
+            strQuery = "INSERT INTO send SET puid=\"" + strPUID + "\", pservername=\"" + strPservername + "\", tstartsend=NOW(), complete=0;";
+            mysql_query(mconnect, strQuery.c_str());
+            if(*mysql_error(mconnect)) {
+                strLogMessage="SQL Error: ";
+                strLogMessage+=mysql_error(mconnect);
+                strLogMessage+="\nQuery: " + strQuery + "\n";
+                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+            }    
+        } else {
+            strLogMessage="No processing to be done, ending processing.";
+            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+            strQuery = "UPDATE process SET complete=1, tendproc=NOW() WHERE PUID=\"" + strPUID + "\" limit 1;";
+            mysql_query(mconnect, strQuery.c_str());
+            if(*mysql_error(mconnect)) {
+                strLogMessage="SQL Error: ";
+                strLogMessage+=mysql_error(mconnect);
+                strLogMessage+="\nQuery: " + strQuery + "\n";
+                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+            }
+            strQuery = "INSERT INTO send SET puid=\"" + strPUID + "\", pservername=\"" + strPservername + "\", tstartsend=NOW(), complete=0;";
+            mysql_query(mconnect, strQuery.c_str());
+            if(*mysql_error(mconnect)) {
+                strLogMessage="SQL Error: ";
+                strLogMessage+=mysql_error(mconnect);
+                strLogMessage+="\nQuery: " + strQuery + "\n";
+                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+            }    
         }
     }
     mysql_thread_end();
