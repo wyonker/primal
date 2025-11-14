@@ -533,7 +533,7 @@ void fEndReceive() {
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     while(1) {
-        strQuery = "SELECT id, puid, fullpath, rservername, rec_id, tstartrec FROM receive WHERE complete = 0 AND rservername = '" + strThisServerName + "';";
+        strQuery = "SELECT id, puid, fullpath, servername, rec_id, tstartrec FROM receive WHERE complete = 0 AND servername = '" + strThisServerName + "';";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
             strLogMessage="RECV  SQL Error: ";
@@ -601,7 +601,7 @@ void fEndReceive() {
                             strLogMessage+="\nQuery: " + strQuery3 + "\n";
                             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         }
-                        strQuery4="INSERT INTO process SET puid=\"" + strPUID + "\", pservername=\"" + strServerName + "\", tstartproc=NOW(), complete=0;";
+                        strQuery4="INSERT INTO process SET puid=\"" + strPUID + "\", servername=\"" + strServerName + "\", tstartproc=NOW(), complete=0;";
                         mysql_query(mconnect, strQuery4.c_str());
                         if(*mysql_error(mconnect)) {
                             strLogMessage="RECV  SQL Error: ";
@@ -715,7 +715,7 @@ void fProcess() {
                 strLogMessage="Processing PUID: " + strPUID;
                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
-                strQuery2="SELECT rec_id FROM recieve WHERE puid = '" + strPUID + "';";
+                strQuery2="SELECT rec_id FROM receive WHERE puid = '" + strPUID + "';";
                 mysql_query(mconnect, strQuery2.c_str());
                 if(*mysql_error(mconnect)) {
                     strLogMessage="SQL Error: ";
@@ -791,7 +791,7 @@ void fProcess() {
                             strLogMessage+="\nQuery: " + strQuery + "\n";
                             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         }
-                        strQuery = "INSERT INTO send SET puid=\"" + strPUID + "\", pservername=\"" + strPservername + "\", tstartsend=NOW(), complete=0;";
+                        strQuery = "INSERT INTO send SET puid=\"" + strPUID + "\", servername=\"" + strPservername + "\", tstartsend=NOW(), complete=0;";
                         mysql_query(mconnect, strQuery.c_str());
                         if(*mysql_error(mconnect)) {
                             strLogMessage="SQL Error: ";
@@ -810,7 +810,7 @@ void fProcess() {
                             strLogMessage+="\nQuery: " + strQuery + "\n";
                             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         }
-                        strQuery = "INSERT INTO send SET puid=\"" + strPUID + "\", pservername=\"" + strPservername + "\", tstartsend=NOW(), complete=0;";
+                        strQuery = "INSERT INTO send SET puid=\"" + strPUID + "\", servername=\"" + strPservername + "\", tstartsend=NOW(), complete=0;";
                         mysql_query(mconnect, strQuery.c_str());
                         if(*mysql_error(mconnect)) {
                             strLogMessage="SQL Error: ";
@@ -909,7 +909,7 @@ void fSend() {
 
     intLC=1;
     while (1) {
-        strQuery = "SELECT send.id, send.puid, send.sservername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete > 4;";
+        strQuery = "SELECT send.id, send.puid, send.servername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete > 4;";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
             strLogMessage="SEND  SQL Error: ";
