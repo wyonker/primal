@@ -53,17 +53,17 @@ fi
 echo "`date +"%Y-%m-%d %H:%M:%S"`  " $PUID " Patient ID: " $UPID
 
 #First check to see if we inserted this study already in the receive
-NUMSTUDIES=`echo "SELECT COUNT(*) FROM receive WHERE puid = \"$PUID\" AND rservername = \"$HOSTNAME\";" | mysql -N -u root primal`
+NUMSTUDIES=`echo "SELECT COUNT(*) FROM receive WHERE puid = \"$PUID\" AND servername = \"$HOSTNAME\";" | mysql -N -u root primal`
 if [ "$NUMSTUDIES" -eq 0 ]; then
-    echo "INSERT INTO receive SET puid = \"$PUID\", fullpath = \"$FULLPATH\", rservername = \"$HOSTNAME\", SIUID=\"$SIUID\", tstartrec = NOW(), senderAET = \"$SENDERAET\", callingAET = \"$CALLINGAET\", rec_images=1;" | mysql -N -u root primal
+    echo "INSERT INTO receive SET puid = \"$PUID\", fullpath = \"$FULLPATH\", servername = \"$HOSTNAME\", SIUID=\"$SIUID\", tstartrec = NOW(), senderAET = \"$SENDERAET\", callingAET = \"$CALLINGAET\", rec_images=1;" | mysql -N -u root primal
 else
-    echo "UPDATE receive SET rec_images = rec_images + 1 WHERE puid = \"$PUID\" AND rservername = \"$HOSTNAME\" limit 1;" | mysql -N -u root primal
+    echo "UPDATE receive SET rec_images = rec_images + 1 WHERE puid = \"$PUID\" AND servername = \"$HOSTNAME\" limit 1;" | mysql -N -u root primal
 fi
 
 #First check to see if we inserted this study already
 NUMSTUDIES=`echo "SELECT COUNT(*) FROM study WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\";" | mysql -N -u root primal`
 if [ "$NUMSTUDIES" -eq 0 ]; then
-    echo "INSERT INTO study SET puid=\"$PUID\", upid=\"$UPID\", SIUID=\"$SIUID\", sServerName=\"$HOSTNAME\", studyDesc=\"$STUDYDESC\", AccessionNum=\"$ACCN\", StudyDate=\"$STUDYDATETIME\", StudyModType=\"$MODALITY\", sClientID=\"$ORG\", StudyNumImg=1;" | mysql -N -u root primal
+    echo "INSERT INTO study SET puid=\"$PUID\", upid=\"$UPID\", SIUID=\"$SIUID\", servername=\"$HOSTNAME\", studyDesc=\"$STUDYDESC\", AccessionNum=\"$ACCN\", StudyDate=\"$STUDYDATETIME\", StudyModType=\"$MODALITY\", sClientID=\"$ORG\", StudyNumImg=1;" | mysql -N -u root primal
 else
     echo "UPDATE study SET StudyNumImg = StudyNumImg + 1 WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\" limit 1;" | mysql -N -u root primal
 fi
@@ -77,6 +77,6 @@ else
 fi
 
 #add to image table
-echo "INSERT INTO image SET puid=\"$PUID\", SOPIUID=\"$SOPIUID\", SERIUID=\"$SERUID\", iservername=\"$HOSTNAME\", ifilename=\"$FILENAME\", idate=NOW(), ilocation=\"$FULLPATH\";" | mysql -N -u root primal
+echo "INSERT INTO image SET puid=\"$PUID\", SOPIUID=\"$SOPIUID\", SERIUID=\"$SERUID\", servername=\"$HOSTNAME\", ifilename=\"$FILENAME\", idate=NOW(), ilocation=\"$FULLPATH\";" | mysql -N -u root primal
 echo "`date +"%Y-%m-%d %H:%M:%S"`  " $PUID " Finished Saving."
 exit 0
