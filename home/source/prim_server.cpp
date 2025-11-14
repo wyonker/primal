@@ -825,6 +825,10 @@ void fProcess() {
                 }
             }
         }
+        if(do_shutdown) {
+            mysql_library_end();
+            return;
+        }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     mysql_thread_end();
@@ -860,12 +864,17 @@ void fSend() {
     MYSQL_ROW row;
     MYSQL_ROW row2;
     MYSQL_ROW row3;
+    MYSQL_ROW row4;
     MYSQL_ROW row5;
 
     MYSQL_RES *result;
     MYSQL_RES *result2;
     MYSQL_RES *result3;
+    MYSQL_RES *result4;
     MYSQL_RES *result5;
+
+    strLogMessage="Starting the send thread.";
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     mconnect=mysql_init(NULL);
     mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
@@ -934,6 +943,8 @@ void fSend() {
                     strStartSend = row[6];
                     strComplete = row[7];
                     strAccn = row[8];
+                    strLogMessage = strPUID + " SEND  Processing send for " + strAccn + ".";
+                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     if(strAccn.size() > 3) {
                         strNewAccn = strAccn.substr(0, strAccn.size()-3);
                     }
@@ -1100,6 +1111,33 @@ void fSend() {
                                             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                         }
                                         //fWriteLog(strQuery4, "/var/log/primal/primal.log");
+                                        strQuery = "SELECT sent_directory FROM conf_rec WHERE conf_rec_id = " + strRecId + " limit 1;";
+                                        mysql_query(mconnect, strQuery.c_str());
+                                        if(*mysql_error(mconnect)) {
+                                            strLogMessage="SEND  SQL Error: ";
+                                            strLogMessage+=mysql_error(mconnect);
+                                            strLogMessage+="strQuery = " + strQuery + ".";
+                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        }
+                                        result4 = mysql_store_result(mconnect);
+                                        if(result4) {
+                                            intNumRows = mysql_num_rows(result4);
+                                            if(intNumRows > 0) {
+                                                while ((row4 = mysql_fetch_row(result4))) {
+                                                    strDestLocation = row4[0];
+                                                    const char* source_dir = strLocation.c_str();
+                                                    const char* destination_dir = strDestLocation.c_str();
+                                                    if (std::rename(source_dir, destination_dir) != 0) {
+                                                        strLogMessage = "Failed to move directory";
+                                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                                    } else {
+                                                        strLogMessage = "Successfully moved " + std::string(source_dir) + " directory to " + std::string(destination_dir) + ".";
+                                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        //Need to move study to sent directory
                                     }
                                 } else {
                                     strLogMessage = strPUID + " SEND  " + strAccn + " No images found.  Not sending.";
@@ -1112,6 +1150,9 @@ void fSend() {
                             }
                         }
                     }
+
+                    strLogMessage = strPUID + " SEND  Send processing complete.";
+                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                 }
             }
         }
