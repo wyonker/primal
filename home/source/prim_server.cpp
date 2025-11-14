@@ -715,7 +715,7 @@ void fProcess() {
                 strLogMessage="Processing PUID: " + strPUID;
                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
-                strQuery2="SELECT rec_id FROM reecieve WHERE puid = '" + strPUID + "';";
+                strQuery2="SELECT rec_id FROM recieve WHERE puid = '" + strPUID + "';";
                 mysql_query(mconnect, strQuery2.c_str());
                 if(*mysql_error(mconnect)) {
                     strLogMessage="SQL Error: ";
