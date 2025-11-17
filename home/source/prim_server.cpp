@@ -921,6 +921,7 @@ void fSend() {
 
     intLC=1;
     while (1) {
+        //HL7 branch
         strQuery = "SELECT send.id, send.puid, send.servername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete > 4;";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
@@ -1151,6 +1152,156 @@ void fSend() {
                         }
                     }
 
+                    strLogMessage = strPUID + " SEND  Send processing complete.";
+                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                }
+            }
+        }
+        //Regular branch
+        strQuery = "SELECT send.id, send.puid, send.servername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete = 0;";
+        mysql_query(mconnect, strQuery.c_str());
+        if(*mysql_error(mconnect)) {
+            strLogMessage="SEND  SQL Error: ";
+            strLogMessage+=mysql_error(mconnect);
+            strLogMessage+="strQuery = " + strQuery + ".";
+            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        }
+        result = mysql_store_result(mconnect);
+        if(result) {
+            intNumRows = mysql_num_rows(result);
+            if(intNumRows > 0) {
+                while ((row = mysql_fetch_row(result))) {
+                    strID = row[0];
+                    strPUID = row[1];
+                    strServerName = row[2];
+                    strDestNum = row[3];
+                    strDest = row[4];
+                    strOrg = row[5];
+                    strStartSend = row[6];
+                    strComplete = row[7];
+                    strAccn = row[8];
+                    strLogMessage = strPUID + " SEND  Processing send for " + strAccn + ".";
+                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    if(strAccn.size() > 3) {
+                        strNewAccn = strAccn.substr(0, strAccn.size()-3);
+                    }
+                    strCMD = "date +\%s -d \"" + strStartSend + "\"";
+                    strQuery2="SELECT * FROM conf_send WHERE conf_send_id = " + strDestNum + " limit 1;";
+                    mysql_query(mconnect, strQuery2.c_str());
+                    if(*mysql_error(mconnect)) {
+                        strLogMessage="SEND  SQL Error: ";
+                        strLogMessage+=mysql_error(mconnect);
+                        strLogMessage+="strQuery2 = " + strQuery2 + ".";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
+                    result2 = mysql_store_result(mconnect);
+                    if(result2) {
+                        intNumRows = mysql_num_rows(result2);
+                        if(intNumRows > 0) {
+                            while ((row2 = mysql_fetch_row(result2))) {
+                                strRecId = row2[1];
+                                strSendName = row2[2];
+                                strSendOrg = row2[3];
+                                strSendAET = row2[4];
+                                strSendAEC = row2[5];
+                                strSendHIP = row2[6];
+                                strSendType = row2[7];
+                                strSendPort = row2[8];
+                                strSendTimeOut = row2[9];
+                                strSendCompression = row2[10];
+                                strSendRetry = row2[11];
+                                strSendUser = row2[12];
+                                strSendPass = row2[13];
+                                strSendOrder = row2[14];
+                                strSendActive = row2[15];
+                                strLogMessage = strPUID + " SEND  " + strAccn + " Sending to AET " + strSendAET;
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            }
+                            //mysql_free_result(result2);
+                        } else {
+                            strLogMessage = strPUID + " SEND  " + strAccn + " No destination found.  Not sending.";
+                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            continue;
+                        }
+                    } else {
+                        strLogMessage = strPUID + " SEND  " + strAccn + " No results found for destination query.  Not sending.";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        continue;                               
+                    }
+                    if(strSendActive == "0") {
+                        strLogMessage = strPUID + " SEND  " + strAccn + " " + strSendName + " is not active.  Not sending.";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        continue;
+                    }
+                    if(strRecId.empty()) {
+                        strLogMessage = strPUID + " SEND  " + strAccn + " No receiving configuration assigned.  Not sending.";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        continue;
+                    }
+                    strQuery3 = "SELECT DISTINCT ilocation FROM image WHERE puid = '" + strPUID + "';";
+                    mysql_query(mconnect, strQuery3.c_str());
+                    if(*mysql_error(mconnect)) {
+                        strLogMessage="SEND  SQL Error: ";
+                        strLogMessage+=mysql_error(mconnect);
+                        strLogMessage+="strQuery3 = " + strQuery3 + ".";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
+                    result3 = mysql_store_result(mconnect);
+                    if(result3) {
+                        intNumRows = mysql_num_rows(result3);
+                        if(intNumRows > 0) {
+                            while ((row3 = mysql_fetch_row(result3))) {
+                                strLocation = row3[0];
+                            }
+                            //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
+                            strLogMessage = strPUID + " SEND  Sending " + strAccn + " to " + strSendHIP + " at location " + strLocation + ".";
+                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            fWriteLog(strLogMessage, "/var/log/primal/prim_server_out.log");
+                            strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
+                            //fWriteLog(strCMD, "/var/log/primal/primal.log");
+                            strStatus = exec(strCMD.c_str());
+                            strLogMessage = strPUID + " SEND  Finished sending " + strAccn + " to " + strSendHIP + ".";
+                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            strQuery4 = "UPDATE send SET complete = 1, tendsend = NOW() WHERE id = '" + strID + "';";
+                            mysql_query(mconnect, strQuery4.c_str());
+                            if(*mysql_error(mconnect)) {
+                                strLogMessage="SEND  SQL Error: ";
+                                strLogMessage+=mysql_error(mconnect);
+                                strLogMessage+="strQuery3 = " + strQuery4 + ".";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            }
+                            strQuery = "SELECT sent_directory FROM conf_rec WHERE conf_rec_id = " + strRecId + " limit 1;";
+                            mysql_query(mconnect, strQuery.c_str());
+                            if(*mysql_error(mconnect)) {
+                                strLogMessage="SEND  SQL Error: ";
+                                strLogMessage+=mysql_error(mconnect);
+                                strLogMessage+="strQuery = " + strQuery + ".";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            }
+                            result4 = mysql_store_result(mconnect);
+                            if(result4) {
+                                intNumRows = mysql_num_rows(result4);
+                                if(intNumRows > 0) {
+                                    while ((row4 = mysql_fetch_row(result4))) {
+                                        strDestLocation = row4[0];
+                                        const char* source_dir = strLocation.c_str();
+                                        const char* destination_dir = strDestLocation.c_str();
+                                        if (std::rename(source_dir, destination_dir) != 0) {
+                                            strLogMessage = "Failed to move directory";
+                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        } else {
+                                            strLogMessage = "Successfully moved " + std::string(source_dir) + " directory to " + std::string(destination_dir) + ".";
+                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        }
+                                    }
+                                }
+                            }
+                            //Need to move study to sent directory
+                        }
+                    } else {
+                        strLogMessage = strPUID + " SEND  " + strAccn + " No images found.  Not sending.";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
                     strLogMessage = strPUID + " SEND  Send processing complete.";
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                 }
