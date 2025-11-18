@@ -1044,6 +1044,7 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="1" selected>DICOM</option>';
 		echo '<option value="2">SCP</option>';
 		echo '<option value="3">FTP</option>';
+		echo '<option value="4">Archive</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Destination Port Number:</td>';
 		echo '<td><input type="text" name="send_port" value="104" /></td></tr>';
@@ -1068,12 +1069,12 @@ if($_GET['action'] == 'Rec') {
 		echo '<tr><td>' . 'Password:</td>';
 		echo '<td><input type="text" name="send_password" /></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
-		echo '<tr><td>' . 'Order:</td>';
-		echo '<td><input type="text" name="send_order" value="1" /></td></tr>';
 		echo '<select name="active" id="active" default=1>';
 		echo '<option value="1">Yes</option>';
 		echo '<option value="2" selected>No</option>';
 		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Order:</td>';
+		echo '<td><input type="text" name="send_order" value="1" /></td></tr>';
 		echo '</table>';
 		echo '<br><div class="btn-group">';
 		echo '<button type="submit" id="btnAddD" name="btnAddD">Add</button>';
