@@ -61,12 +61,16 @@ else
 fi
 
 #First check to see if we inserted this study already
-NUMSTUDIES=`echo "SELECT COUNT(*) FROM study WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\";" | mysql -N -u root primal`
+NUMSTUDIES=`echo "SELECT COUNT(*) FROM study WHERE org=\"$ORG\" AND SIUID=\"$SIUID\";" | mysql -N -u root primal`
 if [ "$NUMSTUDIES" -eq 0 ]; then
-    echo "INSERT INTO study SET puid=\"$PUID\", upid=\"$UPID\", SIUID=\"$SIUID\", servername=\"$HOSTNAME\", studyDesc=\"$STUDYDESC\", AccessionNum=\"$ACCN\", StudyDate=\"$STUDYDATETIME\", StudyModType=\"$MODALITY\", sClientID=\"$ORG\", StudyNumImg=1;" | mysql -N -u root primal
+    echo "INSERT INTO study SET upid=\"$UPID\", SIUID=\"$SIUID\", servername=\"$HOSTNAME\", studyDesc=\"$STUDYDESC\", AccessionNum=\"$ACCN\", StudyDate=\"$STUDYDATETIME\", StudyModType=\"$MODALITY\", org=\"$ORG\", StudyNumImg=1;" | mysql -N -u root primal
+    echo "INSERT INTO study_puid SET studyID=LAST_INSERT_ID(), puid=\"$PUID\";" | mysql -N -u root primal
+    STUDYID=`echo "SELECT studyID FROM study_puid WHERE puid=\"$PUID\";" | mysql -N -u root primal`
 else
-    echo "UPDATE study SET StudyNumImg = StudyNumImg + 1 WHERE puid=\"$PUID\" AND SIUID=\"$SIUID\" limit 1;" | mysql -N -u root primal
+    STUDYID=`echo "SELECT studyID FROM study_puid WHERE puid=\"$PUID\";" | mysql -N -u root primal`
+    echo "UPDATE study SET StudyNumImg = StudyNumImg + 1 WHERE ID=\"$STUDYID\" limit 1;" | mysql -N -u root primal
 fi
+echo "UPDATE receive SET studyID=\"$STUDYID\" WHERE puid=\"$PUID\" AND servername=\"$HOSTNAME\" limit 1;" | mysql -N -u root primal
 
 #First check to see if we inserted this series already
 NUMSERIES=`echo "SELECT COUNT(*) FROM series WHERE puid = \"$PUID\" AND SERIUID = \"$SERUID\";" | mysql -N -u root primal`

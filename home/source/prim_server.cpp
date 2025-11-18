@@ -840,7 +840,7 @@ void fSend() {
     std::string strLogMessage, strCMD, strID, strPUID, strServerName, strDestNum, strDest, strOrg, strStartSend, strEndSend, strImages, strError, strRetry, strComplete;
     std::string strQuery, strQuery2, strQuery3, strQuery4, strLocation, strSendPort, strSendHIP, strSendAEC, strSendAET, strStatus;
     std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId;
-    std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn, strTime, strDestLocation;
+    std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn, strTime, strDestLocation, strStudyID;
 
     int intNumRows, intStartSec, intNowSec, intDateCheck, intLC, intDone, intSend=0;
 
@@ -922,7 +922,7 @@ void fSend() {
     intLC=1;
     while (1) {
         //HL7 branch
-        strQuery = "SELECT send.id, send.puid, send.servername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete > 4;";
+        strQuery = "SELECT send.id, send.puid, send.servername, send.tdestnum, send.tdest, send.tstartsend, send.complete FROM send WHERE send.complete > 4;";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
             strLogMessage="SEND  SQL Error: ";
@@ -940,10 +940,43 @@ void fSend() {
                     strServerName = row[2];
                     strDestNum = row[3];
                     strDest = row[4];
-                    strOrg = row[5];
-                    strStartSend = row[6];
-                    strComplete = row[7];
-                    strAccn = row[8];
+                    strStartSend = row[5];
+                    strComplete = row[6];
+                    strQuery = "SELECT studyID FROM study_puid WHERE puid = \"" + strPUID + "\";";
+                    mysql_query(mconnect, strQuery.c_str());
+                    if(*mysql_error(mconnect)) {
+                        strLogMessage="SEND  SQL Error: ";
+                        strLogMessage+=mysql_error(mconnect);
+                        strLogMessage+="strQuery = " + strQuery + ".";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
+                    result2 = mysql_store_result(mconnect);
+                    if(result2) {
+                        intNumRows = mysql_num_rows(result2);
+                        if(intNumRows > 0) {
+                            while ((row2 = mysql_fetch_row(result2))) {
+                                strStudyID = row2[0];
+                            }
+                        }
+                    }
+                    strQuery = "SELECT AccessionNum, org FROM study WHERE studyID = \"" + strStudyID + "\";";
+                    mysql_query(mconnect, strQuery.c_str());
+                    if(*mysql_error(mconnect)) {
+                        strLogMessage="SEND  SQL Error: ";
+                        strLogMessage+=mysql_error(mconnect);
+                        strLogMessage+="strQuery = " + strQuery + ".";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
+                    result3 = mysql_store_result(mconnect);
+                    if(result3) {
+                        intNumRows = mysql_num_rows(result3);
+                        if(intNumRows > 0) {
+                            while ((row3 = mysql_fetch_row(result3))) {
+                                strAccn = row3[0];
+                                strOrg = row3[1];
+                            }
+                        }
+                    }
                     strLogMessage = strPUID + " SEND  Processing send for " + strAccn + ".";
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     if(strAccn.size() > 3) {
@@ -1158,7 +1191,7 @@ void fSend() {
             }
         }
         //Regular branch
-        strQuery = "SELECT send.id, send.puid, send.servername, send.tdestnum, send.tdest, send.org, send.tstartsend, send.complete, study.AccessionNum FROM send LEFT JOIN study ON send.puid = study.puid WHERE send.complete = 0;";
+        strQuery = "SELECT send.id, send.puid, send.servername, send.tdestnum, send.tdest, send.tstartsend, send.complete FROM send WHERE send.complete = 0;";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
             strLogMessage="SEND  SQL Error: ";
@@ -1176,10 +1209,44 @@ void fSend() {
                     strServerName = row[2];
                     strDestNum = row[3];
                     strDest = row[4];
-                    strOrg = row[5];
-                    strStartSend = row[6];
-                    strComplete = row[7];
-                    strAccn = row[8];
+                    strStartSend = row[5];
+                    strComplete = row[6];
+                    strQuery = "SELECT studyID FROM study_puid WHERE puid = \"" + strPUID + "\";";
+                    mysql_query(mconnect, strQuery.c_str());
+                    if(*mysql_error(mconnect)) {
+                        strLogMessage="SEND  SQL Error: ";
+                        strLogMessage+=mysql_error(mconnect);
+                        strLogMessage+="strQuery = " + strQuery + ".";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
+                    result2 = mysql_store_result(mconnect);
+                    if(result2) {
+                        intNumRows = mysql_num_rows(result2);
+                        if(intNumRows > 0) {
+                            while ((row2 = mysql_fetch_row(result2))) {
+                                strStudyID = row2[0];
+                            }
+                        }
+                    }
+                    strQuery = "SELECT AccessionNum, org FROM study WHERE studyID = \"" + strStudyID + "\";";
+                    mysql_query(mconnect, strQuery.c_str());
+                    if(*mysql_error(mconnect)) {
+                        strLogMessage="SEND  SQL Error: ";
+                        strLogMessage+=mysql_error(mconnect);
+                        strLogMessage+="strQuery = " + strQuery + ".";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
+                    result3 = mysql_store_result(mconnect);
+                    if(result3) {
+                        intNumRows = mysql_num_rows(result3);
+                        if(intNumRows > 0) {
+                            while ((row3 = mysql_fetch_row(result3))) {
+                                strAccn = row3[0];
+                                strOrg = row3[1];
+                            }
+                        }
+                    }
+
                     strLogMessage = strPUID + " SEND  Processing send for " + strAccn + ".";
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     if(strAccn.size() > 3) {
@@ -1307,6 +1374,7 @@ void fSend() {
                 }
             }
         }
+        mysql_free_result(result);
         if(do_shutdown) {
             mysql_library_end();
             return;
