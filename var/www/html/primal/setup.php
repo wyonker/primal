@@ -938,7 +938,12 @@ if($_GET['action'] == 'Rec') {
 		if($row["send_type"] == 3) {
 			echo ' selected';
 		}
-		echo 'FTP</option>';
+		echo '>FTP</option>';
+		echo '<option value="4"';
+		if($row["send_type"] == 4) {
+			echo ' selected';
+		}
+		echo '>Archive</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Destination Port Number:</td>';
 		echo '<td><input type="text" name="send_port" value ="' . $row["send_port"] . '" /></td></tr>';
