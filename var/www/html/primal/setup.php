@@ -1003,6 +1003,8 @@ if($_GET['action'] == 'Rec') {
 		echo '<td><input type="text" name="send_username" value ="' . $row["send_username"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Password:</td>';
 		echo '<td><input type="text" name="send_password" value ="' . $row["send_password"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Full Path:</td>';
+		echo '<td><input type="text" name="send_path" value ="' . $row["send_path"] . '" /></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
 		echo '<select name="active" id="active" default=1>';
 		echo '<option value="1"';
@@ -1068,6 +1070,8 @@ if($_GET['action'] == 'Rec') {
 		echo '<td><input type="text" name="send_username" /></td></tr>';
 		echo '<tr><td>' . 'Password:</td>';
 		echo '<td><input type="text" name="send_password" /></td></tr>';
+		echo '<tr><td>' . 'Full Path:</td>';
+		echo '<td><input type="text" name="send_path" value="/home/dicom/archive" /></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
 		echo '<select name="active" id="active" default=1>';
 		echo '<option value="1">Yes</option>';
