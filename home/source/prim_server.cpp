@@ -1191,7 +1191,7 @@ void fSend() {
             }
         }
         //Regular branch
-        strQuery = "SELECT send.id, send.puid, send.servername, send.tdestnum, send.tdest, send.tstartsend, send.complete FROM send WHERE send.complete = 0;";
+        strQuery = "SELECT id, puid, servername, tdestnum, tdest, tstartsend, complete FROM send WHERE complete = 0;";
         mysql_query(mconnect, strQuery.c_str());
         if(*mysql_error(mconnect)) {
             strLogMessage="SEND  SQL Error: ";
@@ -1320,13 +1320,27 @@ void fSend() {
                             while ((row3 = mysql_fetch_row(result3))) {
                                 strLocation = row3[0];
                             }
-                            //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
-                            strLogMessage = strPUID + " SEND  Sending " + strAccn + " to " + strSendHIP + " at location " + strLocation + ".";
-                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                            fWriteLog(strLogMessage, "/var/log/primal/prim_server_out.log");
-                            strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
-                            //fWriteLog(strCMD, "/var/log/primal/primal.log");
-                            strStatus = exec(strCMD.c_str());
+                            if(strSendType == 1) {
+                                //Dicom type
+                                //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
+                                strLogMessage = strPUID + " SEND  Sending " + strAccn + " to " + strSendHIP + " at location " + strLocation + ".";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                fWriteLog(strLogMessage, "/var/log/primal/prim_server_out.log");
+                                strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
+                                //fWriteLog(strCMD, "/var/log/primal/primal.log");
+                                strStatus = exec(strCMD.c_str());
+                            } elseif (strSendType == 2) {
+                                //SCP type
+                            } elseif (strSendType == 3) {
+                                //FTP type
+                            } elseif (strSendType == 4) {
+                                //Archive type
+                                strLogMessage = strPUID + " SEND  Sending " + strAccn + " to archive at " + strSendHIP + " " + strSendPort + ".";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                fWriteLog(strLogMessage, "/var/log/primal/prim_server_out.log");
+                                strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
+                                strStatus = exec(strCMD.c_str());
+                            }
                             strLogMessage = strPUID + " SEND  Finished sending " + strAccn + " to " + strSendHIP + ".";
                             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                             strQuery4 = "UPDATE send SET complete = 1, tendsend = NOW() WHERE id = '" + strID + "';";

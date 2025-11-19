@@ -178,7 +178,6 @@ create table conf_send (conf_send_id int(10) UNSIGNED UNIQUE not null AUTO_INCRE
 	send_retry int(5) not null default 3,
 	send_username varchar(32) not null default 'primal',
 	send_password varchar(32) not null default 'primal',
-	send_path varchar(128) not null default '/home/dicom/archive',
 	send_order int(5) not null default 1,
 	active int(1) not null default 1,
 	primary key (conf_send_id));
