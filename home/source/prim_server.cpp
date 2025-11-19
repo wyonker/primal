@@ -1320,7 +1320,7 @@ void fSend() {
                             while ((row3 = mysql_fetch_row(result3))) {
                                 strLocation = row3[0];
                             }
-                            if(strSendType == 1) {
+                            if(strSendType == "1") {
                                 //Dicom type
                                 //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
                                 strLogMessage = strPUID + " SEND  Sending " + strAccn + " to " + strSendHIP + " at location " + strLocation + ".";
@@ -1329,11 +1329,11 @@ void fSend() {
                                 strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
                                 //fWriteLog(strCMD, "/var/log/primal/primal.log");
                                 strStatus = exec(strCMD.c_str());
-                            } elseif (strSendType == 2) {
+                            } elseif (strSendType == "2") {
                                 //SCP type
-                            } elseif (strSendType == 3) {
+                            } elseif (strSendType == "3") {
                                 //FTP type
-                            } elseif (strSendType == 4) {
+                            } elseif (strSendType == "4") {
                                 //Archive type
                                 strLogMessage = strPUID + " SEND  Sending " + strAccn + " to archive at " + strSendHIP + " " + strSendPort + ".";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
