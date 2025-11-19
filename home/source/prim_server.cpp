@@ -1331,8 +1331,12 @@ void fSend() {
                                 strStatus = exec(strCMD.c_str());
                             } else if (strSendType == "2") {
                                 //SCP type
+                                strLogMessage = strPUID + " SEND  Not implemented yet.";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                             } else if (strSendType == "3") {
                                 //FTP type
+                                strLogMessage = strPUID + " SEND  Not implemented yet.";
+                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                             } else if (strSendType == "4") {
                                 //Archive type
                                 strLogMessage = strPUID + " SEND  Sending " + strAccn + " to archive at " + strSendHIP + " " + strSendPort + ".";
