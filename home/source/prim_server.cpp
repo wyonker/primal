@@ -1329,11 +1329,11 @@ void fSend() {
                                 strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
                                 //fWriteLog(strCMD, "/var/log/primal/primal.log");
                                 strStatus = exec(strCMD.c_str());
-                            } elseif (strSendType == "2") {
+                            } else if (strSendType == "2") {
                                 //SCP type
-                            } elseif (strSendType == "3") {
+                            } else if (strSendType == "3") {
                                 //FTP type
-                            } elseif (strSendType == "4") {
+                            } else if (strSendType == "4") {
                                 //Archive type
                                 strLogMessage = strPUID + " SEND  Sending " + strAccn + " to archive at " + strSendHIP + " " + strSendPort + ".";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
