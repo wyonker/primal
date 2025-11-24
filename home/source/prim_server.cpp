@@ -54,6 +54,8 @@ With a large chunck of stuff now being in the DB, let work needs to be done here
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 
 namespace {
     volatile sig_atomic_t do_shutdown = 0;
@@ -321,6 +323,100 @@ int ReadDBConfFile() {
     infile.close();
 
     return 0;
+}
+
+bool encryptFile(const std::string& inputFile, const std::string& outputFile, const unsigned char* key, const unsigned char* iv) {
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return false;
+
+    if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv)) {
+        EVP_CIPHER_CTX_free(ctx);
+        return false;
+    }
+
+    std::ifstream inFile(inputFile, std::ios::binary);
+    std::ofstream outFile(outputFile, std::ios::binary);
+    if (!inFile.is_open() || !outFile.is_open()) {
+        EVP_CIPHER_CTX_free(ctx);
+        return false;
+    }
+
+    std::vector<unsigned char> inBuf(4096);
+    std::vector<unsigned char> outBuf(4096 + EVP_MAX_IV_LENGTH); // Account for potential padding
+    int len;
+
+    while (inFile.read(reinterpret_cast<char*>(inBuf.data()), inBuf.size())) {
+        if (1 != EVP_EncryptUpdate(ctx, outBuf.data(), &len, inBuf.data(), inFile.gcount())) {
+            EVP_CIPHER_CTX_free(ctx);
+            return false;
+        }
+        outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
+    }
+
+    // Process remaining data from last read
+    if (inFile.gcount() > 0) {
+        if (1 != EVP_EncryptUpdate(ctx, outBuf.data(), &len, inBuf.data(), inFile.gcount())) {
+            EVP_CIPHER_CTX_free(ctx);
+            return false;
+        }
+        outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
+    }
+
+    if (1 != EVP_EncryptFinal_ex(ctx, outBuf.data(), &len)) {
+        EVP_CIPHER_CTX_free(ctx);
+        return false;
+    }
+    outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
+
+    EVP_CIPHER_CTX_free(ctx);
+    return true;
+}
+
+bool decryptFile(const std::string& inputFile, const std::string& outputFile, const unsigned char* key, const unsigned char* iv) {
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return false;
+
+    if (1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv)) {
+        EVP_CIPHER_CTX_free(ctx);
+        return false;
+    }
+
+    std::ifstream inFile(inputFile, std::ios::binary);
+    std::ofstream outFile(outputFile, std::ios::binary);
+    if (!inFile.is_open() || !outFile.is_open()) {
+        EVP_CIPHER_CTX_free(ctx);
+        return false;
+    }
+
+    std::vector<unsigned char> inBuf(4096);
+    std::vector<unsigned char> outBuf(4096 + EVP_MAX_IV_LENGTH); // Account for potential padding
+    int len;
+
+    while (inFile.read(reinterpret_cast<char*>(inBuf.data()), inBuf.size())) {
+        if (1 != EVP_DecryptUpdate(ctx, outBuf.data(), &len, inBuf.data(), inFile.gcount())) {
+            EVP_CIPHER_CTX_free(ctx);
+            return false;
+        }
+        outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
+    }
+
+    // Process remaining data from last read
+    if (inFile.gcount() > 0) {
+        if (1 != EVP_DecryptUpdate(ctx, outBuf.data(), &len, inBuf.data(), inFile.gcount())) {
+            EVP_CIPHER_CTX_free(ctx);
+            return false;
+        }
+        outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
+    }
+
+    if (1 != EVP_DecryptFinal_ex(ctx, outBuf.data(), &len)) {
+        EVP_CIPHER_CTX_free(ctx);
+        return false;
+    }
+    outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
+
+    EVP_CIPHER_CTX_free(ctx);
+    return true;
 }
 
 int fStartReceivers() {
@@ -840,9 +936,12 @@ void fSend() {
     std::string strLogMessage, strCMD, strID, strPUID, strServerName, strDestNum, strDest, strOrg, strStartSend, strEndSend, strImages, strError, strRetry, strComplete;
     std::string strQuery, strQuery2, strQuery3, strQuery4, strLocation, strSendPort, strSendHIP, strSendAEC, strSendAET, strStatus;
     std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId;
-    std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn, strTime, strDestLocation, strStudyID;
+    std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn, strTime, strDestLocation, strStudyID, strFileName, strFileName2;
 
     int intNumRows, intStartSec, intNowSec, intDateCheck, intLC, intDone, intSend=0;
+
+    unsigned char key[32]; // AES-256 key
+    unsigned char iv[16];  // AES IV
 
     MYSQL *mconnect;
     MYSQL *mconnect2;
@@ -1280,7 +1379,8 @@ void fSend() {
                                 strSendUser = row2[12];
                                 strSendPass = row2[13];
                                 strSendOrder = row2[14];
-                                strSendActive = row2[15];
+                                strSendEncrypt = row2[15];
+                                strSendActive = row2[16];
                                 strLogMessage = strPUID + " SEND  " + strAccn + " Sending to AET " + strSendAET;
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                             }
@@ -1323,12 +1423,63 @@ void fSend() {
                             if(strSendType == "1") {
                                 //Dicom type
                                 //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
+                                strQuery3 = "SELECT ifilename, fkey, fiv FROM image WHERE puid = '" + strPUID + "';";
+                                mysql_query(mconnect, strQuery3.c_str());
+                                if(*mysql_error(mconnect)) {
+                                    strLogMessage="SEND  SQL Error: ";
+                                    strLogMessage+=mysql_error(mconnect);
+                                    strLogMessage+="strQuery3 = " + strQuery3 + ".";
+                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                }
+                                result3 = mysql_store_result(mconnect);
+                                if(result3) {
+                                    intNumRows = mysql_num_rows(result3);
+                                    if(intNumRows > 0) {
+                                        while ((row3 = mysql_fetch_row(result3))) {
+                                            strFileName = row3[0];
+                                            strFKey = row3[1];
+                                            strFIV = row3[2];
+                                            if(strFKey != "0" && strFIV != "0") {
+                                                //File is encrypted.  Decrypt it.
+                                                strFileName2 = strFileName;
+                                                if (strFileName2.length() >= 3) {
+                                                    strFileName2.replace(strFileName2.length() - 3, 3, "dcm");
+                                                } else {
+                                                    strLogMessage = strPUID + " SEND  WARN: Filename too short to replace extension for " + strFileName + ".";
+                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                                }
+                                                if(decryptFile(strLocation + "/" + strFileName , strLocation + "/" + strFileName2, fHexToBin(strFKey), fHexToBin(strFIV))) {
+                                                    strLogMessage = strPUID + " SEND  File decrypted successfully.";
+                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                                } else {
+                                                    strLogMessage = strPUID + " SEND  File decryption failed for " + strFileName + ".";
+                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                                 strLogMessage = strPUID + " SEND  Sending " + strAccn + " to " + strSendHIP + " at location " + strLocation + ".";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 fWriteLog(strLogMessage, "/var/log/primal/prim_server_out.log");
                                 strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
-                                //fWriteLog(strCMD, "/var/log/primal/primal.log");
                                 strStatus = exec(strCMD.c_str());
+                                //Remove all decrypted files if there are any .bin files.
+                                for (const auto& entry : fs::directory_iterator(strLocation)) {
+                                    if (entry.is_regular_file()) {
+                                        std::string currentFile = entry.path().filename().string();
+                                        if (currentFile.length() >= 3) {
+                                            std::string fileExtension = currentFile.substr(currentFile.length() - 3);
+                                            if (fileExtension == "dcm") {
+                                                if(fs::exists(entry.path().replace_extension(".bin"))) {
+                                                    std::remove(entry.path().c_str());
+                                                    strLogMessage = strPUID + " SEND  Removed decrypted file " + currentFile + ".";
+                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             } else if (strSendType == "2") {
                                 //SCP type
                                 strLogMessage = strPUID + " SEND  Not implemented yet.";
@@ -1339,11 +1490,43 @@ void fSend() {
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                             } else if (strSendType == "4") {
                                 //Archive type
-                                strLogMessage = strPUID + " SEND  Sending " + strAccn + " to archive at " + strSendHIP + " " + strSendPort + ".";
+                                strLogMessage = strPUID + " SEND  Sending " + strAccn + " to archive and encrypting at " + strSendHIP + " " + strSendPort + ".";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                fWriteLog(strLogMessage, "/var/log/primal/prim_server_out.log");
-                                strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
-                                strStatus = exec(strCMD.c_str());
+                                if(strSendEncrypt == "1") {
+                                    if(strSendHIP == "localhost" || strSendHIP == "127.0.0.1") {
+                                        //This allows the host to be addressed by name or IP and files not be encrypted.
+                                        for (const auto& entry : fs::directory_iterator(strLocation)) {
+                                            if (entry.is_regular_file()) {
+                                                RAND_bytes(key, sizeof(key));
+                                                RAND_bytes(iv, sizeof(iv));
+
+                                                if (encryptFile(entry.path().filename(), entry.path().filename().replace_extension(".bin"), key, iv)) {
+                                                    strQuery = "UPDATE image SET ifilename = '" + entry.path().filename().replace_extension(".bin").string() + "', fkey = '" + fBinToHex(std::string(reinterpret_cast<char*>(key), sizeof(key))) + "', fiv = '" + fBinToHex(std::string(reinterpret_cast<char*>(iv), sizeof(iv))) + "' WHERE PUID = '" + strPUID + "' AND filename = '" + entry.path().filename().string() + "' limit 1;";
+                                                    mysql_query(mconnect, strQuery.c_str());
+                                                    if(*mysql_error(mconnect)) {
+                                                        strLogMessage="SEND  SQL Error: ";
+                                                        strLogMessage+=mysql_error(mconnect);
+                                                        strLogMessage+="strQuery = " + strQuery + ".";
+                                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                                    }
+                                                    strLogMessage = strPUID + " SEND  File encrypted successfully.";
+                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                                } else {
+                                                    strLogMessage = strPUID + " SEND  File encryption failed for " + entry.path().filename().string() + ".";
+                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        strLogMessage = strPUID + " SEND  Remote encryption not available.  Sending unencrypted.";
+                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
+                                        strStatus = exec(strCMD.c_str());
+                                    }
+                                } else {
+                                    strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
+                                    strStatus = exec(strCMD.c_str());
+                                }
                             }
                             strLogMessage = strPUID + " SEND  Finished sending " + strAccn + " to " + strSendHIP + ".";
                             fWriteLog(strLogMessage, "/var/log/primal/primal.log");

@@ -90,6 +90,8 @@ create table image   (SOPIUID varchar(68) not null,
     idate datetime,
     iarchive varchar(128) not null default 'local',
     ilocation varchar(256),
+	fkey varchar(128) default "0",
+	fiv varchar(128) default "0",
     TransferSyntaxUID varchar(64),
     primary key (SOPIUID, puid, servername));
 create table monitor (SCP varchar(4) not null primary key,
@@ -179,6 +181,7 @@ create table conf_send (conf_send_id int(10) UNSIGNED UNIQUE not null AUTO_INCRE
 	send_username varchar(32) not null default 'primal',
 	send_password varchar(32) not null default 'primal',
 	send_order int(5) not null default 1,
+	send_encrypt int(1) not null default 0,
 	active int(1) not null default 1,
 	primary key (conf_send_id));
 create table config (id int UNSIGNED UNIQUE not null AUTO_INCREMENT,
