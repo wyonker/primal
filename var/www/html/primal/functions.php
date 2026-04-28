@@ -342,4 +342,35 @@ function Sanatize_Input($strInput, $intType, $intLength) {
 	$strReturn=$strInput;
 	return $intError;
 }
+
+function Check_DB_Version() {
+	global $conn;
+	$query = "SELECT conf_value FROM config WHERE conf_name = 'DBVER' LIMIT 1;";
+	$result = $conn->query($query);
+	if($result->num_rows > 0) {
+		$row = mysqli_fetch_assoc($result);
+		$strDBVer = $row['conf_value'];
+		$strConfigFile = file_get_contents('/etc/primal/primal.db');
+		$intPos = strpos($strConfigFile, "DBVER");
+		if($intPos !== false) {
+			//$strFileDBVer should be everything after the = to the end of the line.
+			$intEndPos = strpos($strConfigFile, "\n", $intPos);
+			if($intEndPos === false) {
+				$intEndPos = strlen($strConfigFile);
+			}
+			$strFileDBVer = substr($strConfigFile, $intPos + 5, $intEndPos - ($intPos + 5));
+			$strFileDBVer = trim($strFileDBVer);
+			if($strDBVer != $strFileDBVer) {
+				header('Location: error.php?e=2');
+				exit;
+			}
+		} else {
+			header('Location: error.php?e=2');
+			exit;
+		}
+	} else {
+		header('Location: error.php?e=2');
+		exit;
+	}
+}
 ?>

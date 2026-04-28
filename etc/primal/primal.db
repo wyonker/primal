@@ -6,3 +6,4 @@ DBUSER=primal
 DBPASS=primal
 DBHOST=localhost
 DBPORT=3306
+DBVER=2

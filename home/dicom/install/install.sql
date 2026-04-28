@@ -236,7 +236,6 @@ create table procedure_matching	(procedure_id int(10) UNSIGNED UNIQUE not null A
 	study_description varchar(256),
 	body_part varchar(64)
 	);
-grant all privileges on primal.* to 'primal'@'localhost' identified by 'primal' with grant option;
 insert into user (loginid, login_sec_level, username, active, password, rec_sec) values('primal', '255', 'primal', '1', 'cHJpbWFs', 'ALL');
 insert into page_columns (id, name, dorder) values(1, 'Start Receive', 1);
 insert into page_columns (id, name, dorder) values(2, 'Patient Name', 2);
@@ -260,6 +259,7 @@ insert into locker (pproc, plock) values ('config_edit', '0');
 create index image_puid_indx on image(puid);
 create index series_modality on series(Modality);
 insert into config (conf_name, conf_value) values ('use_db', '0');
+insert into config (conf_name, conf_value) values ('DBVER', '2');
 INSERT INTO conf_rec SET conf_name = '!Global!', conf_server = 'localhost', rec_type = '1', rec_port = 2000, rec_dir = '/home/dicom/receive', rec_log_full_path = '/var/log/primal/receive.log', rec_log_level = 'debug', rec_aet = 'PRIMAL', rec_time_out = 10, proc_dir = '/home/dicom/process', proc_log_full_path = '/var/log/primal/process.log', out_dir = '/home/dicom/send', rec_comp_level = 6, out_log_full_path = '/var/log/primal/send.log', sent_dir = '/home/dicom/sent', hold_dir = '/home/dicom/hold', error_dir = '/home/dicom/error', dupe = 0, pass_through = 0, ret_period = 4320, active = 1;
 INSERT INTO conf_proc SET conf_rec_id = (SELECT conf_rec_id FROM conf_rec WHERE conf_name = '!Global!' LIMIT 1), proc_name = '!Global!', proc_type = 'tag', proc_tag = '0010,0010', proc_operator = '=', proc_cond = '%', proc_action = 'allow', proc_order = 0, proc_dest = 0, active = 1;
 INSERT INTO conf_send SET conf_rec_id = (SELECT conf_rec_id FROM conf_rec WHERE conf_name = '!Global!' LIMIT 1), send_name = '!Global!', send_aet = 'PRIMAL', send_aec = 'PRIMAL', send_hip = '0.0.0.0', send_type = 'dicom', send_port = 104, send_time_out = 10, send_comp_level = 0, send_retry = 3, send_username = 'primal', send_password = 'primal', send_order = 0, active = 1;
@@ -278,3 +278,17 @@ create table rec (id bigint(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
     INDEX accn (accn));
 grant all privileges on mirth_primal.* to 'primal'@'localhost' identified by 'primal' with grant option;
 grant all privileges on mirth_primal.* to 'mirth'@'localhost' with grant option;
+
+DROP DATABASE IF EXISTS primpsg;
+CREATE DATABASE IF NOT EXISTS primpsg;
+use primpsg;
+CREATE TABLE images (
+  id mediumint(9) NOT NULL AUTO_INCREMENT,
+  SOPIUID varchar(128) NOT NULL,
+  SIUID varchar(128) NOT NULL,
+  NEWSOPIUID varchar(128) NOT NULL,
+  ACCN varchar(64) DEFAULT NULL,
+  IMAGENUM int(5) NOT NULL default 0,
+  CREATED datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=348632 DEFAULT CHARSET=latin1;

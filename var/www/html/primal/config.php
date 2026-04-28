@@ -1,5 +1,5 @@
 <?php
-//Version 1.01.01
+//Version 1.01.02
 //Build 3
 //2026-04-28
 //License GPLv3
@@ -18,6 +18,8 @@
         $conn = new mysqli($DBHost, $DBUser, $DBPass, $DBName);
     } catch (Exception $e) {
         error_log('Connection error: ' . $e->getMessage());
+        header('Location: error.php?e=1');
+        /*
         echo '<!DOCTYPE html>';
         echo '<html lang="en">';
         echo '<head>';
@@ -29,6 +31,7 @@
         echo '<h2>ERROR:  Cannot connect to database.  Exiting...</h2>';
         echo '</body>';
         echo '</html>';
+        */
         exit;
     }
 ?>
