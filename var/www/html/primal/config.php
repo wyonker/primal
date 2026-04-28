@@ -1,7 +1,7 @@
 <?php
-//Version 1.01.00
-//Build 2
-//2024-09-19
+//Version 1.01.01
+//Build 3
+//2026-04-28
 //License GPLv3
 //Written by Will Yonker
     $DBHost = "localhost";
@@ -14,12 +14,10 @@
     $LDAPGroup = "End Users";
     $LDAPDN = "test.com";
     $LDAPShortName = "test";
-    //$conn = mysql_connect($DBHost, $DBUser, $DBPass) or die
-    //                     ('Error connecting to mysql');
-    //mysql_select_db($DBName);
-    $conn = new mysqli($DBHost, $DBUser, $DBPass, $DBName);
-    if ($conn->connect_errno) {
-        error_log('Connection error: ' . $conn->connect_errno);
+    try {
+        $conn = new mysqli($DBHost, $DBUser, $DBPass, $DBName);
+    } catch (Exception $e) {
+        error_log('Connection error: ' . $e->getMessage());
         echo '<!DOCTYPE html>';
         echo '<html lang="en">';
         echo '<head>';
