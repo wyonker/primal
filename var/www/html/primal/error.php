@@ -127,7 +127,7 @@ if(isset ($_GET['a'])) {
         echo '<BODY>';
         echo '<H1>PRIMAL Web Interface</H1>';
         echo '<BR>';
-        echo '<h2>In order to recreate the database, you will need to run the following command on the command line of the server hosting PRIMAL:</h2>';
+        echo '<h2>In order to recreate the database, you will need to run the following command on the command line of the server hosting PRIMAL (as a user with sufficient privileges):</h2>';
         echo '<h2>Note:  Please be sure to update the configuration values in config.php before running the commands below.</h2>';
         echo '<h3>mysql -u [username] -p [database name] < /home/dicom/install/install.sql</h3>';
         echo '<h3>grant all privileges on primal.* to \'' . htmlspecialchars($DBUser) . '\'@\'localhost\' identified by \'' . htmlspecialchars($DBPass) . '\' with grant option;</h3>';
