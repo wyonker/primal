@@ -48,6 +48,16 @@
     echo '	<!-- Written by Will Yonker-->';
     echo '    <link rel="stylesheet" href="default.css">';
     echo '</HEAD>';
+    //Need to see if the current user can even write to the config file before we display the form.  If not, we need to display an error message and instructions for how to fix the permissions.
+    if(!is_writable('config.php')) {
+        echo '<BODY>';
+        echo '   <H1>PRIMAL Web Interface</H1>';
+        echo '   <H2>Initial Setup</H2><br />';
+        echo '   <p style="color:#FF0000;"><strong>ERROR:</strong>  The web server does not have permissions to write to the config.php file.  Please change the permissions on the config.php file to allow write access and try again.</p>';
+        echo '</BODY>';
+        echo '</HTML>';
+        exit();
+    }
     //Read the config file and save existing values.
     $strConfig = file_get_contents('config.php');
     preg_match('/\$DBHost\s*=\s*"([^"]+)";/', $strConfig, $matches);
