@@ -14,6 +14,11 @@
     $LDAPGroup = "End Users";
     $LDAPDN = "test.com";
     $LDAPShortName = "test";
+    if($DBUser == "test") {
+        //The config file has not be setup.  Need to redirect.
+        header("Location: newsetup.php");
+        exit();
+    }
     try {
         $conn = new mysqli($DBHost, $DBUser, $DBPass, $DBName);
     } catch (Exception $e) {

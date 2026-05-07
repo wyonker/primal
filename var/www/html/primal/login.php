@@ -12,11 +12,6 @@
 	require_once ('config.php');
 	require_once ('functions.php');
 	date_default_timezone_set('America/New_York');
-if($DBUser == "test") {
-    //The config file has not be setup.  Need to redirect.
-    header("Location: newsetup.php");
-    exit();
-}
 echo <<<EOT
 <HTML>
 <!DOCTYPE html>
