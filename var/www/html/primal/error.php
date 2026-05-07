@@ -150,24 +150,8 @@ if(isset ($_GET['a'])) {
         echo '<BODY>';
         echo '<H1>PRIMAL Web Interface</H1>';
         echo '<BR>';
-        echo '<form name="form1" method="post" action="error.php">';
-        echo '<table>';
-        echo '<tr><td>Database Host:</td><td><input type="text" name="DBHost" value="' . htmlspecialchars($DBHost) . '"></td></tr>';
-        echo '<tr><td>Database User:</td><td><input type="text" name="DBUser" value="' . htmlspecialchars($DBUser) . '"></td></tr>';
-        echo '<tr><td>Database Pass:</td><td><input type="password" name="DBPass" value="' . htmlspecialchars($DBPass) . '"></td></tr>';
-        echo '<tr><td>Database Name:</td><td><input type="text" name="DBName" value="' . htmlspecialchars($DBName) . '"></td></tr>';
-        echo '<tr><td>LDAP Host:</td><td><input type="text" name="LDAPHost" value="' . htmlspecialchars($LDAPHost) . '"></td></tr>';
-        echo '<tr><td>LDAP Domain:</td><td><input type="text" name="LDAPDomain" value="' . htmlspecialchars($LDAPDomain) . '"></td></tr>';
-        echo '<tr><td>LDAP Base DN:</td><td><input type="text" name="LDAPBaseDN" value="' . htmlspecialchars($LDAPBaseDN) . '"></td></tr>';
-        echo '<tr><td>LDAP Group:</td><td><input type="text" name="LDAPGroup" value="' . htmlspecialchars($LDAPGroup) . '"></td></tr>';
-        echo '<tr><td>LDAP DN:</td><td><input type="text" name="LDAPDN" value="' . htmlspecialchars($LDAPDN) . '"></td></tr>';
-        echo '</table> <br>';
-        echo '<input type="submit" value="Submit">';
-        echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-        echo '<input type="reset" value="Clear" /><br><br>';
-        echo '<br>';
-        echo '</form>';
-
+        echo '<h2>ERROR:  Unable to connect to the database using the current configuration values.  Please update the configuration values <a href="newsetup.php">here</a> and try again.';
+        echo 'Or update the database values from the command line and try again <a href="index.php">here</a>.</h2>';
         echo '</BODY>';
         echo '</HTML>';
     } elseif($interror == 2) {
