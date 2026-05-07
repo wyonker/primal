@@ -54,6 +54,8 @@
         echo '   <H1>PRIMAL Web Interface</H1>';
         echo '   <H2>Initial Setup</H2><br />';
         echo '   <p style="color:#FF0000;"><strong>ERROR:</strong>  The web server does not have permissions to write to the config.php file.  Please change the permissions on the config.php file to allow write access and try again.</p>';
+        echo '   <BR>';
+        echo '   <a href="newsetup.php">Try Again...</a>';
         echo '</BODY>';
         echo '</HTML>';
         exit();
