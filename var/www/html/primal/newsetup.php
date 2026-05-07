@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
     //Version 1.10.01
-    //2025-07-31
+    //2026-05-07
     //Written by Will Yonker
     
     session_start();
@@ -9,7 +9,7 @@
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
     header( "Cache-Control: no-cache, must-revalidate" );
     header( "Pragma: no-cache" );
-	require_once ('config.php');
+	//require_once ('config.php');
 	require_once ('functions.php');
 	date_default_timezone_set('America/New_York');
     echo '<!DOCTYPE html>';
