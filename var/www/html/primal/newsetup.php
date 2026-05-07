@@ -35,6 +35,21 @@
         $config_data .= "    \$LDAPGroup = \"End Users\";\n";
         $config_data .= "    \$LDAPDN = \"test.com\";\n";
         $config_data .= "    \$LDAPShortName = \"test\";\n";
+        $config_data .= "    if(\$DBUser == \"test\") {\n";
+        $config_data .= "        //The config file has not be setup.  Need to redirect.\n";
+        $config_data .= "        header(\"Location: newsetup.php\");\n";
+        $config_data .= "        exit();\n";
+        $config_data .= "    } else {\n";
+        $config_data .= "        try {\n";
+        $config_data .= "            \$conn = new mysqli(\$DBHost, \$DBUser, \$DBPass, \$DBName);\n";
+        $config_data .= "        } catch (Exception \$e) {\n";
+        $config_data .= "            error_log('Connection error: ' . \$e->getMessage());\n";
+        $config_data .= "            header('Location: error.php?e=1');\n";
+        $config_data .= "            exit;\n";
+        $config_data .= "        }\n";
+        $config_data .= "    }\n";
+        $config_data .= "?>\n";
+
         file_put_contents('config.php', $config_data);
         //Redirect to login page
         header("Location: login.php");
