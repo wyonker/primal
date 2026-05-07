@@ -1,7 +1,7 @@
 <?php
 //Version 1.01.02
-//Build 3
-//2026-04-28
+//Build 4
+//2026-05-07
 //License GPLv3
 //Written by Will Yonker
     $DBHost = "localhost";
@@ -18,25 +18,26 @@
         //The config file has not be setup.  Need to redirect.
         header("Location: newsetup.php");
         exit();
-    }
-    try {
-        $conn = new mysqli($DBHost, $DBUser, $DBPass, $DBName);
-    } catch (Exception $e) {
-        error_log('Connection error: ' . $e->getMessage());
-        header('Location: error.php?e=1');
-        /*
-        echo '<!DOCTYPE html>';
-        echo '<html lang="en">';
-        echo '<head>';
-        echo '<meta charset="UTF-8">';
-        echo '</head>';
-        echo '<body>';
-        echo "<h1>PRIMAL Web Interface</h1>";
-        echo "<BR>";
-        echo '<h2>ERROR:  Cannot connect to database.  Exiting...</h2>';
-        echo '</body>';
-        echo '</html>';
-        */
-        exit;
+    } else {
+        try {
+            $conn = new mysqli($DBHost, $DBUser, $DBPass, $DBName);
+        } catch (Exception $e) {
+            error_log('Connection error: ' . $e->getMessage());
+            header('Location: error.php?e=1');
+            /*
+            echo '<!DOCTYPE html>';
+            echo '<html lang="en">';
+            echo '<head>';
+            echo '<meta charset="UTF-8">';
+            echo '</head>';
+            echo '<body>';
+            echo "<h1>PRIMAL Web Interface</h1>";
+            echo "<BR>";
+            echo '<h2>ERROR:  Cannot connect to database.  Exiting...</h2>';
+            echo '</body>';
+            echo '</html>';
+            */
+            exit;
+        }
     }
 ?>
