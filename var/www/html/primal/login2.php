@@ -1,7 +1,7 @@
 <?php
     //License GPLv3
-	//Version 1.00.09
-	//2025-04-24
+	//Version 1.00.10
+	//2026-05-08
 	//Written by Will Yonker
 
     session_start();
@@ -61,6 +61,7 @@
             $_SESSION['rec_sec'] = "1 2 3 4 5 6 7 8 9";
             $strLogMessage = "AD User: " . $_SESSION['loginid'] . " logged in with security level " . $_SESSION['login_sec_level'];
             write_to_log($strLogMessage);
+			check_db_version();
             header ("location: index.php");
         } else {
             ldap_unbind($ad);
@@ -114,6 +115,7 @@
 		if ($_SESSION['retry'] == 0) {
 			$strMessage = "Logged in.";
 			write_to_log($strMessage);
+			check_db_version();
 			header ("location: index.php");
 		} else {
 			header ("location: login.php");
