@@ -1,7 +1,7 @@
 <?php
-    //Version 2.99.00
+    //Version 2.99.01
     //Build 2
-    //2015-09-12
+    //2026-06-10
     //License GPLv3
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
@@ -231,6 +231,7 @@ echo '</table><br>';
 echo 'Active should be -1 to force the user to change their password<br>';
 echo '0 for an inactive account (user can not log in)<br>';
 echo '1 for an active account<br>';
+echo 'Their security level must be less than or equal to your security level.  The higher the security level, the more permissions the user has.  A user with a higher security level than you will not be able to be modified or added by you.<br>';
 echo '<br><button type="submit" name="submit">Add</button>';
 echo '<button type="submit" name="reset">Clear</button>';
 echo '<button type="submit" name="cancel">Cancel</button>';
