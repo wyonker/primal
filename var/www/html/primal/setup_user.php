@@ -1,8 +1,8 @@
 <?php
     //License GPLv3
     //Copyright (C) 2010 Will Yonker <
-    //version 1.00.02
-    //2025-04-21
+    //version 1.00.03
+    //2026-06-10
     
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
@@ -40,6 +40,10 @@ echo "<H3><a href=\"/primal/setup.php\">Setup</a></H3>";
 echo '<br><br>';
 $strQuery = "SELECT * from user ";
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if(isset($_POST['btnAdd'])) {
+        header("Location: add_user.php");
+        exit();
+    }
     if(isset($_POST['btnReset'])) {
         if(isset($_SESSION["rseclevel"])) {
             unset($_SESSION["rseclevel"]);
@@ -267,6 +271,9 @@ echo "</tbody>";
 echo '</table>';
 echo '<button type="submit" id="btnQuery" name="btnQuery">Query</button>';
 echo '<button type="submit" id="btnReset" name="btnReset">Clear</button>';
+if($_SESSION['login_sec_level'] > 250) {
+    echo '<button type="submit" id="btnAdd" name="btnAdd">Add User</button>';
+}
 echo '</form><br>';
 echo "<BR>";
 
