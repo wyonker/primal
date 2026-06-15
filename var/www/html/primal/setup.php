@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-	//Version 1.00.01
-	//2024-12-26
+	//Version 1.00.02
+	//2026-06-15
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -416,7 +416,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 Display_Header2();
 echo "<H2>System Setup</H2>";
-echo "<H3><a href=\"/primal/setup_user.php\">Setup User</a></H3>";
+echo '<H3><a href="setup_user.php">Setup User</a></H3>';
+echo '<H3><a href="setup_db.php">Setup Database</a></H3>';
 
 if((!isset($_GET['rec'])) && (!isset($_GET['rule'])) && (!isset($_GET['dest']))) {
 	$arrRec = [];
