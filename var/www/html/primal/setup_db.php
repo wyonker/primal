@@ -54,7 +54,10 @@ echo "<H2>System Setup DB</H2>";
 $strQuery = "SELECT * FROM config";
 $result = mysqli_query($conn, $strQuery);
 while($row = mysqli_fetch_assoc($result)) {
-	$arrConfig[$row['name']] = $row['value'];
+	if($row['conf_name'] != "DBVER") {
+		//Don't want to show the DBVER config item.  It should only be changed by dev when updating the database structure.
+		$arrConfig[$row['conf_name']] = $row['conf_value'];
+	}
 }
 echo '<form action="setup_db.php" method="post">';
 echo '<table border="1">';
