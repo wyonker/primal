@@ -141,7 +141,6 @@ if($intUpdate == 1) {
 } else {
 	echo '<input type="submit" name="btnUpdate" value="Update">';
 }
-echo '<input type="submit" name="btnUpdate" value="Update">';
 echo '<input type="submit" name="btnReset" value="Reset">';
 echo '<input type="submit" name="btnCancel" value="Cancel">';
 if($intAdd == 0) {
