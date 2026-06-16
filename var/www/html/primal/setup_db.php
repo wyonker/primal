@@ -117,6 +117,11 @@ if($intAdd == 0) {
 } else {
 	echo '<input type="submit" name="btnAdd2" value="Add">';
 }
+echo '<br><br>';
+echo '<h2>Currently Implemented Config Items</h2>';
+echo '<ul>';
+echo '<li><strong>use_db</strong> - Use the DB for configuration values or /etc/primal/primal.conf  (only one will be used)</li>';
+echo '</ul>';
 echo '</form>';
 
 ?>
