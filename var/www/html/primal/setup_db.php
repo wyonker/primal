@@ -32,6 +32,7 @@ EOT;
 
 $intAdd = 0;
 $intUpdate = 0;
+$intDelete = 0;
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	if(isset($_POST['btnCancel'])) {
 		header("Location: setup.php");
@@ -77,6 +78,20 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		header("Location: setup_db.php");
 		exit();
 	} elseif(isset($_POST['btnDelete'])) {
+		$intDelete = 1;
+	} elseif(isset($_POST['btnDelete2'])) {
+		//We will loop through the posted values and look for checkboxes that are checked.  The name of the checkbox will be the conf_name and the value will be the conf_value.  If the checkbox is checked we will delete that config item.
+		foreach($_POST as $key => $value) {
+			if(strpos($key, '_value') === false) {
+				//This is a checkbox value.  We need to check if it is checked.
+				if(isset($_POST[$key]) && $_POST[$key] == $value) {
+					//The checkbox is checked.  We will delete this config item.
+					$strQuery = "DELETE FROM config WHERE conf_name = '".$key."'";
+					mysqli_query($conn, $strQuery);
+				}
+			}
+		}
+		header("Location: setup_db.php");
 		exit();
 	} elseif(isset($_POST['btnReset'])) {
 		header("Location: setup_db.php");
@@ -106,9 +121,13 @@ echo '<th>Config Value</th>';
 echo '</tr>';
 echo '</thead>';
 echo '<tbody>';
-if($intUpdate == 1) {
+if($intUpdate == 1 || $intDelete == 1) {
 	//Put a checkbox in front of each config item so they can select which ones to update.  We will use the conf_name as the name of the checkbox and the conf_value as the value.  When they submit the form we will check which checkboxes are checked and update those config items with the new values they entered in the text boxes.
 	foreach($arrConfig as $key => $value) {
+		if($intDelete == 1 && $key == "use_db") {
+			//Don't allow them to delete the use_db config item.  This could cause problems if they delete it and then can't get back into the setup page to add it back.
+			continue;
+		}
 		echo '<tr>';
 		echo '<td><input type="checkbox" name="'.$key.'" value="'.$value.'"> '.$key.'</td>';
 		echo '<td><input type="text" name="'.$key.'_value" value="'.$value.'"></td>';
@@ -147,6 +166,11 @@ if($intAdd == 0) {
 	echo '<input type="submit" name="btnAdd" value="Add">';
 } else {
 	echo '<input type="submit" name="btnAdd2" value="Add">';
+}
+if($intDelete == 1) {
+	echo '<input type="submit" name="btnDelete2" value="Delete">';
+} else {
+	echo '<input type="submit" name="btnDelete" value="Delete">';
 }
 echo '<br><br>';
 echo '<h2>Currently Implemented Config Items</h2>';
