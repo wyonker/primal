@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-	//Version 1.00.00
-	//2026-06-15
+	//Version 1.00.01
+	//2026-06-16
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -30,12 +30,13 @@ echo <<<EOT
 <BODY>
 EOT;
 
+$intAdd = 0;
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	if(isset($_POST['btnCancel'])) {
 		header("Location: setup.php");
 		exit();
 	} elseif(isset($_POST['btnAdd'])) {
-		exit();
+		$intAdd = 1;
 	} elseif(isset($_POST['btnUpdate'])) {
 		exit();
 	} elseif(isset($_POST['btnDelete'])) {
@@ -74,11 +75,20 @@ foreach($arrConfig as $key => $value) {
 	echo '<td><input type="text" name="'.$key.'" value="'.$value.'"></td>';
 	echo '</tr>';
 }
+if($intAdd == 1) {
+	echo '<tr>';
+	echo '<td><input type="text" name="new_conf_name"></td>';
+	echo '<td><input type="text" name="new_conf_value"></td>';
+	echo '</tr>';
+}
 echo '</tbody>';
 echo '</table>';
 echo '<input type="submit" name="btnUpdate" value="Update">';
 echo '<input type="submit" name="btnReset" value="Reset">';
 echo '<input type="submit" name="btnCancel" value="Cancel">';
+if($intAdd == 0) {
+	echo '<input type="submit" name="btnAdd" value="Add">';
+}
 echo '</form>';
 
 ?>
