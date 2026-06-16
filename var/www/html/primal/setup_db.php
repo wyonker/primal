@@ -31,6 +31,7 @@ echo <<<EOT
 EOT;
 
 $intAdd = 0;
+$intUpdate = 0;
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	if(isset($_POST['btnCancel'])) {
 		header("Location: setup.php");
@@ -59,6 +60,21 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$strNewConfValue = $_POST['new_conf_value'];
 		}
 	} elseif(isset($_POST['btnUpdate'])) {
+		$intUpdate = 1;
+	} elseif(isset($_POST['btnUpdate2'])) {
+		//We will loop through the posted values and look for checkboxes that are checked.  The name of the checkbox will be the conf_name and the value will be the old conf_value.  We will then look for a text box with the name of the conf_name + "_value" to get the new value.  If the checkbox is checked we will update that config item with the new value.
+		foreach($_POST as $key => $value) {
+			if(strpos($key, '_value') !== false) {
+				//This is a text box value.  We need to check if the corresponding checkbox is checked.
+				$conf_name = str_replace('_value', '', $key);
+				if(isset($_POST[$conf_name]) && $_POST[$conf_name] == $value) {
+					//The checkbox is checked and the value matches the old value.  We will update this config item with the new value.
+					$strQuery = "UPDATE config SET conf_value = '".$value."' WHERE conf_name = '".$conf_name."'";
+					mysqli_query($conn, $strQuery);
+				}
+			}
+		}
+		header("Location: setup_db.php");
 		exit();
 	} elseif(isset($_POST['btnDelete'])) {
 		exit();
@@ -90,25 +106,41 @@ echo '<th>Config Value</th>';
 echo '</tr>';
 echo '</thead>';
 echo '<tbody>';
-foreach($arrConfig as $key => $value) {
-	echo '<tr>';
-	echo '<td>'.$key.'</td>';
-	echo '<td><input type="text" name="'.$key.'" value="'.$value.'"></td>';
-	echo '</tr>';
-}
-if($intAdd == 1) {
-	echo '<tr>';
-	echo '<td><input type="text" name="new_conf_name"></td>';
-	echo '<td><input type="text" name="new_conf_value"></td>';
-	echo '</tr>';
-} elseif($intAdd == 2) {
-	echo '<tr>';
-	echo '<td><input type="text" name="new_conf_name" value="'.$strNewConfName.'"></td>';
-	echo '<td><input type="text" name="new_conf_value" value="'.$strNewConfValue.'"></td>';
-	echo '</tr>';
+if($intUpdate == 1) {
+	//Put a checkbox in front of each config item so they can select which ones to update.  We will use the conf_name as the name of the checkbox and the conf_value as the value.  When they submit the form we will check which checkboxes are checked and update those config items with the new values they entered in the text boxes.
+	foreach($arrConfig as $key => $value) {
+		echo '<tr>';
+		echo '<td><input type="checkbox" name="'.$key.'" value="'.$value.'"> '.$key.'</td>';
+		echo '<td><input type="text" name="'.$key.'_value" value="'.$value.'"></td>';
+		echo '</tr>';
+	}
+} else {
+	//Just show the config items with text boxes to edit the values.  If they want to update they will click the update button and we will show the checkboxes then.
+	foreach($arrConfig as $key => $value) {
+		echo '<tr>';
+		echo '<td>'.$key.'</td>';
+		echo '<td><input type="text" name="'.$key.'" value="'.$value.'"></td>';
+		echo '</tr>';
+	}
+	if($intAdd == 1) {
+		echo '<tr>';
+		echo '<td><input type="text" name="new_conf_name"></td>';
+		echo '<td><input type="text" name="new_conf_value"></td>';
+		echo '</tr>';
+	} elseif($intAdd == 2) {
+		echo '<tr>';
+		echo '<td><input type="text" name="new_conf_name" value="'.$strNewConfName.'"></td>';
+		echo '<td><input type="text" name="new_conf_value" value="'.$strNewConfValue.'"></td>';
+		echo '</tr>';
+	}
 }
 echo '</tbody>';
 echo '</table>';
+if($intUpdate == 1) {
+	echo '<input type="submit" name="btnUpdate2" value="Update">';
+} else {
+	echo '<input type="submit" name="btnUpdate" value="Update">';
+}
 echo '<input type="submit" name="btnUpdate" value="Update">';
 echo '<input type="submit" name="btnReset" value="Reset">';
 echo '<input type="submit" name="btnCancel" value="Cancel">';
