@@ -37,6 +37,27 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		exit();
 	} elseif(isset($_POST['btnAdd'])) {
 		$intAdd = 1;
+	} elseif(isset($_POST['btnAdd2'])) {
+		if(trim($_POST['new_conf_name']) != " " && trim($_POST['new_conf_value']) != " " && trim($_POST['new_conf_name']) != "" && trim($_POST['new_conf_value']) != "") {
+			//First let's check to make sure the config name doesn't already exist.  We don't want duplicates.
+			$strQuery = "SELECT * FROM config WHERE conf_name = '".$_POST['new_conf_name']."'";
+			$result = mysqli_query($conn, $strQuery);
+			if(mysqli_num_rows($result) > 0) {
+				$intAdd = 2;
+				$strNewConfName = $_POST['new_conf_name'];
+				$strNewConfValue = $_POST['new_conf_value'];
+			} else {
+				$strQuery = "INSERT INTO config (conf_name, conf_value) VALUES ('".$_POST['new_conf_name']."', '".$_POST['new_conf_value']."')";
+				mysqli_query($conn, $strQuery);
+				header("Location: setup_db.php");
+				exit();
+			}
+		} elseif(trim($_POST['new_conf_name']) != "" && trim($_POST['new_conf_name']) != " ") {
+			//They entered a config name but not a value.  We need both to add a new config item.
+			$intAdd = 2;
+			$strNewConfName = $_POST['new_conf_name'];
+			$strNewConfValue = $_POST['new_conf_value'];
+		}
 	} elseif(isset($_POST['btnUpdate'])) {
 		exit();
 	} elseif(isset($_POST['btnDelete'])) {
@@ -80,6 +101,11 @@ if($intAdd == 1) {
 	echo '<td><input type="text" name="new_conf_name"></td>';
 	echo '<td><input type="text" name="new_conf_value"></td>';
 	echo '</tr>';
+} elseif($intAdd == 2) {
+	echo '<tr>';
+	echo '<td><input type="text" name="new_conf_name" value="'.$strNewConfName.'"></td>';
+	echo '<td><input type="text" name="new_conf_value" value="'.$strNewConfValue.'"></td>';
+	echo '</tr>';
 }
 echo '</tbody>';
 echo '</table>';
@@ -88,6 +114,8 @@ echo '<input type="submit" name="btnReset" value="Reset">';
 echo '<input type="submit" name="btnCancel" value="Cancel">';
 if($intAdd == 0) {
 	echo '<input type="submit" name="btnAdd" value="Add">';
+} else {
+	echo '<input type="submit" name="btnAdd2" value="Add">';
 }
 echo '</form>';
 
