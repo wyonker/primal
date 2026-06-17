@@ -7,9 +7,10 @@ header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
 header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
 header( "Cache-Control: no-cache, must-revalidate" );
 header( "Pragma: no-cache" );
-header('Content-Type: text/event-stream');
+header('Content-Encoding: none');
 header('Connection: keep-alive');
 header('X-Accel-Buffering: no'); 
+ob_end_clean();
 
 require_once('config.php');
 require_once('functions.php');
@@ -40,14 +41,24 @@ $result_code = null;
 
 echo '<pre>';
 echo 'Stopping PRIMAL services...';
+ob_flush();
+flush();
 exec("sudo /home/dicom/startup.bash stop ALL", $output, $result_code);
 echo implode("\n", $output);
+ob_flush();
+flush();
 sleep(15);
 echo 'Starting PRIMAL services...';
+ob_flush();
+flush();
 exec("sudo /home/dicom/startup.bash start ALL", $output, $result_code);
 echo implode("\n", $output);
+ob_flush();
+flush();
 sleep(15);
 echo "</pre>";
+
+echo '<H3><a href="setup.php">Return to Setup</a></H3>';
 
 Display_Footer();
 echo '</BODY>';
