@@ -68,8 +68,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 			if(strpos($key, '_value') !== false) {
 				//This is a text box value.  We need to check if the corresponding checkbox is checked.
 				$conf_name = str_replace('_value', '', $key);
-				if(isset($_POST[$conf_name]) && $_POST[$conf_name] == $value) {
-					//The checkbox is checked and the value matches the old value.  We will update this config item with the new value.
+				if(isset($_POST[$conf_name])) {
+					//The checkbox is checked.  We will update this config item with the new value.
 					$strQuery = "UPDATE config SET conf_value = '".$value."' WHERE conf_name = '".$conf_name."'";
 					mysqli_query($conn, $strQuery);
 				}
@@ -84,7 +84,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		foreach($_POST as $key => $value) {
 			if(strpos($key, '_value') === false) {
 				//This is a checkbox value.  We need to check if it is checked.
-				if(isset($_POST[$key]) && $_POST[$key] == $value) {
+				if(isset($_POST[$key])) {
 					//The checkbox is checked.  We will delete this config item.
 					$strQuery = "DELETE FROM config WHERE conf_name = '".$key."'";
 					mysqli_query($conn, $strQuery);
