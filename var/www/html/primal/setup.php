@@ -418,7 +418,7 @@ Display_Header2();
 echo "<H2>System Setup</H2>";
 echo '<H3><a href="setup_user.php">Setup User</a></H3>';
 echo '<H3><a href="setup_db.php">Setup Database</a></H3>';
-echo '<H3><a href="setup.php?action=Restart">Restart PRIMAL</a></H3>';
+echo '<H3><a href="setup_restart.php">Restart PRIMAL</a></H3>';
 
 if((!isset($_GET['rec'])) && (!isset($_GET['rule'])) && (!isset($_GET['dest']))) {
 	$arrRec = [];
