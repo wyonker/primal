@@ -40,7 +40,7 @@ $output = [];
 $result_code = null;
 
 echo '<pre>';
-echo 'Stopping PRIMAL services...';
+echo 'Stopping PRIMAL services...<br><br>';
 ob_flush();
 flush();
 exec("sudo /home/dicom/startup.bash stop ALL", $output, $result_code);
@@ -48,7 +48,7 @@ echo implode("\n", $output);
 ob_flush();
 flush();
 sleep(15);
-echo 'Starting PRIMAL services...';
+echo '<br><br>Starting PRIMAL services...<br><br>';
 ob_flush();
 flush();
 exec("sudo /home/dicom/startup.bash start ALL", $output, $result_code);
