@@ -479,7 +479,7 @@ if($_GET['action'] == 'Rec') {
 		}
 		$result = mysqli_query($conn, $strQuery);
 		$row = mysqli_fetch_assoc($result);
-		echo '<form action="setup.php?action=save" method="post">';
+		echo '<form action="setup.php" method="post">';
 		if($_GET['rec'] == "-1") {
 			echo '<input type="hidden" name="conf_rec_id" value ="-1" />';
 		} else {
