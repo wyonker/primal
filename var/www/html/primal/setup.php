@@ -561,7 +561,7 @@ if($_GET['action'] == 'Rec') {
 		echo '<tr><td>' . 'Store sent files (minutes, 0=dont store, -1=store forever)' . '</td>';
 		echo '<td><input type="text" name="ret_period" value ="' . $row["ret_period"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Encrypt on store?:</td><td>';
-		echo '<select name="encrypt" id="encrypt" default=2>';
+		echo '<select name="encrypt" id="encrypt">';
 		echo '<option value="1"';
 		if($row["encrypt"] == 1) {
 			echo ' selected';
@@ -587,7 +587,7 @@ if($_GET['action'] == 'Rec') {
 		}
 		echo '<button type="submit" id="btnReset" name="btnReset">Clear</button>';
 		echo '<button type="submit" id="btnCancel" name="btnCancel">Cancel</button>';
-		echo '<input type="button" onClick="jsDelete()" id="btnDelete" name="btnCancel" value=" Delete" size="3">';
+		echo '<input type="button" onClick="jsDelete()" id="btnDelete" name="btnDelete" value=" Delete" size="3">';
 		echo '<div id="btnDelete2" class="modal">';
   		echo '<!-- Modal content -->';
   		echo '<div class="modal-content">';
