@@ -562,8 +562,16 @@ if($_GET['action'] == 'Rec') {
 		echo '<td><input type="text" name="ret_period" value ="' . $row["ret_period"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Encrypt on store?:</td><td>';
 		echo '<select name="encrypt" id="encrypt" default=2>';
-		echo '<option value="1">Yes</option>';
-		echo '<option value="2" selected><b>No</b></option>';
+		echo '<option value="1"';
+		if($row["encrypt"] == 1) {
+			echo ' selected';
+		}
+		echo '>Yes</option>';
+		echo '<option value="2"';
+		if($row["encrypt"] == 2) {
+			echo ' selected';
+		}		
+		echo '>No</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
 		echo '<select name="active" id="active" default=1>';
@@ -1021,19 +1029,6 @@ if($_GET['action'] == 'Rec') {
 		echo '<td><input type="text" name="send_username" value ="' . $row["send_username"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Password:</td>';
 		echo '<td><input type="text" name="send_password" value ="' . $row["send_password"] . '" /></td></tr>';
-		echo '<tr><td>' . 'Encrypt on store?:</td><td>';
-		echo '<select name="encrypt" id="encrypt" default=2>';
-		echo '<option value="1"';
-		if($row["encrypt"] == 1) {
-			echo ' selected';
-		}
-		echo '>Yes</option>';
-		echo '<option value="2"';
-		if($row["encrypt"] == 2) {
-			echo ' selected';
-		}		
-		echo '>No</option>';
-		echo '</select></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
 		echo '<select name="active" id="active" default=1>';
 		echo '<option value="1"';
