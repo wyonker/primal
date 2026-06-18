@@ -119,6 +119,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "rec_comp_level = '" . $_POST['rec_comp_level'] . "', ";
 		$strQuery .= "pass_through = '" . $_POST['pass_through'] . "', ";
 		$strQuery .= "ret_period = '" . $_POST['ret_period'] . "', ";
+		$strQuery .= "encrypt = '" . $_POST['encrypt'] . "', ";
 		$strQuery .= "active = '" . $_POST['active'] . "';";
 
 		$result = mysqli_query($conn, $strQuery);
@@ -219,6 +220,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "rec_comp_level = '" . $_POST['rec_comp_level'] . "', ";
 		$strQuery .= "pass_through = '" . $_POST['pass_through'] . "', ";
 		$strQuery .= "ret_period = '" . $_POST['ret_period'] . "', ";
+		$strQuery .= "encrypt = '" . $_POST['encrypt'] . "', ";
 		$strQuery .= "active = '" . $_POST['active'] . "' ";
 		$strQuery .= "WHERE conf_rec_id = " . $_POST['conf_rec_id'] . " limit 1;";
 
@@ -558,6 +560,11 @@ if($_GET['action'] == 'Rec') {
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Store sent files (minutes, 0=dont store, -1=store forever)' . '</td>';
 		echo '<td><input type="text" name="ret_period" value ="' . $row["ret_period"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Encrypt on store?:</td><td>';
+		echo '<select name="encrypt" id="encrypt" default=2>';
+		echo '<option value="1">Yes</option>';
+		echo '<option value="2" selected><b>No</b></option>';
+		echo '</select></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
 		echo '<select name="active" id="active" default=1>';
 		echo '<option value="1"><b>Yes</b></option>';
@@ -653,6 +660,11 @@ if($_GET['action'] == 'Rec') {
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Store sent files (minutes, 0=dont store, -1=store forever)' . '</td>';
 		echo '<td><input type="text" name="ret_period" value="10800" /></td></tr>';
+		echo '<tr><td>' . 'Encrypt on store?:</td><td>';
+		echo '<select name="encrypt" id="encrypt" default=2>';
+		echo '<option value="1">Yes</option>';
+		echo '<option value="2" selected><b>No</b></option>';
+		echo '</select></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
 		echo '<select name="active" id="active" default=1>';
 		echo '<option value="1">Yes</option>';

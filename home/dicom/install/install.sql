@@ -152,6 +152,7 @@ create table conf_rec (conf_rec_id bigint(20) UNSIGNED UNIQUE not null AUTO_INCR
 	dupe int(5) not null default 0,
 	pass_through int(1) not null default 0,
 	ret_period int(10) not null default 4320,
+	encrypt int(1) not null default 2,
 	active int(1) not null default 1,
  	primary key (conf_rec_id));
 create table conf_proc (conf_proc_id int(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
