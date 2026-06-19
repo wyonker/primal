@@ -422,25 +422,29 @@ echo "<H2>System Setup</H2>";
 echo '<H3><a href="setup_user.php">Setup User</a></H3>';
 echo '<H3><a href="setup_db.php">Setup Database</a></H3>';
 echo '<H3><a href="setup_restart.php">Restart PRIMAL</a></H3>';
+echo '<H3><a href="setup.php?action=defaults">Modify Default Settings</a></H3>';
 
 if((!isset($_GET['rec'])) && (!isset($_GET['rule'])) && (!isset($_GET['dest']))) {
 	$arrRec = [];
 	echo '<table style="margin-right:auto;margin-left:0px;border="1">';
-	$strQuery = "SELECT * FROM conf_rec WHERE conf_name = \"!Global!\";";
-	$result = mysqli_query($conn, $strQuery);
-	$row = mysqli_fetch_assoc($result);
-	array_push($arrRec, $row['conf_rec_id']);
-	echo '<tr><td><div id="rec"><br><br><a href="/primal/setup.php?action=Rec&rec=' . $row['conf_rec_id'] . '">' . $row['conf_name'] . '</a></div></td>';
-	$strQuery = "SELECT * FROM conf_rec WHERE conf_name != \"!Global!\";";
-	$result = mysqli_query($conn, $strQuery);
-	$intNumRows = mysqli_num_rows($result);
-	while($row = mysqli_fetch_assoc($result)) {
-		$intLC=1;
+	if($_GET['action'] == 'defaults') {
+		$strQuery = "SELECT * FROM conf_rec WHERE conf_name = \"!Global!\";";
+		$result = mysqli_query($conn, $strQuery);
+		$row = mysqli_fetch_assoc($result);
 		array_push($arrRec, $row['conf_rec_id']);
-		echo '<td><div id="rec"><br><br><a href="/primal/setup.php?action=Rec&rec=' . $row['conf_rec_id'] . '">' . $row['conf_name'] . '</a></div></td>';
+		echo '<tr><td><div id="rec"><br><br><a href="/primal/setup.php?action=Rec&rec=' . $row['conf_rec_id'] . '">' . $row['conf_name'] . '</a></div></td>';
+	} else {
+		$strQuery = "SELECT * FROM conf_rec WHERE conf_name != \"!Global!\";";
+		$result = mysqli_query($conn, $strQuery);
+		$intNumRows = mysqli_num_rows($result);
+		while($row = mysqli_fetch_assoc($result)) {
+			$intLC=1;
+			array_push($arrRec, $row['conf_rec_id']);
+			echo '<td><div id="rec"><br><br><a href="/primal/setup.php?action=Rec&rec=' . $row['conf_rec_id'] . '">' . $row['conf_name'] . '</a></div></td>';
+		}
+		array_push($arrRec, "0");
+		echo '<td><div id="rec"><br><br><a href="/primal/setup.php?action=Rec&rec=-1">Add Receiver</a></div></td></tr>';
 	}
-	array_push($arrRec, "0");
-	echo '<td><div id="rec"><br><br><a href="/primal/setup.php?action=Rec&rec=-1">Add Receiver</a></div></td></tr>';
 	//Now let's show the routes.
 	echo "<tr>";
 	foreach($arrRec as &$rec) {
@@ -466,10 +470,6 @@ if((!isset($_GET['rec'])) && (!isset($_GET['rule'])) && (!isset($_GET['dest'])))
 	}
 	echo "</tr>";
 	echo "</table>";
-}
-if($_GET['action'] == 'Restart') {
-	header("Location: setup_restart.php");
-	exit();
 }
 if($_GET['action'] == 'Rec') {
 	if(isset($_GET['rec'])) {
@@ -1198,68 +1198,6 @@ if($_GET['action'] == 'Rec') {
 		echo '</div>';
 		echo '</form>';
 	}
-/*
-} else {
-	$strQuery = "SELECT conf_rec_id, conf_name FROM conf_rec ORDER BY conf_name;";
-	$result = mysqli_query($conn, $strQuery);
-	$intNumRows = mysqli_num_rows($result);
-	$intLC=1;
-	while($intLC <= ($intNumRows + 1)) {
-		$row = mysqli_fetch_assoc($result);
-		echo '<div id="rec" style="top: ' . $intLC * 150 . ';">';
-		if($intLC > $intNumRows) {
-			echo '<BR><BR><a href="/primal/setup.php?action=Rec">New</a><BR><BR>';
-		} else {
-			echo '<BR><BR><a href="/primal/setup.php?action=Rec&rec=' . $row['conf_rec_id'] . '">' . $row['conf_name'] . '</a><BR><BR>';
-		}
-		echo '</div>';
-
-		echo '<div id="proc" style="top: ' . $intLC * 150 . ';">';
-		if(!isset($row['conf_rec_id'])) {
-			echo '<BR><BR>N/A<BR><BR>';
-		} else {
-			$strQuery2 = "SELECT conf_proc_id, proc_name FROM conf_proc WHERE conf_rec_id = " . $row['conf_rec_id'] . ";";
-			$result2 = mysqli_query($conn, $strQuery2);
-			$intNumRows2 = mysqli_num_rows($result2);
-			if($intNumRows2 > 0) {
-				$intLC2=0;
-				while($intLC2 < $intNumRows2) {
-					$row2 = mysqli_fetch_assoc($result2);
-					echo '<a href="/primal/setup.php?action=Rule&rec=' . $row2['conf_proc_id'] . '&rule=' . $row2['conf_proc_id'] . '">' . $row2['proc_name'] . '</a><BR>';
-					$intLC2++;
-				}
-				echo '<a href="/primal/setup.php?action=Rule&rec=' . $row['conf_rec_id'] . '&rule=0">Add Rule</a><BR>';
-			} else {
-				echo '<a href="/primal/setup.php?action=Rule&rec=' . $row['conf_rec_id'] . '&rule=0">Add Rule</a><BR>';
-			}
-		}
-		echo '</div>';
-
-		echo '<div id="out" style="top: ' . $intLC * 150 . ';">';
-		if(!isset($row['conf_rec_id'])) {
-			echo '<BR><BR>N/A<BR><BR>';
-		} else {
-			$strQuery3 = "SELECT conf_send_id, send_name FROM conf_send WHERE conf_rec_id = " . $row['conf_rec_id'] . ";";
-			$result3 = mysqli_query($conn, $strQuery3);
-			$intNumRows3 = mysqli_num_rows($result3);
-			if($intNumRows3 > 0) {
-				$intLC3=0;
-				while($intLC3 < $intNumRows3) {
-					$row3 = mysqli_fetch_assoc($result3);
-					echo '<a href="/primal/setup.php?action=Dest&dest=' . $row3['conf_send_id'] . '">' . $row3['send_name'] . '</a><BR>';
-					$intLC3++;
-				}
-				echo '<a href="/primal/setup.php?action=Dest&rec=' . $row['conf_rec_id'] . '&dest=0">Add Destination</a><BR>';
-			} else {
-				echo '<a href="/primal/setup.php?action=Dest&rec=' . $row['conf_rec_id'] . '&dest=0">Add Destination</a><BR>';
-			}
-		}
-		echo '</div>';
-		echo '<BR>';
-		$intLC++;
-	}
-	echo '<BR><BR>';
-*/
 }
 Display_Footer();
 echo '</BODY>';
