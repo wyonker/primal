@@ -220,7 +220,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "rec_comp_level = '" . $_POST['rec_comp_level'] . "', ";
 		$strQuery .= "pass_through = '" . $_POST['pass_through'] . "', ";
 		$strQuery .= "ret_period = '" . $_POST['ret_period'] . "', ";
-		$strQuery .= "encrypt = '" . $_POST['encrypt'] . "', ";
 		$strQuery .= "active = '" . $_POST['active'] . "' ";
 		$strQuery .= "WHERE conf_rec_id = " . $_POST['conf_rec_id'] . " limit 1;";
 
@@ -349,6 +348,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "send_aec = '" . $_POST['send_aec'] . "', ";
 		$strQuery .= "send_hip = '" . $_POST['send_hip'] . "', ";
 		$strQuery .= "send_type = '" . $_POST['send_type'] . "', ";
+		$strQuery .= "send_encrypt = '" . $_POST['send_encrypt'] . "', ";
 		$strQuery .= "send_port = '" . $_POST['send_port'] . "', ";
 		$strQuery .= "send_time_out = '" . $_POST['send_time_out'] . "', ";
 		$strQuery .= "send_comp_level = '" . $_POST['send_comp_level'] . "', ";
@@ -377,6 +377,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "send_aec = '" . $_POST['send_aec'] . "', ";
 		$strQuery .= "send_hip = '" . $_POST['send_hip'] . "', ";
 		$strQuery .= "send_type = '" . $_POST['send_type'] . "', ";
+		$strQuery .= "send_encrypt = '" . $_POST['send_encrypt'] . "', ";
 		$strQuery .= "send_port = '" . $_POST['send_port'] . "', ";
 		$strQuery .= "send_time_out = '" . $_POST['send_time_out'] . "', ";
 		$strQuery .= "send_comp_level = '" . $_POST['send_comp_level'] . "', ";
@@ -560,19 +561,6 @@ if($_GET['action'] == 'Rec') {
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Store sent files (minutes, 0=dont store, -1=store forever)' . '</td>';
 		echo '<td><input type="text" name="ret_period" value ="' . $row["ret_period"] . '" /></td></tr>';
-		echo '<tr><td>' . 'Encrypt on store?:</td><td>';
-		echo '<select name="encrypt" id="encrypt">';
-		echo '<option value="1"';
-		if($row["encrypt"] == 1) {
-			echo ' selected';
-		}
-		echo '>Yes</option>';
-		echo '<option value="2"';
-		if($row["encrypt"] == 2) {
-			echo ' selected';
-		}		
-		echo '>No</option>';
-		echo '</select></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
 		echo '<select name="active" id="active" default=1>';
 		echo '<option value="1"><b>Yes</b></option>';
@@ -668,11 +656,6 @@ if($_GET['action'] == 'Rec') {
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Store sent files (minutes, 0=dont store, -1=store forever)' . '</td>';
 		echo '<td><input type="text" name="ret_period" value="10800" /></td></tr>';
-		echo '<tr><td>' . 'Encrypt on store?:</td><td>';
-		echo '<select name="encrypt" id="encrypt" default=2>';
-		echo '<option value="1">Yes</option>';
-		echo '<option value="2" selected><b>No</b></option>';
-		echo '</select></td></tr>';
 		echo '<tr><td>' . '<label for="active">Active?:</label></td><td>';
 		echo '<select name="active" id="active" default=1>';
 		echo '<option value="1">Yes</option>';
@@ -971,6 +954,19 @@ if($_GET['action'] == 'Rec') {
 		}
 		echo '>Archive</option>';
 		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Encrypt on store?:</td><td>';
+		echo '<select name="send_encrypt" id="send_encrypt">';
+		echo '<option value="1"';
+		if($row["send_encrypt"] == 1) {
+			echo ' selected';
+		}
+		echo '>Yes</option>';
+		echo '<option value="2"';
+		if($row["send_encrypt"] == 2) {
+			echo ' selected';
+		}		
+		echo '>No</option>';
+		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Destination Port Number:</td>';
 		echo '<td><input type="text" name="send_port" value ="' . $row["send_port"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Time Out (in seconds):</td>';
@@ -1071,6 +1067,11 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="2">SCP</option>';
 		echo '<option value="3">FTP</option>';
 		echo '<option value="4">Archive</option>';
+		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Encrypt on store?:</td><td>';
+		echo '<select name="send_encrypt" id="send_encrypt" default=2>';
+		echo '<option value="1">Yes</option>';
+		echo '<option value="2" selected><b>No</b></option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Destination Port Number:</td>';
 		echo '<td><input type="text" name="send_port" value="104" /></td></tr>';

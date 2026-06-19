@@ -152,7 +152,6 @@ create table conf_rec (conf_rec_id bigint(20) UNSIGNED UNIQUE not null AUTO_INCR
 	dupe int(5) not null default 0,
 	pass_through int(1) not null default 0,
 	ret_period int(10) not null default 4320,
-	encrypt int(1) not null default 2,
 	active int(1) not null default 1,
  	primary key (conf_rec_id));
 create table conf_proc (conf_proc_id int(10) UNSIGNED UNIQUE not null AUTO_INCREMENT,
@@ -175,6 +174,7 @@ create table conf_send (conf_send_id int(10) UNSIGNED UNIQUE not null AUTO_INCRE
   	send_aec varchar(32) not null default 'PRIMAL',
 	send_hip varchar(32) not null default '0.0.0.0',
 	send_type varchar(32) not null default 'dicom',
+	send_encrypt int(1) not null default 2,
 	send_port int(5) default 2000,
 	send_time_out int(5) not null default 10,
 	send_comp_level int(5) not null default 0,
