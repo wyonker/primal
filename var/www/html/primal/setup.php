@@ -592,7 +592,7 @@ if($_GET['action'] == 'Rec') {
 		echo '</div>';
 		echo '</form>';
 	} else {
-		echo '<form action="setup.php?action=save" method="post">';
+		echo '<form action="setup.php" method="post">';
 		echo '<table border="1">';
 		echo '<tr><td>' . 'Config Name:</td>';
 		echo '<td><input type="text" name="conf_name" value="Default" /></td></tr>';
@@ -678,7 +678,7 @@ if($_GET['action'] == 'Rec') {
 		$strQuery = "SELECT * FROM conf_proc WHERE conf_proc_id = " . $_GET['rule'] . " limit 1;";
 		$result = mysqli_query($conn, $strQuery);
 		$row = mysqli_fetch_assoc($result);
-		echo '<form action="setup.php?action=save" method="post">';
+		echo '<form action="setup.php" method="post">';
 		echo '<input type="hidden" name="conf_rec_id" value ="' . $row["conf_rec_id"] . '" />';
 		echo '<input type="hidden" name="conf_proc_id" value ="' . $_GET['rule'] . '" />';
 		echo '<input type="hidden" name="proc_result" id="proc_result" value ="' . $row["proc_tag"] . '" />';
@@ -857,7 +857,7 @@ if($_GET['action'] == 'Rec') {
 		echo '</div>';
 		echo '</form>';
 } else {
-		echo '<form action="setup.php?action=save" method="post">';
+		echo '<form action="setup.php" method="post">';
 		echo '<input type="hidden" name="conf_rec_id" value ="' . $_GET["rec"] . '" />';
 		echo '<input type="hidden" name="conf_proc_id" value ="0" />';
 		echo '<input type="hidden" name="proc_result" id="proc_result" value ="tag" />';
@@ -921,7 +921,7 @@ if($_GET['action'] == 'Rec') {
 		$strQuery = "SELECT * FROM conf_send WHERE conf_send_id = " . $_GET['dest'] . " limit 1;";
 		$result = mysqli_query($conn, $strQuery);
 		$row = mysqli_fetch_assoc($result);
-		echo '<form action="setup.php?action=save" method="post">';
+		echo '<form action="setup.php" method="post">';
 		echo '<input type="hidden" name="conf_rec_id" value ="' . $row["conf_rec_id"] . '" />';
 		echo '<input type="hidden" name="conf_send_id" value ="' . $_GET['dest'] . '" />';
 		echo '<table border="1">';
@@ -1051,7 +1051,7 @@ if($_GET['action'] == 'Rec') {
 		echo '</div>';
 		echo '</form>';
 	} else {
-		echo '<form action="setup.php?action=save" method="post">';
+		echo '<form action="setup.php" method="post">';
 		echo '<input type="hidden" name="conf_rec_id" value ="' . $_GET["rec"] . '" />';
 		echo '<input type="hidden" name="conf_send_id" />';
 		echo '<table border="1">';
