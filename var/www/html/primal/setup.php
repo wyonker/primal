@@ -422,7 +422,11 @@ echo "<H2>System Setup</H2>";
 echo '<H3><a href="setup_user.php">Setup User</a></H3>';
 echo '<H3><a href="setup_db.php">Setup Database</a></H3>';
 echo '<H3><a href="setup_restart.php">Restart PRIMAL</a></H3>';
-echo '<H3><a href="setup.php?action=defaults">Modify Default Settings</a></H3>';
+if($_GET['action'] != 'defaults') {
+	echo '<H3><a href="setup.php?action=defaults">Modify Default Settings</a></H3>';
+} else {
+	echo '<H3><a href="setup.php">Normal</a></H3>';
+}
 
 if((!isset($_GET['rec'])) && (!isset($_GET['rule'])) && (!isset($_GET['dest']))) {
 	$arrRec = [];
