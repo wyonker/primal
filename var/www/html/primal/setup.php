@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-	//Version 1.00.03
-	//2026-06-17
+	//Version 1.00.04
+	//2026-06-19
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -90,8 +90,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		unset($_SESSION["conf_rec"]);
 		unset($_SESSION["conf_proc"]);
 		unset($_SESSION["conf_send"]);
-		header("Location: setup.php");
-		exit();
 	} elseif(isset($_POST['btnAdd'])) {
 		$intReturn = fValidateInput(1, $_POST['conf_name']);
 		if($intReturn == 1) {
