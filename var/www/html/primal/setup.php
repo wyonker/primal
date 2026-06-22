@@ -1,6 +1,6 @@
 <?php
 	//License GPLv3
-	//Version 1.00.05
+	//Version 1.00.06
 	//2026-06-22
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
@@ -852,12 +852,12 @@ if($_GET['action'] == 'Rec') {
 		if($row["active"] == 0) {
 			echo ' selected';
 		}
-		echo '>Yes</option>';
+		echo '>No</option>';
 		echo '<option value="2"';
 		if($row["active"] == 1) {
 			echo ' selected';
 		}
-		echo '>No</option>';
+		echo '>Yes</option>';
 		echo '</select></td></tr>';
 		echo '</table>';
 		echo '<br><div class="btn-group">';
