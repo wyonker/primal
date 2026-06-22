@@ -746,6 +746,10 @@ if($_GET['action'] == 'Rec') {
 		echo '<tr><td>' . '<label for="proc_operator">Operator Type:</label></td><td>';
 		echo '<select name="proc_operator" id="proc_operator">';
 		echo '<option value=">"';
+		if($row["proc_operator"] == "All") {
+			echo ' selected';
+		}
+		echo '>All</option>';
 		if($row["proc_operator"] == ">") {
 			echo ' selected';
 		}
@@ -896,6 +900,7 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="8">script</option>';
 		echo '<option value="9">Begins</option>';
 		echo '<option value="10">!Begins</option>';
+		echo '<option value="11">All</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'Rule Condition:</td>';
 		echo '<td><input type="text" name="proc_cond" /></td></tr>';
