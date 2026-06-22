@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-	//Version 1.00.04
-	//2026-06-19
+	//Version 1.00.05
+	//2026-06-22
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -281,6 +281,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "proc_operator = '" . $_POST['proc_operator'] . "', ";
 		$strQuery .= "proc_cond = '" . $_POST['proc_cond'] . "', ";
 		$strQuery .= "proc_action = '" . $_POST['proc_action'] . "', ";
+		$strQuery .= "proc_action_value = '" . $_POST['proc_action_value'] . "', ";
 		$strQuery .= "proc_order = '" . $_POST['proc_order'] . "', ";
 		$strQuery .= "proc_dest = '" . $_POST['proc_dest'] . "', ";
 		$strQuery .= "active = '" . $_POST['proc_active'] . "', ";
@@ -310,6 +311,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "proc_operator = '" . $_POST['proc_operator'] . "', ";
 		$strQuery .= "proc_cond = '" . $_POST['proc_cond'] . "', ";
 		$strQuery .= "proc_action = '" . $_POST['proc_action'] . "', ";
+		$strQuery .= "proc_action_value = '" . $_POST['proc_action_value'] . "', ";
 		$strQuery .= "proc_order = '" . $_POST['proc_order'] . "', ";
 		$strQuery .= "proc_dest = '" . $_POST['proc_dest'] . "', ";
 		$strQuery .= "active = '" . $_POST['proc_active'] . "' ";
@@ -828,7 +830,16 @@ if($_GET['action'] == 'Rec') {
 			echo ' selected';
 		}
 		echo '>Jump</option>';
+		echo '<option value="7"';
+		if($row["proc_action"] == 7) {
+			echo ' selected';
+		}
+		echo '>Modify</option>';
 		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Rule Condition:</td>';
+		echo '<td><input type="text" name="proc_cond" value ="' . $row["proc_cond"] . '" /></td></tr>';
+		echo '<tr><td>' . 'Action Value:</td>';
+		echo '<td><input type="text" name="proc_action_value" value ="' . $row["proc_action_value"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Order:</td>';
 		echo '<td><input type="text" name="proc_order" value ="' . $row["proc_order"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Destination (0 for all):</td>';
@@ -896,7 +907,10 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="4">Error</option>';
 		echo '<option value="5">Send</option>';
 		echo '<option value="6">Jump</option>';
+		echo '<option value="7">Modify</option>';
 		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Action Value:</td>';
+		echo '<td><input type="text" name="proc_action_value" /></td></tr>';
 		echo '<tr><td>' . 'Order:</td>';
 		echo '<td><input type="text" name="proc_order" value="1" /></td></tr>';
 		echo '<tr><td>' . 'Destination (0 for all):</td>';

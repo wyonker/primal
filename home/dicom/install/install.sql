@@ -162,6 +162,7 @@ create table conf_proc (conf_proc_id int(10) UNSIGNED UNIQUE not null AUTO_INCRE
 	proc_operator varchar(32) not null default '=',
 	proc_cond varchar(32) not null default '0',
 	proc_action varchar(8) not null default 'allow',
+	proc_action_value varchar(128) default 'UNK',
 	proc_order int(5) not null default 1, 
 	proc_dest int(10) default 0,
 	active int(1) not null default 1,

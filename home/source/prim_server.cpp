@@ -725,8 +725,70 @@ void fEndReceive() {
 
 
 int fRuleTag(std::string strPUID, int intConf_proc_id) {
-    (void) strPUID;
-    (void) intConf_proc_id;
+    std::string strLogMessage, strQuery, strProc_name, strProc_type, strProc_tag, strProc_operator, strProc_cond, strProc_action; 
+    int intNumRows, intConf_rec_id, intProc_order, intProc_dest, intProc_active;
+
+    MYSQL *mconnect;
+    ReadDBConfFile();
+
+    MYSQL_ROW row;
+    MYSQL_RES *result;
+
+    mconnect=mysql_init(NULL);
+    mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
+    if (!mconnect) {
+        strLogMessage="RECV  MySQL Initilization failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return;
+    }
+    mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
+    if (!mconnect) {
+        strLogMessage="RECV  MySQL connection failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return;
+    }
+
+    strQuery = "SELECT * FROM conf_proc WHERE conf_proc_id = " + std::to_string(intConf_proc_id) + " limit 1;";
+    mysql_query(mconnect, strQuery.c_str());
+    if(*mysql_error(mconnect)) {
+        strLogMessage="RECV  SQL Error: ";
+        strLogMessage+=mysql_error(mconnect);
+        strLogMessage+="\nQuery: " + strQuery + "\n";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    }
+    result = mysql_store_result(mconnect);
+    if(result) {
+        intNumRows=mysql_num_rows(result);
+        if(intNumRows > 0) {
+            while((row = mysql_fetch_row(result))) {
+              	intConf_rec_id = stoi(row[1]);
+            	strProc_name = row[2];
+            	strProc_type = row[3];
+            	strProc_tag = row[4];
+                strProc_operator = row[5];
+                strProc_cond = row[6];
+                strProc_action = row[7];
+                intProc_order = stoi(row[8]);
+                intProc_dest = stoi(row[9]);
+                intProc_active = stoi(row[10]);
+            }
+        }
+    }
+    if(intProc_active != 1) {
+        strLogMessage = strPUID + " PROC " + strProc_name + " is not active.  Skipping.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        mysql_thread_end();
+        return 1;
+    }
+
+    if(strProc_tag.empty() || trim(strProc_tag).empty() || trim(strProc_tag) == " "|| trim(strProc_tag) == "null") {
+        strLogMessage = strPUID + " PROC " + strProc_name + " does not have a tag specified.  Skipping.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        mysql_thread_end();
+        return 1;
+    }
+
+
     return 0;
 }
 
