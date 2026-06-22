@@ -840,8 +840,6 @@ if($_GET['action'] == 'Rec') {
 		}
 		echo '>Modify</option>';
 		echo '</select></td></tr>';
-		echo '<tr><td>' . 'Rule Condition:</td>';
-		echo '<td><input type="text" name="proc_cond" value ="' . $row["proc_cond"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Action Value:</td>';
 		echo '<td><input type="text" name="proc_action_value" value ="' . $row["proc_action_value"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Order:</td>';
