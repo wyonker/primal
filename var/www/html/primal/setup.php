@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-	//Version 1.00.06
-	//2026-06-22
+	//Version 1.00.07
+	//2026-06-23
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -348,6 +348,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "send_aec = '" . $_POST['send_aec'] . "', ";
 		$strQuery .= "send_hip = '" . $_POST['send_hip'] . "', ";
 		$strQuery .= "send_type = '" . $_POST['send_type'] . "', ";
+		$strQuery .= "send_arc_dir = '" . $_POST['send_arc_dir'] . "', ";
 		$strQuery .= "send_encrypt = '" . $_POST['send_encrypt'] . "', ";
 		$strQuery .= "send_port = '" . $_POST['send_port'] . "', ";
 		$strQuery .= "send_time_out = '" . $_POST['send_time_out'] . "', ";
@@ -377,6 +378,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "send_aec = '" . $_POST['send_aec'] . "', ";
 		$strQuery .= "send_hip = '" . $_POST['send_hip'] . "', ";
 		$strQuery .= "send_type = '" . $_POST['send_type'] . "', ";
+		$strQuery .= "send_arc_dir = '" . $_POST['send_arc_dir'] . "', ";
 		$strQuery .= "send_encrypt = '" . $_POST['send_encrypt'] . "', ";
 		$strQuery .= "send_port = '" . $_POST['send_port'] . "', ";
 		$strQuery .= "send_time_out = '" . $_POST['send_time_out'] . "', ";
@@ -973,6 +975,8 @@ if($_GET['action'] == 'Rec') {
 		}
 		echo '>Archive</option>';
 		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Directory Path for Archive:</td>';
+		echo '<td><input type="text" name="send_arc_dir" value ="' . $row["send_arc_dir"] . '" /></td></tr>';
 		echo '<tr><td>' . 'Encrypt on store?:</td><td>';
 		echo '<select name="send_encrypt" id="send_encrypt">';
 		echo '<option value="1"';
@@ -1087,6 +1091,8 @@ if($_GET['action'] == 'Rec') {
 		echo '<option value="3">FTP</option>';
 		echo '<option value="4">Archive</option>';
 		echo '</select></td></tr>';
+		echo '<tr><td>' . 'Directory Path for Archive:</td>';
+		echo '<td><input type="text" name="send_arc_dir" value="/home/dicom/archive/" /></td></tr>';
 		echo '<tr><td>' . 'Encrypt on store?:</td><td>';
 		echo '<select name="send_encrypt" id="send_encrypt" default=2>';
 		echo '<option value="1">Yes</option>';

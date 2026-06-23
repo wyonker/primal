@@ -72,8 +72,8 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
-const std::string strVersionNum = "4.02.07";
-const std::string strVersionDate = "2025-09-30";
+const std::string strVersionNum = "4.02.08";
+const std::string strVersionDate = "2026-06-22";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -725,7 +725,7 @@ void fEndReceive() {
 
 
 int fRuleTag(std::string strPUID, int intConf_proc_id) {
-    std::string strLogMessage, strQuery, strProc_name, strProc_type, strProc_tag, strProc_operator, strProc_cond, strProc_action; 
+    std::string strLogMessage, strQuery, strProc_name, strProc_type, strProc_tag, strProc_operator, strProc_cond, strProc_action, strProc_Action_value, strCMD; 
     int intNumRows, intConf_rec_id, intProc_order, intProc_dest, intProc_active;
 
     MYSQL *mconnect;
@@ -768,9 +768,10 @@ int fRuleTag(std::string strPUID, int intConf_proc_id) {
                 strProc_operator = row[5];
                 strProc_cond = row[6];
                 strProc_action = row[7];
-                intProc_order = stoi(row[8]);
-                intProc_dest = stoi(row[9]);
-                intProc_active = stoi(row[10]);
+                strProc_Action_value = row[8];
+                intProc_order = stoi(row[9]);
+                intProc_dest = stoi(row[10]);
+                intProc_active = stoi(row[11]);
             }
         }
     }
@@ -787,7 +788,16 @@ int fRuleTag(std::string strPUID, int intConf_proc_id) {
         mysql_thread_end();
         return 1;
     }
-
+    if(strProc_action == "7") {
+        //We are only working with modifications for now
+        strLogMessage = strPUID + " PROC " + strProc_name + " has an action of " + strProc_action + " which is modify.  Processing.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        //Let's build the command to modify the tag
+        strCMD = "/home/dicom/bin/dcmodify -m \"" + strProc_tag + "=" + strProc_Action_value + '\" /home/dicom/incomming/' + strPUID + "/*.dcm >> /var/log/primal/dcmodify.log 2>&1";
+        exec(strCMD.c_str());
+    } else {
+        strLogMessage = strPUID + " PROC " + strProc_name + " has an action of " + strProc_action + " which is not supported.  Skipping.";
+    }
 
     return 0;
 }

@@ -175,7 +175,7 @@ create table conf_send (conf_send_id int(10) UNSIGNED UNIQUE not null AUTO_INCRE
   	send_aec varchar(32) not null default 'PRIMAL',
 	send_hip varchar(32) not null default '0.0.0.0',
 	send_type varchar(32) not null default 'dicom',
-	send_encrypt int(1) not null default 2,
+	send_arc_dir varchar(256) not null default '/home/dicom/archive',
 	send_port int(5) default 2000,
 	send_time_out int(5) not null default 10,
 	send_comp_level int(5) not null default 0,
