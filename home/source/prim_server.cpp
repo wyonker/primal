@@ -1007,7 +1007,7 @@ void fSend() {
     std::string strRecNum, strAET, strFileExt, strHostName, strDateTime, strFullPath, strCmd, strSendType, strPrimalID, strReturn, strDate;
     std::string strLogMessage, strCMD, strID, strPUID, strServerName, strDestNum, strDest, strOrg, strStartSend, strEndSend, strImages, strError, strRetry, strComplete;
     std::string strQuery, strQuery2, strQuery3, strQuery4, strLocation, strSendPort, strSendHIP, strSendAEC, strSendAET, strStatus;
-    std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId;
+    std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId, strSendArcDir;
     std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn, strTime, strDestLocation, strStudyID, strFileName, strFileName2;
 
     int intNumRows, intStartSec, intNowSec, intDateCheck, intLC, intDone, intSend=0;
@@ -1444,15 +1444,16 @@ void fSend() {
                                 strSendAEC = row2[5];
                                 strSendHIP = row2[6];
                                 strSendType = row2[7];
-                                strSendPort = row2[8];
-                                strSendTimeOut = row2[9];
-                                strSendCompression = row2[10];
-                                strSendRetry = row2[11];
-                                strSendUser = row2[12];
-                                strSendPass = row2[13];
-                                strSendOrder = row2[14];
-                                strSendEncrypt = row2[15];
-                                strSendActive = row2[16];
+                                strSendArcDir = row2[8];
+                                strSendPort = row2[9];
+                                strSendTimeOut = row2[10];
+                                strSendCompression = row2[11];
+                                strSendRetry = row2[12];
+                                strSendUser = row2[13];
+                                strSendPass = row2[14];
+                                strSendOrder = row2[15];
+                                strSendEncrypt = row2[16];
+                                strSendActive = row2[17];
                                 strLogMessage = strPUID + " SEND  " + strAccn + " Sending to AET " + strSendAET;
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                             }
@@ -1564,7 +1565,9 @@ void fSend() {
                                 //Archive type
                                 strLogMessage = strPUID + " SEND  Sending " + strAccn + " to archive and encrypting at " + strSendHIP + " " + strSendPort + ".";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                //archive type really only makes sense if storing locally.
                                 if(strSendEncrypt == "1") {
+                                    //Encrypt files before moving to the archive directory.
                                     if(strSendHIP == "localhost" || strSendHIP == "127.0.0.1") {
                                         //This allows the host to be addressed by name or IP and files not be encrypted.
                                         for (const auto& entry : fs::directory_iterator(strLocation)) {
