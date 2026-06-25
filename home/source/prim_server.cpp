@@ -222,7 +222,8 @@ std::string fSecToTime(int intSec) {
 std::string exec(const char* cmd) {
     std::array<char, 256> buffer;
     std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    //std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    std::unique_ptr<FILE, void(*)(FILE*)> pipe(popen(cmd, "r"), [](FILE* f) { pclose(f); });
     if (!pipe) {
         throw std::runtime_error("popen() failed!");
     }
