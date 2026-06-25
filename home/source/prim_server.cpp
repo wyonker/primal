@@ -79,6 +79,30 @@ const std::string strVersionDate = "2026-06-22";
 
 //#include "prim_functions.h"
 
+const std::string WHITESPACE = " \n\r\t\f\v";
+
+// Trim from the start (in-place)
+void ltrim(std::string &s) {
+    size_t start = s.find_first_not_of(WHITESPACE);
+    s.erase(0, start);
+}
+
+// Trim from the end (in-place)
+void rtrim(std::string &s) {
+    size_t end = s.find_last_not_of(WHITESPACE);
+    if (end != std::string::npos) {
+        s.erase(end + 1);
+    } else {
+        s.clear(); // String is entirely whitespace
+    }
+}
+
+// Trim from both ends (in-place)
+void trim(std::string &s) {
+    rtrim(s);
+    ltrim(s);
+}
+
 std::vector<int> vecPIDs;
 
 struct my_msgbuf {
@@ -228,6 +252,28 @@ std::size_t fWriteLog(std::string strLogMessage, std::string strLogFile) {
     fpLogFile << std::flush;
     fpLogFile.close();
     return 0;
+}
+
+std::string fHexToBin(std::string hex) {
+    std::string bin;
+    bin.reserve(hex.length() / 2);
+    for (std::size_t i = 0; i < hex.length(); i += 2) {
+        std::string byteString = hex.substr(i, 2);
+        char byte = static_cast<char>(strtol(byteString.c_str(), nullptr, 16));
+        bin.push_back(byte);
+    }
+    return bin;
+}
+
+std::string fBinToHex(std::string bin) {
+    std::string hex;
+    hex.reserve(bin.length() * 2);
+    const char hexDigits[] = "0123456789ABCDEF";
+    for (unsigned char c : bin) {
+        hex.push_back(hexDigits[(c >> 4) & 0xF]);
+        hex.push_back(hexDigits[c & 0xF]);
+    }
+    return hex;
 }
 
 std::string fGetTagValue(std::string strTagID, std::string strDcmDump, std::size_t intType, std::size_t intOrder){
@@ -429,8 +475,8 @@ int fStartReceivers() {
     MYSQL *mconnect2;
     ReadDBConfFile();
 
-    MYSQL_ROW row, row2;
-    MYSQL_RES *result, *result2;
+    MYSQL_ROW row;
+    MYSQL_RES *result;
 
     mconnect=mysql_init(NULL);
     mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
@@ -739,13 +785,13 @@ int fRuleTag(std::string strPUID, int intConf_proc_id) {
     if (!mconnect) {
         strLogMessage="RECV  MySQL Initilization failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return;
+        return 1;
     }
     mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
     if (!mconnect) {
         strLogMessage="RECV  MySQL connection failed.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return;
+        return 1;
     }
 
     strQuery = "SELECT * FROM conf_proc WHERE conf_proc_id = " + std::to_string(intConf_proc_id) + " limit 1;";
@@ -782,7 +828,8 @@ int fRuleTag(std::string strPUID, int intConf_proc_id) {
         return 1;
     }
 
-    if(strProc_tag.empty() || trim(strProc_tag).empty() || trim(strProc_tag) == " "|| trim(strProc_tag) == "null") {
+    trim(strProc_tag);
+    if(strProc_tag.empty() || strProc_tag.empty() || strProc_tag == " "|| strProc_tag == "null") {
         strLogMessage = strPUID + " PROC " + strProc_name + " does not have a tag specified.  Skipping.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         mysql_thread_end();
@@ -793,10 +840,11 @@ int fRuleTag(std::string strPUID, int intConf_proc_id) {
         strLogMessage = strPUID + " PROC " + strProc_name + " has an action of " + strProc_action + " which is modify.  Processing.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         //Let's build the command to modify the tag
-        strCMD = "/home/dicom/bin/dcmodify -m \"" + strProc_tag + "=" + strProc_Action_value + '\" /home/dicom/incomming/' + strPUID + "/*.dcm >> /var/log/primal/dcmodify.log 2>&1";
+        strCMD = "/home/dicom/bin/dcmodify -m \"" + strProc_tag + "=" + strProc_Action_value + "\" /home/dicom/incomming/" + strPUID + "/*.dcm >> /var/log/primal/dcmodify.log 2>&1";
         exec(strCMD.c_str());
     } else {
         strLogMessage = strPUID + " PROC " + strProc_name + " has an action of " + strProc_action + " which is not supported.  Skipping.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
     }
 
     return 0;
@@ -839,7 +887,6 @@ void fProcess() {
     [[maybe_unused]] int intReturn;
 
     MYSQL *mconnect;
-    MYSQL *mconnect2;
     ReadDBConfFile();
 
     MYSQL_ROW row, row2, row3;
@@ -1005,8 +1052,8 @@ void fProcess() {
 
 void fSend() {
     std::string strRecNum, strAET, strFileExt, strHostName, strDateTime, strFullPath, strCmd, strSendType, strPrimalID, strReturn, strDate;
-    std::string strLogMessage, strCMD, strID, strPUID, strServerName, strDestNum, strDest, strOrg, strStartSend, strEndSend, strImages, strError, strRetry, strComplete;
-    std::string strQuery, strQuery2, strQuery3, strQuery4, strLocation, strSendPort, strSendHIP, strSendAEC, strSendAET, strStatus;
+    std::string strLogMessage, strCMD, strID, strPUID, strServerName, strDestNum, strDest, strOrg, strStartSend, strEndSend, strImages, strError, strRetry, strComplete, strSendEncrypt, strSendCompress, strSendTimeout;
+    std::string strQuery, strQuery2, strQuery3, strQuery4, strLocation, strSendPort, strSendHIP, strSendAEC, strSendAET, strStatus, strFKey, strFIV;
     std::string strSendOrder, strSendPass, strSendRetry, strSendCompression, strSendTimeOut, strSendOrg, strSendName, strRecId, strSendArcDir;
     std::string strSendActive, strSendUser, strMPID, strAccn, strQuery5, strMPAccn, strNewAccn, strTime, strDestLocation, strStudyID, strFileName, strFileName2;
 
@@ -1521,7 +1568,10 @@ void fSend() {
                                                     strLogMessage = strPUID + " SEND  WARN: Filename too short to replace extension for " + strFileName + ".";
                                                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                                 }
-                                                if(decryptFile(strLocation + "/" + strFileName , strLocation + "/" + strFileName2, fHexToBin(strFKey), fHexToBin(strFIV))) {
+                                                //need to declare fHexToBin and fBinToHex functions to convert hex strings to binary and vice versa
+                                                const unsigned char* strFKey2 = reinterpret_cast<const unsigned char*>(strFKey.c_str());
+                                                const unsigned char* strFIV2 = reinterpret_cast<const unsigned char*>(strFIV.c_str());
+                                                if(decryptFile(strLocation + "/" + strFileName , strLocation + "/" + strFileName2, strFKey2, strFIV2)) {
                                                     strLogMessage = strPUID + " SEND  File decrypted successfully.";
                                                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                                 } else {
@@ -1538,6 +1588,7 @@ void fSend() {
                                 strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
                                 strStatus = exec(strCMD.c_str());
                                 //Remove all decrypted files if there are any .bin files.
+                                /*
                                 for (const auto& entry : fs::directory_iterator(strLocation)) {
                                     if (entry.is_regular_file()) {
                                         std::string currentFile = entry.path().filename().string();
@@ -1553,6 +1604,7 @@ void fSend() {
                                         }
                                     }
                                 }
+                                */
                             } else if (strSendType == "2") {
                                 //SCP type
                                 strLogMessage = strPUID + " SEND  Not implemented yet.";
@@ -1565,11 +1617,26 @@ void fSend() {
                                 //Archive type
                                 strLogMessage = strPUID + " SEND  Sending " + strAccn + " to archive and encrypting at " + strSendHIP + " " + strSendPort + ".";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                //archive type really only makes sense if storing locally.
-                                if(strSendEncrypt == "1") {
-                                    //Encrypt files before moving to the archive directory.
-                                    if(strSendHIP == "localhost" || strSendHIP == "127.0.0.1") {
-                                        //This allows the host to be addressed by name or IP and files not be encrypted.
+                                //Encrypt files before moving to the archive directory.
+                                if(strSendHIP == "localhost" || strSendHIP == "127.0.0.1") {
+                                    //This allows the host to be addressed by name or IP and files not be encrypted.
+                                    //First let's check if the archive directory exists.  If not, create it.
+                                    if (!fs::exists(strSendArcDir)) {
+                                        if (fs::create_directories(strSendArcDir)) {
+                                            strLogMessage = strPUID + " SEND  Created archive directory " + strSendArcDir + ".";
+                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        } else {
+                                            strLogMessage = strPUID + " SEND  Failed to create archive directory " + strSendArcDir + ".";
+                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        }
+                                    }
+                                    //Move the study to the archive directory and encrypt the files.  This will be done in place.
+                                    fs::path archivePath = fs::path(strSendArcDir) / fs::path(strLocation).filename();
+                                    fs::create_directories(archivePath);
+                                    fs::rename(strLocation, archivePath);
+                                    strLocation = archivePath.string();
+                                    //archive type really only makes sense if storing locally.
+                                    if(strSendEncrypt == "1") {
                                         for (const auto& entry : fs::directory_iterator(strLocation)) {
                                             if (entry.is_regular_file()) {
                                                 RAND_bytes(key, sizeof(key));
@@ -1593,12 +1660,12 @@ void fSend() {
                                             }
                                         }
                                     } else {
-                                        strLogMessage = strPUID + " SEND  Remote encryption not available.  Sending unencrypted.";
-                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                         strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
                                         strStatus = exec(strCMD.c_str());
                                     }
                                 } else {
+                                    strLogMessage = strPUID + " SEND  Sending to archive server.";
+                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                     strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
                                     strStatus = exec(strCMD.c_str());
                                 }
