@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 3.31.16
-# Build 5
-# 2021-07-20
+# Version 4.00.00
+# Build 1
+# 2026-07-28
 # License GPLv3
 
 source /root/.bashrc
@@ -19,6 +19,8 @@ then
 	echo "Usage: $0 {start|stop|restart} {recever number or ALL}"
 	exit 1
 fi
+
+USEDB=`echo "SELECT conf_value FROM config WHERE conf_name=\"use_db\";"|mysql -N -u root primal
 
 SCPFOUND=0
 if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ]
@@ -223,21 +225,34 @@ then
 		exit 1
 	fi
 
-	for i in $RECEIVERS
-	do
-		set -- $i
-		source /home/dicom/bin/readconf.bash
-		if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ] || [ "$STARTVAR" == "$i" ]
-		then
-			logger -t primal "`date` Starting PRIMAL $i receiver..."
-			/usr/bin/screen -aA -h 20000 -d -m -S "PRIMAL SCP receiver $i" /home/dicom/scp.bash $i
-		fi
-	done
-	LIST="prim_receive_server prim_process_server prim_send_server prim_qr_server"
-	for i in $LIST
-	do
-		systemctl start $i.service >> /home/dicom/logs/primal.log 2>&1 &
-	done
+	if [ "$USEDB" == "1" ]
+	then
+		RECS=`echo "SELECT conf_rec_id FROM conf_rec WHERE conf_name != \"!Global!\";"|mysql -N -u root primal`
+		for i in $RECS
+		do
+			if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ] || [ "$STARTVAR" == "$i" ]
+			then
+				logger -t primal "`date` Starting PRIMAL $i receiver..."
+				/usr/bin/screen -aA -h 20000 -d -m -S "PRIMAL SCP receiver $i" /home/dicom/scp2.bash $i
+			fi
+		done
+	else
+		for i in $RECEIVERS
+		do
+			set -- $i
+			source /home/dicom/bin/readconf.bash
+			if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ] || [ "$STARTVAR" == "$i" ]
+			then
+				logger -t primal "`date` Starting PRIMAL $i receiver..."
+				/usr/bin/screen -aA -h 20000 -d -m -S "PRIMAL SCP receiver $i" /home/dicom/scp.bash $i
+			fi
+		done
+		LIST="prim_receive_server prim_process_server prim_send_server prim_qr_server"
+		for i in $LIST
+		do
+			systemctl start $i.service >> /home/dicom/logs/primal.log 2>&1 &
+		done
+	fi
 
 	logger -t primal "`date` Finished PRIMAL startup..."
 	echo "`date` Finished PRIMAL startup..."
