@@ -1,6 +1,6 @@
 #!/bin/bash
-#Version 17
-#2025-07-29
+#Version 18
+#2026-07-28
 # Author:  Will Yonker
 # License GPLv3
 
@@ -59,6 +59,12 @@ then
 	echo "RHEL 9 found."
 	OSVER=9
 fi
+TEMPOSVER=`grep -c "Red Hat Enterprise Linux release 10" /etc/redhat-release`
+if [ $TEMPOSVER -gt 0 ]
+then
+	echo "RHEL 10 found."
+	OSVER=10
+fi
 TEMPOSVER=`grep -c "AlmaLinux release 9" /etc/redhat-release`
 if [ $TEMPOSVER -gt 0 ]
 then
@@ -68,7 +74,7 @@ fi
 sleep 3
 if [ $OSVER -lt 1 ]
 then
-	echo "This script is for CentOS 7, RHEL 7, RHEL 8, , RHEL 9 or AlmaLinux 9.  Exiting..."
+	echo "This script is for CentOS 7, RHEL 7, RHEL 8, RHEL 9, RHEL 10 or AlmaLinux 9.  Exiting..."
 	exit 1
 fi
 
