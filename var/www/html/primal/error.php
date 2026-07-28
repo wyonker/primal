@@ -154,8 +154,9 @@ if(isset ($_GET['a'])) {
         echo 'Or update the database values from the command line and try again <a href="index.php">here</a>.</h2>';
         echo '</BODY>';
         echo '</HTML>';
+        exit();
     } elseif($interror == 2) {
-        //DB exists but is the wrong version
+        //DB version exists but is not the same as the config.php version
         echo '<BODY>';
         echo '<H1>PRIMAL Web Interface</H1>';
         echo '<BR>';
@@ -164,6 +165,25 @@ if(isset ($_GET['a'])) {
         echo '<h3><a href="error.php?a=2">Recreate Database</a></h3>';
         echo '</BODY>';
         echo '</HTML>';
+        exit();
+    } elseif($interror == 3) {
+        //DB version is set but the config.php file does not have a version set
+        echo '<BODY>';
+        echo '<H1>PRIMAL Web Interface</H1>';
+        echo '<BR>';
+        echo '<h2>The database version is set but the config.php file does not have a version set.  Please update the config.php file with the correct version number.</h2>';
+        echo '</BODY>';
+        echo '</HTML>';
+        exit();
+    } elseif($interror == 4) {
+        //DB version is not set.  
+        echo '<BODY>';
+        echo '<H1>PRIMAL Web Interface</H1>';
+        echo '<BR>';
+        echo '<h2>The database version is not set.  Please update the DB and make sure the version is the same as the config file.</h2>';
+        echo '</BODY>';
+        echo '</HTML>';
+        exit();
     }
 }
 
