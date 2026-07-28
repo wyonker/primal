@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-	//Version 1.00.07
-	//2026-06-23
+	//Version 1.00.08
+	//2026-07-28
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -117,7 +117,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$strQuery .= "rec_comp_level = '" . $_POST['rec_comp_level'] . "', ";
 		$strQuery .= "pass_through = '" . $_POST['pass_through'] . "', ";
 		$strQuery .= "ret_period = '" . $_POST['ret_period'] . "', ";
-		$strQuery .= "encrypt = '" . $_POST['encrypt'] . "', ";
 		$strQuery .= "active = '" . $_POST['active'] . "';";
 
 		$result = mysqli_query($conn, $strQuery);
