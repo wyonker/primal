@@ -365,11 +365,11 @@ function Check_DB_Version() {
 				exit;
 			}
 		} else {
-			header('Location: error.php?e=2');
+			header('Location: error.php?e=3');
 			exit;
 		}
 	} else {
-		header('Location: error.php?e=2');
+		header('Location: error.php?e=4');
 		exit;
 	}
 }
