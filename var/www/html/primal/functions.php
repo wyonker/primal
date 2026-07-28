@@ -1,7 +1,7 @@
 <?php
 	// License GPLv3
-	//Version 1.00.10
-	//2022-07-13
+	//Version 1.00.11
+	//2026-07-28
 
 function Display_Header() {
 	header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
@@ -361,7 +361,7 @@ function Check_DB_Version() {
 			$strFileDBVer = substr($strConfigFile, $intPos + 5, $intEndPos - ($intPos + 5));
 			$strFileDBVer = trim($strFileDBVer);
 			if($strDBVer != $strFileDBVer) {
-				header('Location: error.php?e=2');
+				header('Location: error.php?e=2&d=' . $strDBVer . '&c=' . $strFileDBVer);
 				exit;
 			}
 		} else {
