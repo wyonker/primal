@@ -358,7 +358,7 @@ function Check_DB_Version() {
 			if($intEndPos === false) {
 				$intEndPos = strlen($strConfigFile);
 			}
-			$strFileDBVer = substr($strConfigFile, $intPos + 5, $intEndPos - ($intPos + 5));
+			$strFileDBVer = substr($strConfigFile, $intPos + 6, $intEndPos - ($intPos + 6));
 			$strFileDBVer = trim($strFileDBVer);
 			if($strDBVer != $strFileDBVer) {
 				header('Location: error.php?e=2&d=' . $strDBVer . '&c=' . $strFileDBVer);
