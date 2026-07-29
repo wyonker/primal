@@ -57,11 +57,11 @@ then
 	echo "`date` Stopping PRIMAL receivers..."
 	if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ]
 	then
-		ISRUNNING1=`ps -ef|grep "scp.bash"|grep -v grep|wc -l`
+		ISRUNNING1=`ps -ef|grep -v grep|egrep -E "scp[2]?\.bash"|wc -l`
 		ISRUNNING2=`ps -ef|grep "storescp --fork"|grep -v grep|wc -l`
 		ISRUNNING3=`ps -ef|grep "prim_store_sever"|grep -v grep|wc -l`
 	else
-		ISRUNNING1=`ps -ef|grep "scp.bash $STARTVAR"|grep -v grep|wc -l`
+		ISRUNNING1=`ps -ef|grep -v grep|egrep -E "scp[2]?\.bash $STARTVAR"|wc -l`
 		ISRUNNING2=`ps -ef|grep "storescp --fork"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
 		ISRUNNING3=`ps -ef|grep "prim_store_server"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
 	fi
@@ -73,15 +73,15 @@ then
 		then
 			if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ]
 			then
-				SSSTRING="scp.bash"
+				SSSTRING="scp[2]?\.bash"
 			else
-				SSSTRING="scp.bash $STARTVAR"
+				SSSTRING="scp[2]?\.bash $STARTVAR"
 			fi
 			ISDONE=0
 			LC1=0
 			while [ $ISDONE -ne 1 ]
 			do
-				KILLLIST=`ps -ef|grep -e "$SSSTRING"|grep -v grep|tr -s " "|cut -d " " -f2|tr "\n" " "|sed 's/ $/\n/g'`
+				KILLLIST=`ps -ef|grep -v grep|egrep -E "$SSSTRING"|tr -s " "|cut -d " " -f2|tr "\n" " "|sed 's/ $/\n/g'`
 				if [ $LC1 -eq 0 ]
 				then
 					kill $KILLLIST
