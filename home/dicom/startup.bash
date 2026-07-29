@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 4.00.00
+# Version 4.00.01
 # Build 1
-# 2026-07-28
+# 2026-07-29
 # License GPLv3
 
 source /root/.bashrc
@@ -20,7 +20,7 @@ then
 	exit 1
 fi
 
-USEDB=`echo "SELECT conf_value FROM config WHERE conf_name=\"use_db\";"|mysql -N -u root primal
+USEDB=`echo "SELECT conf_value FROM config WHERE conf_name=\"use_db\";"|mysql -N -u root primal`
 
 SCPFOUND=0
 if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ]
