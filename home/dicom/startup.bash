@@ -57,11 +57,11 @@ then
 	echo "`date` Stopping PRIMAL receivers..."
 	if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ]
 	then
-		ISRUNNING1=`ps -ef|grep -v grep|egrep -E "scp[2]?\.bash"|wc -l`
+		ISRUNNING1=`ps -ef|grep -v grep|grep -E "scp[2]?\.bash"|wc -l`
 		ISRUNNING2=`ps -ef|grep "storescp --fork"|grep -v grep|wc -l`
 		ISRUNNING3=`ps -ef|grep "prim_store_sever"|grep -v grep|wc -l`
 	else
-		ISRUNNING1=`ps -ef|grep -v grep|egrep -E "scp[2]?\.bash $STARTVAR"|wc -l`
+		ISRUNNING1=`ps -ef|grep -v grep|grep -E "scp[2]?\.bash $STARTVAR"|wc -l`
 		ISRUNNING2=`ps -ef|grep "storescp --fork"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
 		ISRUNNING3=`ps -ef|grep "prim_store_server"|grep "--ss $STARTVAR"|grep -v grep|wc -l`
 	fi
@@ -81,7 +81,7 @@ then
 			LC1=0
 			while [ $ISDONE -ne 1 ]
 			do
-				KILLLIST=`ps -ef|grep -v grep|egrep -E "$SSSTRING"|tr -s " "|cut -d " " -f2|tr "\n" " "|sed 's/ $/\n/g'`
+				KILLLIST=`ps -ef|grep -v grep|grep -E "$SSSTRING"|tr -s " "|cut -d " " -f2|tr "\n" " "|sed 's/ $/\n/g'`
 				if [ $LC1 -eq 0 ]
 				then
 					kill $KILLLIST
@@ -214,9 +214,9 @@ then
 	echo "`date` Starting up PRIMAL receivers..."
 	if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ]
     then
-		RUNNING=`ps -ef|grep -v grep|egrep -E "scp[2]?\.bash" |wc -l`
+		RUNNING=`ps -ef|grep -v grep|grep -E "scp[2]?\.bash" |wc -l`
 	else
-		RUNNING=`ps -ef|grep -v grep|egrep -E "scp[2]?\.bash $STARTVAR"|wc -l`
+		RUNNING=`ps -ef|grep -v grep|grep -E "scp[2]?\.bash $STARTVAR"|wc -l`
 	fi
 	if [ $RUNNING -gt 0 ]
 	then
