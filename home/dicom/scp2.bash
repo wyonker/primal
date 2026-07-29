@@ -1,17 +1,17 @@
 #!/bin/bash
-# Version 1.00.00
+# Version 1.00.01
 # Build 1
-# 2026-07-28
+# 2026-07-29
 # License GPLv3
 
-PRIRECTYPE=`echo "SELECT rec_type FROM conf_rec WHERE rec_num=$1;"|mysql -N -u root primal`
-PRICL=`echo "SELECT rec_comp_level FROM conf_rec WHERE rec_num=$1;"|mysql -N -u root primal`
-PRIAET=`echo "SELECT rec_aet FROM conf_rec WHERE rec_num=$1;"|mysql -N -u root primal`
-PRIRECTO=`echo "SELECT rec_time_out FROM conf_rec WHERE rec_num=$1;"|mysql -N -u root primal`
-PRILL=`echo "SELECT rec_log_level FROM conf_rec WHERE rec_num=$1;"|mysql -N -u root primal`
-PRIPORT=`echo "SELECT rec_port FROM conf_rec WHERE rec_num=$1;"|mysql -N -u root primal`
-PRIIF=`echo "SELECT rec_dir FROM conf_rec WHERE rec_num=$1;"|mysql -N -u root primal`
-PRILFIN=`echo "SELECT rec_log_full_path FROM conf_rec WHERE rec_num=$1;"|mysql -N -u root primal`
+PRIRECTYPE=`echo "SELECT rec_type FROM conf_rec WHERE conf_rec_id=$1;"|mysql -N -u root primal`
+PRICL=`echo "SELECT rec_comp_level FROM conf_rec WHERE conf_rec_id=$1;"|mysql -N -u root primal`
+PRIAET=`echo "SELECT rec_aet FROM conf_rec WHERE conf_rec_id=$1;"|mysql -N -u root primal`
+PRIRECTO=`echo "SELECT rec_time_out FROM conf_rec WHERE conf_rec_id=$1;"|mysql -N -u root primal`
+PRILL=`echo "SELECT rec_log_level FROM conf_rec WHERE conf_rec_id=$1;"|mysql -N -u root primal`
+PRIPORT=`echo "SELECT rec_port FROM conf_rec WHERE conf_rec_id=$1;"|mysql -N -u root primal`
+PRIIF=`echo "SELECT rec_dir FROM conf_rec WHERE conf_rec_id=$1;"|mysql -N -u root primal`
+PRILFIN=`echo "SELECT rec_log_full_path FROM conf_rec WHERE conf_rec_id=$1;"|mysql -N -u root primal`
 
 if [ "$PRIRECTYPE" != "1" ]
 then
