@@ -214,9 +214,9 @@ then
 	echo "`date` Starting up PRIMAL receivers..."
 	if [ "$STARTVAR" == "all" ] || [ "$STARTVAR" == "ALL" ]
     then
-		RUNNING=`ps -ef|grep scp.bash|grep -v grep|wc -l`
+		RUNNING=`ps -ef|grep -v grep|grep -e "scp.bash" -e "scp2.bash"|wc -l`
 	else
-		RUNNING=`ps -ef|grep "scp.bash $STARTVAR"|grep -v grep|wc -l`
+		RUNNING=`ps -ef|grep -v grep|grep -e "scp.bash $STARTVAR" -e "scp2.bash $STARTVAR"|wc -l`
 	fi
 	if [ $RUNNING -gt 0 ]
 	then
