@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-	//Version 1.00.08
-	//2026-07-28
+	//Version 1.00.09
+	//2026-07-30
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -517,12 +517,12 @@ if($_GET['action'] == 'Rec') {
 		echo '<td><input type="text" name="rec_log_full_path" value ="' . $row["rec_log_full_path"] . '" /></td></tr>';
 		echo '<tr><td>' . '<label for="rec_log_level">Log Level:</label></td><td>';
 		echo '<select name="rec_log_level" id="rec_log_level">';
-		echo '<option value="1">fatal</option>';
-		echo '<option value="2">error</option>';
-		echo '<option value="3">warn</option>';
-		echo '<option value="4">info</option>';
-		echo '<option value="5" selected><b>debug</b></option>';
-		echo '<option value="6">trace</option>';
+		echo '<option value="fatal">fatal</option>';
+		echo '<option value="error">error</option>';
+		echo '<option value="warn">warn</option>';
+		echo '<option value="info">info</option>';
+		echo '<option value="debug" selected><b>debug</b></option>';
+		echo '<option value="trace">trace</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'AET' . '</td>';
 		echo '<td><input type="text" name="rec_aet" value ="' . $row["rec_aet"] . '" /></td></tr>';
@@ -612,12 +612,12 @@ if($_GET['action'] == 'Rec') {
 		echo '<td><input type="text" name="rec_log_full_path" value="/var/log/primal/in.log"></td></tr>';
 		echo '<tr><td>' . '<label for="rec_log_level">Log Level:</label></td><td>';
 		echo '<select name="rec_log_level" id="rec_log_level">';
-		echo '<option value="1">fatal</option>';
-		echo '<option value="2">error</option>';
-		echo '<option value="3">warn</option>';
-		echo '<option value="4">info</option>';
-		echo '<option value="5" selected><b>debug</b></option>';
-		echo '<option value="6">trace</option>';
+		echo '<option value="fatal">fatal</option>';
+		echo '<option value="error">error</option>';
+		echo '<option value="warn">warn</option>';
+		echo '<option value="info">info</option>';
+		echo '<option value="debug" selected><b>debug</b></option>';
+		echo '<option value="trace">trace</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'AET' . '</td>';
 		echo '<td><input type="text" name="rec_aet" value="PRIMAL" /></td></tr>';
@@ -1160,12 +1160,12 @@ if($_GET['action'] == 'Rec') {
 		echo '<td><input type="text" name="rec_log_full_path" value ="' . $row["rec_log_full_path"] . '" /></td></tr>';
 		echo '<tr><td>' . '<label for="rec_log_level">Log Level:</label></td><td>';
 		echo '<select name="rec_log_level" id="rec_log_level">';
-		echo '<option value="1">fatal</option>';
-		echo '<option value="2">error</option>';
-		echo '<option value="3">warn</option>';
-		echo '<option value="4">info</option>';
-		echo '<option value="5" selected><b>debug</b></option>';
-		echo '<option value="6">trace</option>';
+		echo '<option value="fatal">fatal</option>';
+		echo '<option value="error">error</option>';
+		echo '<option value="warn">warn</option>';
+		echo '<option value="info">info</option>';
+		echo '<option value="debug" selected><b>debug</b></option>';
+		echo '<option value="trace">trace</option>';
 		echo '</select></td></tr>';
 		echo '<tr><td>' . 'AET' . '</td>';
 		echo '<td><input type="text" name="rec_aet" value ="' . $row["rec_aet"] . '" /></td></tr>';
