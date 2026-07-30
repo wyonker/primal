@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 1.00.01
+# Version 1.00.02
 # Build 1
-# 2026-07-29
+# 2026-07-30
 # License GPLv3
 
 PRIRECTYPE=`echo "SELECT rec_type FROM conf_rec WHERE conf_rec_id=$1;"|mysql -N -u root primal`
@@ -29,6 +29,8 @@ do
 	if [ $ISSCPRUNNING -lt 1 ]
 	then
        	/home/dicom/bin/storescp --fork +cl $PRICL -aet $PRIAET -tos $PRIRECTO -ll $PRILL -od $PRIIF -ss $1 -xf /home/dicom/bin/storescp.cfg Default -fe ".dcm" -xcr "/usr/local/bin/mq -n send /prim_receive \"#p 1 #a #c\"" $PRIPORT >> $PRILFIN 2>&1 &
+	else
+		DONE=1
 	fi
 	sleep 3
 done
