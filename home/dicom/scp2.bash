@@ -29,8 +29,6 @@ do
 	if [ $ISSCPRUNNING -lt 1 ]
 	then
        	/home/dicom/bin/storescp --fork +cl $PRICL -aet $PRIAET -tos $PRIRECTO -ll $PRILL -od $PRIIF -ss $1 -xf /home/dicom/bin/storescp.cfg Default -fe ".dcm" -xcr "/usr/local/bin/mq -n send /prim_receive \"#p 1 #a #c\"" $PRIPORT >> $PRILFIN 2>&1 &
-	else
-		DONE=1
 	fi
 	sleep 3
 done
