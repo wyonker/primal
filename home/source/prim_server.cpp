@@ -56,6 +56,7 @@ With a large chunck of stuff now being in the DB, let work needs to be done here
 #include <unistd.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include <regex>
 
 namespace {
     volatile sig_atomic_t do_shutdown = 0;
@@ -72,8 +73,8 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
-const std::string strVersionNum = "4.02.08";
-const std::string strVersionDate = "2026-06-22";
+const std::string strVersionNum = "4.03.00";
+const std::string strVersionDate = "2026-08-03";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -630,7 +631,7 @@ int fRecShutdown() {
 
 void fEndReceive() {
     std::string strLogMessage, strQuery, strID, strPUID, strFullPath, strServerName, strRecID, strDateTime, strThisFilename, strTemp3, strRawDCMdump, strSerIUID, strSerDesc, strModality, strSopIUID, strStudyDateTime;
-    std::string strQuery2, strRecTimeout, strQuery3, strQuery4, strThisServerName;
+    std::string strQuery2, strRecTimeout, strQuery3, strQuery4, strThisServerName, strProcDir;
     int intNumRows, intRecTimeout;
     std::vector<std::string> filenames;
     struct PatientData pData2;
@@ -696,7 +697,7 @@ void fEndReceive() {
                     strRecID = row[4];
                     strDateTime = row[5];
                     //Get the timeout
-                    strQuery2="SELECT rec_time_out FROM conf_rec WHERE conf_rec_id = \"" + strRecID + "\" limit 1;";
+                    strQuery2="SELECT rec_time_out, proc_dir FROM conf_rec WHERE conf_rec_id = \"" + strRecID + "\" limit 1;";
                     mysql_query(mconnect, strQuery2.c_str());
                     if(*mysql_error(mconnect)) {
                         strLogMessage="RECV  SQL Error: ";
@@ -708,6 +709,7 @@ void fEndReceive() {
                     if(result2) {
                         while((row2 = mysql_fetch_row(result2))) {
                             strRecTimeout = row2[0];
+                            strProcDir = row2[1];
                         }
                     }
                     try {
@@ -752,6 +754,14 @@ void fEndReceive() {
                             strLogMessage+="\nQuery: " + strQuery4 + "\n";
                             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         }
+                        fs::path fsRecPath(strFullPath);
+                        fs::path fsProcPath(strProcDir);
+                        try {
+                            fs::rename(fsRecPath, fsProcPath);
+                        } catch (const std::exception& e) {
+                            strLogMessage = strPUID + " RECV  Error moving directory: " + e.what();
+                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        }
                     } else {
                         strLogMessage = strPUID + " RECV  Not yet time to end receive.";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -773,7 +783,9 @@ void fEndReceive() {
 
 int fRuleTag(std::string strPUID, int intConf_proc_id) {
     std::string strLogMessage, strQuery, strProc_name, strProc_type, strProc_tag, strProc_operator, strProc_cond, strProc_action, strProc_Action_value, strCMD; 
-    int intNumRows, intConf_rec_id, intProc_order, intProc_dest, intProc_active;
+    std::string strConf_name, strConf_server, strRec_dir, strRec_log_full_path, strRec_log_level, strRec_aet, strProc_dir, strProc_log_full_path, strOut_dir;
+    std::string strOut_log_full_path, strSent_dir, strHold_dir, strError_dir, strDcmdumpOutput, strFilename, strTagLine;
+    int intNumRows, intConf_rec_id, intProc_order, intProc_dest, intProc_active, intRec_type, intRec_port, intRec_time_out, intRec_comp_level, intDupe, intPass_through, intRet_period, intActive;
 
     MYSQL *mconnect;
     ReadDBConfFile();
@@ -822,13 +834,56 @@ int fRuleTag(std::string strPUID, int intConf_proc_id) {
             }
         }
     }
+    //Let's get conf_rec info
+    strQuery = "SELECT * FROM conf_rec WHERE conf_rec_id = " + std::to_string(intConf_rec_id) + " limit 1;";
+    mysql_query(mconnect, strQuery.c_str());
+    if(*mysql_error(mconnect)) {
+        strLogMessage="RECV  SQL Error: ";
+        strLogMessage+=mysql_error(mconnect);
+        strLogMessage+="\nQuery: " + strQuery + "\n";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    }
+    result = mysql_store_result(mconnect);
+    if(result) {
+        intNumRows=mysql_num_rows(result);
+        if(intNumRows > 0) {
+            while((row = mysql_fetch_row(result))) {
+                strConf_name = row[1];
+                strConf_server = row[2];
+                intRec_type = stoi(row[3]);
+                intRec_port = stoi(row[4]);
+                strRec_dir = row[5];
+                strRec_log_full_path = row[6];
+                strRec_log_level = row[7];
+                strRec_aet = row[8];
+                intRec_time_out = stoi(row[9]);
+                strProc_dir = row[10];
+                strProc_log_full_path = row[11];
+                strOut_dir = row[12];
+                intRec_comp_level = stoi(row[13]);
+                strOut_log_full_path = row[14];
+                strSent_dir = row[15];
+	            strHold_dir = row[16];
+	            strError_dir = row[17];
+                intDupe = stoi(row[18]);
+                intPass_through = stoi(row[19]);
+                intRet_period = stoi(row[20]);
+                intActive = stoi(row[21]);
+            }
+        }
+    }
     if(intProc_active != 1) {
         strLogMessage = strPUID + " PROC " + strProc_name + " is not active.  Skipping.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         mysql_thread_end();
         return 1;
     }
-
+    if(intActive != 1) {
+        strLogMessage = strPUID + " PROC " + strConf_name + " is not active.  Skipping.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        mysql_thread_end();
+        return 1;
+    }
     trim(strProc_tag);
     if(strProc_tag.empty() || strProc_tag.empty() || strProc_tag == " "|| strProc_tag == "null") {
         strLogMessage = strPUID + " PROC " + strProc_name + " does not have a tag specified.  Skipping.";
@@ -836,13 +891,60 @@ int fRuleTag(std::string strPUID, int intConf_proc_id) {
         mysql_thread_end();
         return 1;
     }
+    //Now let's find the files
+    fs::path procPath(strProc_dir);
+    if(!fs::exists(procPath)) {
+        strLogMessage = strPUID + " PROC " + strProc_name + " processing directory does not exist.  Skipping.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        mysql_thread_end();
+        return 1;
+    }
+    if(!fs::is_directory(procPath)) {
+        strLogMessage = strPUID + " PROC " + strProc_name + " processing directory is not a directory.  Skipping.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        mysql_thread_end();
+        return 1;
+    }
+
+    //Need to test the condition first
+    std::regex regexCond(strProc_cond);
+
     if(strProc_action == "7") {
         //We are only working with modifications for now
         strLogMessage = strPUID + " PROC " + strProc_name + " has an action of " + strProc_action + " which is modify.  Processing.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         //Let's build the command to modify the tag
-        strCMD = "/home/dicom/bin/dcmodify -m \"" + strProc_tag + "=" + strProc_Action_value + "\" /home/dicom/incomming/" + strPUID + "/*.dcm >> /var/log/primal/dcmodify.log 2>&1";
-        exec(strCMD.c_str());
+        for(const auto& entry : fs::directory_iterator(procPath)) {
+            if(entry.is_regular_file()) {
+                strFilename = entry.path().filename().string();
+                if(strFilename.find(".dcm") != std::string::npos) {
+                    std::regex regexCond(strProc_cond);
+                    std::string strDcmdumpOutput = exec(("/home/dicom/bin/dcmdump " + entry.path().string()).c_str());
+                    strProc_tag = "(" + strProc_tag + ")";
+                    std::regex pattern("^" + strProc_tag + ".*$");
+                    std::smatch match;
+                    if(std::regex_search(strDcmdumpOutput, match, pattern)) {
+                        strTagLine = match.str(0);
+                        if(std::regex_search(strTagLine, match, regexCond)) {
+                            strLogMessage = strPUID + " PROC " + strProc_name + " file " + strFilename + " matches condition.  Processing.";
+                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        } else {
+                            strLogMessage = strPUID + " PROC " + strProc_name + " file " + strFilename + " does not match condition.  Skipping.";
+                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                            continue;
+                        }
+                    } else {
+                        strLogMessage = strPUID + " PROC " + strProc_name + " file " + strFilename + " does not contain the specified tag.  Skipping.";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                        continue;
+                    }
+                    //The real work starts here.  Let's modify the tag.
+                    strCMD = "/home/dicom/bin/dcmodify -nb -m \"" + strProc_tag + "=" + strProc_Action_value + "\" " + entry.path().filename().string() + " >> /var/log/primal/dcmodify.log 2>&1";
+                    exec(strCMD.c_str());
+                }
+            }
+        }
+
     } else {
         strLogMessage = strPUID + " PROC " + strProc_name + " has an action of " + strProc_action + " which is not supported.  Skipping.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
