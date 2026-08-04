@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-	//Version 1.00.09
-	//2026-07-30
+	//Version 1.00.10
+	//2026-08-04
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -801,7 +801,7 @@ if($_GET['action'] == 'Rec') {
 		}
 		echo '>!Begins</option>';
 		echo '</select></td></tr>';
-		echo '<tr><td>' . 'Rule Condition:</td>';
+		echo '<tr><td>' . 'Rule Condition (<a href="setup_test.php?action=Rule&rec=' . $_GET['rule'] . '">test</a>):</td>';
 		echo '<td><input type="text" name="proc_cond" value ="' . $row["proc_cond"] . '" /></td></tr>';
 		echo '<tr><td>' . '<label for="proc_action">Action Type:</label></td><td>';
 		echo '<select name="proc_action" id="proc_action">';
