@@ -32,10 +32,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         $strTestConditionValue = $_POST['condition_value'];
         $strTestActionValue = $_POST['action_value'];
         if($strTestConditionValue != "" && $strTestConditionValue != " ") {
-            $strTestConditionResult = exec("prim_server -tc " . $strTestConditionValue, $outcome, $status);
+            exec("prim_server -tc " . $strTestConditionValue, $strTestConditionResult, $status);
         }
         if($strTestActionValue != "" && $strTestActionValue != " ") {
-            $strTestActionResult = exec("prim_server -ta " . $strTestActionValue, $outcome, $status);
+            exec("prim_server -ta " . $strTestActionValue, $strTestActionResult, $status);
         }
 
     }
