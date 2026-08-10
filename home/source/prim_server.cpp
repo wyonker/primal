@@ -859,7 +859,7 @@ int fRuleTag(int intConf_proc_id) {
     std::regex_search(strCondTestResults, matches, pattern);
 
     std::regex patternAction(strActionValue);
-    strActionTestResults = std::regex_replace(strActionTestValue, patternAction);
+    strActionTestResults = std::regex_replace(strActionTestValue, patternAction, "");
 
     strQuery = "INSERT INTO config SET conf_value = '" + strCondTestResults + "', conf_name = 'test_rule_condition_result' ON DUPLICATE KEY UPDATE conf_value = '" + strCondTestResults + "';";
     mysql_query(mconnect, strQuery.c_str());
@@ -1983,7 +1983,7 @@ int main(int argc, char* argv[]) {
         }
         strLogMessage = "Starting prim_server version " + strVersionNum + " in test condition mode.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        fRuleTag(intConf_proc_id));
+        fRuleTag(intConf_proc_id);
     } else if(argv[1] == "ta") {
         try {
             intConf_proc_id = std::stoi(argv[2]);
