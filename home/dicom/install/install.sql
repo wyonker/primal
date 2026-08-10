@@ -187,7 +187,7 @@ create table conf_send (conf_send_id int(10) UNSIGNED UNIQUE not null AUTO_INCRE
 	active int(1) not null default 1,
 	primary key (conf_send_id));
 create table config (id int UNSIGNED UNIQUE not null AUTO_INCREMENT,
-	conf_name varchar(64) not null default 'default',
+	conf_name varchar(64) UNIQUE not null,
 	conf_value varchar(64) not null default '0',
   	PRIMARY KEY (id));
 create table page_columns (id int(4) not null primary key,
