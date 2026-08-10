@@ -780,6 +780,106 @@ void fEndReceive() {
     return;
 }
 
+int fRuleTag(int intConf_proc_id) {
+    std::string strLogMessage, strQuery, strCondValue, strCondTestValue, strActionValue, strActionTestValue, strCondTestResults, strActionTestResults;
+    int intNumRows;
+
+    MYSQL *mconnect;
+    ReadDBConfFile();
+
+    MYSQL_ROW row;
+    MYSQL_RES *result;
+
+    mconnect=mysql_init(NULL);
+    mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
+    if (!mconnect) {
+        strLogMessage="RECV  MySQL Initilization failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return 1;
+    }
+    mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
+    if (!mconnect) {
+        strLogMessage="RECV  MySQL connection failed.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        return 1;
+    }
+
+    strQuery = "SELECT conf_value FROM config WHERE conf_name = 'test_rule_condition' limit 1;";
+    mysql_query(mconnect, strQuery.c_str());
+    if(*mysql_error(mconnect)) {
+        strLogMessage="RECV  SQL Error: ";
+        strLogMessage+=mysql_error(mconnect);
+        strLogMessage+="\nQuery: " + strQuery + "\n";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    }
+    result = mysql_store_result(mconnect);
+    if(result) {
+        intNumRows=mysql_num_rows(result);
+        if(intNumRows > 0) {
+            row = mysql_fetch_row(result);
+            strCondTestValue = row[0];
+        }
+    }
+    strQuery = "SELECT conf_value FROM config WHERE conf_name = 'test_rule_action' limit 1;";
+    mysql_query(mconnect, strQuery.c_str());
+    if(*mysql_error(mconnect)) {
+        strLogMessage="RECV  SQL Error: ";
+        strLogMessage+=mysql_error(mconnect);
+        strLogMessage+="\nQuery: " + strQuery + "\n";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    }
+    result = mysql_store_result(mconnect);
+    if(result) {
+        intNumRows=mysql_num_rows(result);
+        if(intNumRows > 0) {
+            row = mysql_fetch_row(result);
+            strActionTestValue = row[0];
+        }
+    }
+    strQuery = "SELECT proc_cond, proc_action_value FROM conf_proc WHERE conf_proc_id = " + std::to_string(intConf_proc_id) + " limit 1;";
+    mysql_query(mconnect, strQuery.c_str());
+    if(*mysql_error(mconnect)) {
+        strLogMessage="RECV  SQL Error: ";
+        strLogMessage+=mysql_error(mconnect);
+        strLogMessage+="\nQuery: " + strQuery + "\n";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    }
+    result = mysql_store_result(mconnect);
+    if(result) {
+        intNumRows=mysql_num_rows(result);
+        if(intNumRows > 0) {
+            row = mysql_fetch_row(result);
+            strCondValue = row[0];
+            strActionValue = row[1];
+        }
+    }
+
+    std::regex pattern("^" + strCondTestValue + ".*$");
+    std::smatch matches;
+    std::regex_search(strCondTestResults, matches, pattern);
+
+    std::regex patternAction(strActionValue);
+    strActionTestResults = std::regex_replace(strActionTestValue, patternAction);
+
+    strQuery = "INSERT INTO config SET conf_value = '" + strCondTestResults + "', conf_name = 'test_rule_condition_result' ON DUPLICATE KEY UPDATE conf_value = '" + strCondTestResults + "';";
+    mysql_query(mconnect, strQuery.c_str());
+    if(*mysql_error(mconnect)) {
+        strLogMessage="RECV  SQL Error: ";
+        strLogMessage+=mysql_error(mconnect);
+        strLogMessage+="\nQuery: " + strQuery + "\n";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    }
+    strQuery = "INSERT INTO config SET conf_value = '" + strActionTestResults + "', conf_name = 'test_rule_action_result' ON DUPLICATE KEY UPDATE conf_value = '" + strActionTestResults + "';";
+    mysql_query(mconnect, strQuery.c_str());
+    if(*mysql_error(mconnect)) {
+        strLogMessage="RECV  SQL Error: ";
+        strLogMessage+=mysql_error(mconnect);
+        strLogMessage+="\nQuery: " + strQuery + "\n";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    }
+
+    return 0;
+}
 
 int fRuleTag(std::string strPUID, int intConf_proc_id) {
     std::string strLogMessage, strQuery, strProc_name, strProc_type, strProc_tag, strProc_operator, strProc_cond, strProc_action, strProc_Action_value, strCMD; 
@@ -892,7 +992,7 @@ int fRuleTag(std::string strPUID, int intConf_proc_id) {
         return 1;
     }
     //Now let's find the files
-    fs::path procPath(strProc_dir);
+    fs::path procPath(strProc_dir + "/" + strPUID);
     if(!fs::exists(procPath)) {
         strLogMessage = strPUID + " PROC " + strProc_name + " processing directory does not exist.  Skipping.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -905,9 +1005,6 @@ int fRuleTag(std::string strPUID, int intConf_proc_id) {
         mysql_thread_end();
         return 1;
     }
-
-    //Need to test the condition first
-    std::regex regexCond(strProc_cond);
 
     if(strProc_action == "7") {
         //We are only working with modifications for now
@@ -1864,7 +1961,7 @@ void signal_handler2([[maybe_unused]] int signal) {
 
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     std::string strLogMessage;
 
     {
@@ -1875,8 +1972,18 @@ int main() {
         sigaction(SIGINT, &action, NULL);
     }
 
-    strLogMessage = "Starting prim_server version " + strVersionNum + ".";
-    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    if(argv[1] == "tc") {
+        strLogMessage = "Starting prim_server version " + strVersionNum + " in test condition mode.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        fRuleTag(argv[2]);
+    } else if(argv[1] == "ta") {
+        strLogMessage = "Starting prim_server version " + strVersionNum + " in test action mode.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        fRuleTag(argv[2]);
+    } else {
+        strLogMessage = "Starting prim_server version " + strVersionNum + ".";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+    }
 
     mysql_library_init(0, NULL, NULL);
     
@@ -1898,9 +2005,3 @@ int main() {
     mysql_library_end();
     return 0;
 }
-
-
-
-
-
-
