@@ -75,7 +75,7 @@ if($_GET['action'] == 'Rule') {
     echo '<tr><td>Result:</td>';
     echo '<td><input type="text" name="action_result" value ="' . $strTestActionResult . '" /></td></tr>';
     echo '<br>';
-    echo '<tr><td><input type="submit" name="btnTest" value="Test" /></td></tr>';
+    echo '<tr><td colspan="2"><input type="submit" name="btnTest" value="Test" /></td></tr>';
     echo '</table>';
     echo '</form>';
 }elseif($_GET['action'] == 'Rule2') {
@@ -111,7 +111,7 @@ if($_GET['action'] == 'Rule') {
     echo '<tr><td>Result:</td>';
     echo '<td><input type="text" name="action_result" value ="' . $strTestActionResult . '" /></td></tr>';
     echo '<br>';
-    echo '<tr><td><input type="submit" name="btnTest" value="Test" /></td></tr>';
+    echo '<tr><td colspan="2"><input type="submit" name="btnTest" value="Test" /></td></tr>';
     echo '</table>';
     echo '</form>';
 }
