@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-	//Version 1.00.01
-	//2026-08-10
+	//Version 1.00.02
+	//2026-08-11
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -31,13 +31,15 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if(isset($_POST['btnTest'])) {
         $strTestConditionValue = $_POST['condition_value'];
         $strTestActionValue = $_POST['action_value'];
-        if($strTestConditionValue != "" && $strTestConditionValue != " ") {
-            exec("prim_server -tc " . $strTestConditionValue, $strTestConditionResult, $status);
-        }
-        if($strTestActionValue != "" && $strTestActionValue != " ") {
-            exec("prim_server -ta " . $strTestActionValue, $strTestActionResult, $status);
-        }
 
+        $strQuery = "INSERT INTO config SET conf_value = '$strTestConditionValue', conf_name = 'test_rule_condition' ON DUPLICATE KEY UPDATE conf_value = '$strTestConditionValue';";
+        mysqli_query($conn, $strQuery);
+        $strQuery = "INSERT INTO config SET conf_value = '$strTestActionValue', conf_name = 'test_rule_action' ON DUPLICATE KEY UPDATE conf_value = '$strTestActionValue';";
+        mysqli_query($conn, $strQuery);
+
+        if($strTestConditionValue != "" && $strTestConditionValue != " ") {
+            exec("prim_server -tc " . $_GET['rec'], $strTestConditionResult, $status);
+        }
     }
 }
 
