@@ -73,8 +73,8 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
-const std::string strVersionNum = "4.03.01";
-const std::string strVersionDate = "2026-08-10";
+const std::string strVersionNum = "4.03.02";
+const std::string strVersionDate = "2026-08-11";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -1973,7 +1973,7 @@ int main(int argc, char* argv[]) {
         sigaction(SIGINT, &action, NULL);
     }
 
-    if(argv[1] == "tc") {
+    if(argc > 1 && std::string(argv[1]) == "tc") {
         try {
             intConf_proc_id = std::stoi(argv[2]);
         } catch(...) {
@@ -1984,17 +1984,21 @@ int main(int argc, char* argv[]) {
         strLogMessage = "Starting prim_server version " + strVersionNum + " in test condition mode.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         fRuleTag(intConf_proc_id);
-    } else if(argv[1] == "ta") {
+
+        return 0;
+    } else if(argc > 1 && std::string(argv[1]) == "ta") {
         try {
             intConf_proc_id = std::stoi(argv[2]);
         } catch(...) {
-            strLogMessage = "Invalid configuration process ID provided for test condition mode.";
+            strLogMessage = "Invalid configuration process ID provided for test action mode.";
             fWriteLog(strLogMessage, "/var/log/primal/primal.log");
             return 1;
         }
         strLogMessage = "Starting prim_server version " + strVersionNum + " in test action mode.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         fRuleTag(intConf_proc_id);
+
+        return 0;
     } else {
         strLogMessage = "Starting prim_server version " + strVersionNum + ".";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
