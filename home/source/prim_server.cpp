@@ -865,11 +865,11 @@ int fRuleTagTest(int intConf_proc_id) {
     strActionTestResults = std::regex_replace(strActionTestValue, patternAction, "");
 
     strLogMessage="RECV tag test results for conf_proc_id: " + std::to_string(intConf_proc_id) + "\n";
-    strLogMessage+=" condition value to be tested: " + strCondValue + "\n";
-    strLogMessage+=" condition rule value: " + strCondTestValue + "\n";
+    strLogMessage+=" condition value to be tested: " + strCondTestValue + "\n";
+    strLogMessage+=" condition rule value: " + strCondValue + "\n";
     strLogMessage+=" condition results: " + strCondTestResults + "\n";
-    strLogMessage+=" action value to be tested: " + strActionValue + "\n";
-    strLogMessage+=" action rule value: " + strActionTestValue + "\n";
+    strLogMessage+=" action value to be tested: " + strActionTestValue + "\n";
+    strLogMessage+=" action rule value: " + strActionValue + "\n";
     strLogMessage+=" action results: " + strActionTestResults + "\n";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
