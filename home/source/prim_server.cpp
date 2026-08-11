@@ -1973,7 +1973,7 @@ int main(int argc, char* argv[]) {
         sigaction(SIGINT, &action, NULL);
     }
 
-    if(argc > 1 && std::string(argv[1]) == "tc") {
+    if(argc > 1 && std::string(argv[1]) == "-tc") {
         try {
             intConf_proc_id = std::stoi(argv[2]);
         } catch(...) {
@@ -1984,9 +1984,11 @@ int main(int argc, char* argv[]) {
         strLogMessage = "Starting prim_server version " + strVersionNum + " in test condition mode.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         fRuleTag(intConf_proc_id);
+        strLogMessage = "Finished running prim_server version " + strVersionNum + " in test condition mode.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
         return 0;
-    } else if(argc > 1 && std::string(argv[1]) == "ta") {
+    } else if(argc > 1 && std::string(argv[1]) == "-ta") {
         try {
             intConf_proc_id = std::stoi(argv[2]);
         } catch(...) {
@@ -1997,7 +1999,9 @@ int main(int argc, char* argv[]) {
         strLogMessage = "Starting prim_server version " + strVersionNum + " in test action mode.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         fRuleTag(intConf_proc_id);
-
+        strLogMessage = "Finished running prim_server version " + strVersionNum + " in test action mode.";
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        
         return 0;
     } else {
         strLogMessage = "Starting prim_server version " + strVersionNum + ".";
