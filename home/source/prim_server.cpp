@@ -857,9 +857,9 @@ int fRuleTagTest(int intConf_proc_id) {
         }
     }
 
-    std::regex pattern("^" + strCondTestValue + ".*$");
+    std::regex pattern(strCondValue);
     std::smatch matches;
-    if(std::regex_search(strCondTestResults, matches, pattern)) {
+    if(std::regex_search(strCondTestValue, matches, pattern)) {
         strCondTestResults = matches[0].str() + " at: " + std::to_string(matches.position(0));
     } else {
         strCondTestResults = "No match found";
