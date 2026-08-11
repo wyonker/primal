@@ -780,7 +780,7 @@ void fEndReceive() {
     return;
 }
 
-int fRuleTag(int intConf_proc_id) {
+int fRuleTagTest(int intConf_proc_id) {
     std::string strLogMessage, strQuery, strCondValue, strCondTestValue, strActionValue, strActionTestValue, strCondTestResults, strActionTestResults;
     int intNumRows;
 
@@ -789,6 +789,9 @@ int fRuleTag(int intConf_proc_id) {
 
     MYSQL_ROW row;
     MYSQL_RES *result;
+
+    strLogMessage="RECV start rule tag test for conf_proc_id: " + std::to_string(intConf_proc_id);
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     mconnect=mysql_init(NULL);
     mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
@@ -861,6 +864,15 @@ int fRuleTag(int intConf_proc_id) {
     std::regex patternAction(strActionValue);
     strActionTestResults = std::regex_replace(strActionTestValue, patternAction, "");
 
+    strLogMessage="RECV tag test results for conf_proc_id: " + std::to_string(intConf_proc_id) + "\n";
+    strLogMessage+=" condition value to be tested: " + strCondValue + "\n";
+    strLogMessage+=" condition rule value: " + strCondTestValue + "\n";
+    strLogMessage+=" condition results: " + strCondTestResults + "\n";
+    strLogMessage+=" action value to be tested: " + strActionValue + "\n";
+    strLogMessage+=" action rule value: " + strActionTestValue + "\n";
+    strLogMessage+=" action results: " + strActionTestResults + "\n";
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+
     strQuery = "INSERT INTO config SET conf_value = '" + strCondTestResults + "', conf_name = 'test_rule_condition_result' ON DUPLICATE KEY UPDATE conf_value = '" + strCondTestResults + "';";
     mysql_query(mconnect, strQuery.c_str());
     if(*mysql_error(mconnect)) {
@@ -877,6 +889,9 @@ int fRuleTag(int intConf_proc_id) {
         strLogMessage+="\nQuery: " + strQuery + "\n";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
     }
+
+    strLogMessage="RECV finished rule tag test for conf_proc_id: " + std::to_string(intConf_proc_id);
+    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
     return 0;
 }
@@ -1983,7 +1998,7 @@ int main(int argc, char* argv[]) {
         }
         strLogMessage = "Starting prim_server version " + strVersionNum + " in test condition mode.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        fRuleTag(intConf_proc_id);
+        fRuleTagTest(intConf_proc_id);
         strLogMessage = "Finished running prim_server version " + strVersionNum + " in test condition mode.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
@@ -1998,10 +2013,10 @@ int main(int argc, char* argv[]) {
         }
         strLogMessage = "Starting prim_server version " + strVersionNum + " in test action mode.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        fRuleTag(intConf_proc_id);
+        fRuleTagTest(intConf_proc_id);
         strLogMessage = "Finished running prim_server version " + strVersionNum + " in test action mode.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        
+
         return 0;
     } else {
         strLogMessage = "Starting prim_server version " + strVersionNum + ".";
