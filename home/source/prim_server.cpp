@@ -73,7 +73,7 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
-const std::string strVersionNum = "4.03.02";
+const std::string strVersionNum = "4.03.03";
 const std::string strVersionDate = "2026-08-11";
 
 //const std::string strProcChainType = "PRIMRCSEND";
@@ -859,7 +859,11 @@ int fRuleTagTest(int intConf_proc_id) {
 
     std::regex pattern("^" + strCondTestValue + ".*$");
     std::smatch matches;
-    std::regex_search(strCondTestResults, matches, pattern);
+    if(std::regex_search(strCondTestResults, matches, pattern)) {
+        strCondTestResults = matches[0].str() + " at: " + std::to_string(matches.position(0));
+    } else {
+        strCondTestResults = "No match found";
+    }
 
     std::regex patternAction(strActionValue);
     strActionTestResults = std::regex_replace(strActionTestValue, patternAction, "");
