@@ -34,8 +34,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $strQuery = "INSERT INTO config SET conf_value = '$strTestConditionValue', conf_name = 'test_rule_condition' ON DUPLICATE KEY UPDATE conf_value = '$strTestConditionValue';";
         mysqli_query($conn, $strQuery);
-        $strQuery = "INSERT INTO config SET conf_value = '$strTestActionValue', conf_name = 'test_rule_action' ON DUPLICATE KEY UPDATE conf_value = '$strTestActionValue';";
-        mysqli_query($conn, $strQuery);
 
         if($strTestConditionValue != "" && $strTestConditionValue != " ") {
             exec("prim_server -tc " . $_GET['rec'], $strTestConditionResult, $status);
@@ -70,9 +68,7 @@ if($_GET['action'] == 'Rule') {
     echo '<tr><td>Result:</td>';
     echo '<td><input type="text" name="condition_result" value ="' . $strTestConditionResult . '" /></td></tr>';
     echo '<br>';
-    echo '<tr><td>Action Value to be tested:</td>';
-    echo '<td><input type="text" name="action_value" value ="' . $strTestActionValue . '" /></td></tr>';
-    echo '<tr><td>' . 'Rule Condition:</td>';
+    echo '<tr><td>' . 'Action Rule:</td>';
     echo '<td><input type="text" name="action_condition" value ="' . $strTestActionCondition . '" /></td></tr>';
     echo '<tr><td>Result:</td>';
     echo '<td><input type="text" name="action_result" value ="' . $strTestActionResult . '" /></td></tr>';
@@ -106,9 +102,7 @@ if($_GET['action'] == 'Rule') {
     echo '<tr><td>Result:</td>';
     echo '<td><input type="text" name="condition_result" value ="' . $strTestConditionResult . '" /></td></tr>';
     echo '<br>';
-    echo '<tr><td>Action Value to be tested:</td>';
-    echo '<td><input type="text" name="action_value" value ="' . $strTestActionValue . '" /></td></tr>';
-    echo '<tr><td>' . 'Rule Condition:</td>';
+    echo '<tr><td>' . 'Action Rule:</td>';
     echo '<td><input type="text" name="action_condition" value ="' . $strTestActionCondition . '" /></td></tr>';
     echo '<tr><td>Result:</td>';
     echo '<td><input type="text" name="action_result" value ="' . $strTestActionResult . '" /></td></tr>';

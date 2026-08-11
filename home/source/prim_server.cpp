@@ -823,22 +823,6 @@ int fRuleTagTest(int intConf_proc_id) {
             strCondTestValue = row[0];
         }
     }
-    strQuery = "SELECT conf_value FROM config WHERE conf_name = 'test_rule_action' limit 1;";
-    mysql_query(mconnect, strQuery.c_str());
-    if(*mysql_error(mconnect)) {
-        strLogMessage="RECV  SQL Error: ";
-        strLogMessage+=mysql_error(mconnect);
-        strLogMessage+="\nQuery: " + strQuery + "\n";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-    }
-    result = mysql_store_result(mconnect);
-    if(result) {
-        intNumRows=mysql_num_rows(result);
-        if(intNumRows > 0) {
-            row = mysql_fetch_row(result);
-            strActionTestValue = row[0];
-        }
-    }
     strQuery = "SELECT proc_cond, proc_action_value FROM conf_proc WHERE conf_proc_id = " + std::to_string(intConf_proc_id) + " limit 1;";
     mysql_query(mconnect, strQuery.c_str());
     if(*mysql_error(mconnect)) {
@@ -866,13 +850,12 @@ int fRuleTagTest(int intConf_proc_id) {
     }
 
     std::regex patternAction(strActionValue);
-    strActionTestResults = std::regex_replace(strActionTestValue, patternAction, "");
+    strActionTestResults = std::regex_replace(strCondTestValue, patternAction, "");
 
     strLogMessage="RECV tag test results for conf_proc_id: " + std::to_string(intConf_proc_id) + "\n";
     strLogMessage+=" condition value to be tested: " + strCondTestValue + "\n";
     strLogMessage+=" condition rule value: " + strCondValue + "\n";
     strLogMessage+=" condition results: " + strCondTestResults + "\n";
-    strLogMessage+=" action value to be tested: " + strActionTestValue + "\n";
     strLogMessage+=" action rule value: " + strActionValue + "\n";
     strLogMessage+=" action results: " + strActionTestResults + "\n";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
