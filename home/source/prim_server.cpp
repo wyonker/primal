@@ -73,8 +73,8 @@ std::vector<std::string > vecRCopt1;
 std::vector<std::string > vecRCcon2;
 std::vector<std::string > vecRCact1;
 
-const std::string strVersionNum = "4.03.03";
-const std::string strVersionDate = "2026-08-11";
+const std::string strVersionNum = "4.03.04";
+const std::string strVersionDate = "2026-08-17";
 
 //const std::string strProcChainType = "PRIMRCSEND";
 
@@ -850,7 +850,7 @@ int fRuleTagTest(int intConf_proc_id) {
     }
 
     std::regex patternAction(strActionValue);
-    strActionTestResults = std::regex_replace(strCondTestValue, patternAction, "");
+    strActionTestResults = std::regex_replace(strCondTestValue, pattern, patternAction);
 
     strLogMessage="RECV tag test results for conf_proc_id: " + std::to_string(intConf_proc_id) + "\n";
     strLogMessage+=" condition value to be tested: " + strCondTestValue + "\n";
