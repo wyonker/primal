@@ -61,14 +61,15 @@ foreach ($subdirectories as $subdirectory) {
     $subdirPath = $dir . '/' . $subdirectory;
     $dcmFiles = glob($subdirPath . '/*.dcm');
     if (!empty($dcmFiles)) {
-        $arrList['puid'] = $subdirectory;
+        $strPUID = $subdirectory;
+        //$arrList['puid'] = $subdirectory;
         $firstDcmFile = $dcmFiles[0];
         exec("dcmdump " . escapeshellarg($firstDcmFile), $output, $return_var);
         foreach ($output as $line) {
             if (strpos($line, '(0008,0050)') !== false) {
                 $strAccn = explode('[', $line)[1];
                 $strAccn = explode(']', $strAccn)[0];
-                $arrList['accn'] = $strAccn;
+                //$arrList['accn'] = $strAccn;
                 break;
             }
         }
@@ -76,7 +77,7 @@ foreach ($subdirectories as $subdirectory) {
             if (strpos($line, '(0010,0010)') !== false) {
                 $strPatientName = explode('[', $line)[1];
                 $strPatientName = explode(']', $strPatientName)[0];
-                $arrList['patient_name'] = $strPatientName;
+                //$arrList['patient_name'] = $strPatientName;
                 break;
             }
         }
@@ -84,7 +85,7 @@ foreach ($subdirectories as $subdirectory) {
             if (strpos($line, '(0008,0020)') !== false) {
                 $strStudyDate = explode('[', $line)[1];
                 $strStudyDate = explode(']', $strStudyDate)[0];
-                $arrList['study_date'] = $strStudyDate;
+                //$arrList['study_date'] = $strStudyDate;
                 break;
             }
         }
@@ -92,10 +93,17 @@ foreach ($subdirectories as $subdirectory) {
             if (strpos($line, '(0008,0030)') !== false) {
                 $strStudyTime = explode('[', $line)[1];
                 $strStudyTime = explode(']', $strStudyTime)[0];
-                $arrList['study_time'] = $strStudyTime;
+                //$arrList['study_time'] = $strStudyTime;
                 break;
             }
         }
+        $arrList[] = [
+            'puid' => $strPUID,
+            'accn' => $strAccn,
+            'patient_name' => $strPatientName,
+            'study_date' => $strStudyDate,
+            'study_time' => $strStudyTime
+        ];
     }
 }
 
@@ -117,7 +125,7 @@ if($_GET['action'] == 'Rule') {
     $strTestConditionRule = $row["proc_cond"];
     $strTestActionCondition = $row["proc_action_value"];
 
-    echo '<form method="post" action="setup_test.php?action=Rule2&rec=' . $intRule . '">';
+    echo '<form method="post" action="setup_test.php?action=Rule2&rec=' . $intRule . '&rule=' . $_GET['rule'] . '">';
     echo '<table>';
     echo '<tr><td>Condition Value to be tested:</td>';
     echo '<td><input type="text" name="condition_value" value ="' . $strTestConditionValue . '" /></td></tr>';
