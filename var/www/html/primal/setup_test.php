@@ -52,17 +52,19 @@ foreach (new FilesystemIterator($dir) as $fileInfo) {
     }
 }
 // loop through the subdirectories and do dcmdump on the first .dcm file in each subdirectory
-$strList = "";
+$arrList = [];
 foreach ($subdirectories as $subdirectory) {
     $subdirPath = $dir . '/' . $subdirectory;
     $dcmFiles = glob($subdirPath . '/*.dcm');
     if (!empty($dcmFiles)) {
+        $arrList['puid'] = $subdirectory;
         $firstDcmFile = $dcmFiles[0];
         exec("dcmdump " . escapeshellarg($firstDcmFile), $output, $return_var);
         foreach ($output as $line) {
             if (strpos($line, '(0008,0050)') !== false) {
                 $strAccn = explode('[', $line)[1];
                 $strAccn = explode(']', $strAccn)[0];
+                $arrList['accn'] = $strAccn;
                 break;
             }
         }
@@ -70,6 +72,7 @@ foreach ($subdirectories as $subdirectory) {
             if (strpos($line, '(0010,0010)') !== false) {
                 $strPatientName = explode('[', $line)[1];
                 $strPatientName = explode(']', $strPatientName)[0];
+                $arrList['patient_name'] = $strPatientName;
                 break;
             }
         }
@@ -77,6 +80,7 @@ foreach ($subdirectories as $subdirectory) {
             if (strpos($line, '(0008,0020)') !== false) {
                 $strStudyDate = explode('[', $line)[1];
                 $strStudyDate = explode(']', $strStudyDate)[0];
+                $arrList['study_date'] = $strStudyDate;
                 break;
             }
         }
@@ -84,10 +88,10 @@ foreach ($subdirectories as $subdirectory) {
             if (strpos($line, '(0008,0030)') !== false) {
                 $strStudyTime = explode('[', $line)[1];
                 $strStudyTime = explode(']', $strStudyTime)[0];
+                $arrList['study_time'] = $strStudyTime;
                 break;
             }
         }
-        $strList .= htmlspecialchars($subdirectory) . " " . htmlspecialchars($strAccn) . " " . htmlspecialchars($strPatientName) . " " . htmlspecialchars($strStudyDate) . " " . htmlspecialchars($strStudyTime) . "<br>";
     }
 }
 
@@ -129,7 +133,13 @@ if($_GET['action'] == 'Rule') {
     echo '<br><br>';
     //display strList
     echo '<H3>Subdirectories in ' . $dir . ':</H3>';
-    echo $strList;
+    foreach ($arrList as $key => $value) {
+        if($key == 'puid') {
+            echo '<p><a href="setup_test.php?action=Rule2&rec=' . $intRule . '&rule=' . $value . '">' . $value . '</a></p>';
+        } else {
+            echo '<p>' . $key . ': ' . $value . '</p>';
+        }
+    }
 }elseif($_GET['action'] == 'Rule2') {
     $intRule = $_GET['rec'];
     $strQuery = "SELECT * FROM conf_proc WHERE conf_proc_id = '$intRule'";
