@@ -97,7 +97,7 @@ foreach ($subdirectories as $subdirectory) {
                 break;
             }
         }
-        $arrList[] = [
+        $arrList = [
             'puid' => $strPUID,
             'accn' => $strAccn,
             'patient_name' => $strPatientName,
@@ -147,17 +147,11 @@ if($_GET['action'] == 'Rule') {
     echo '<table>';
     echo '<tr><th>PUID</th><th>Accession Number</th><th>Patient Name</th><th>Study Date</th><th>Study Time</th></tr>';
     foreach ($arrList as $key => $value) {
-        if($key == 'puid') {
-            echo '<tr><td><a href="setup_test.php?action=Rule2&rec=' . $intRule . '&rule=' . $value . '">' . $value . '</a></td>';
-        } elseif($key == 'accn') {
-            echo '<td>' . $value . '</td>';
-        } elseif($key == 'patient_name') {
-            echo '<td>' . $value . '</td>';
-        } elseif($key == 'study_date') {
-            echo '<td>' . $value . '</td>';
-        } elseif($key == 'study_time') {
-            echo '<td>' . $value . '</td></tr>';
-        }
+        echo '<tr><td><a href="setup_test.php?action=Rule2&rec=' . $intRule . '&rule=' . $value . '">' . $arrList['puid'] . '</a></td>';
+        echo '<td>' . $arrList['accn'] . '</td>';
+        echo '<td>' . $arrList['patient_name'] . '</td>';
+        echo '<td>' . $arrList['study_date'] . '</td>';
+        echo '<td>' . $arrList['study_time'] . '</td></tr>';
     }
 }elseif($_GET['action'] == 'Rule2') {
     $intRule = $_GET['rec'];
