@@ -1,7 +1,7 @@
 <?php
 	//License GPLv3
-	//Version 1.00.02
-	//2026-08-11
+	//Version 1.00.03
+	//2026-08-25
     session_start();
     header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
     header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
@@ -61,25 +61,29 @@ foreach ($subdirectories as $subdirectory) {
         exec("dcmdump " . escapeshellarg($firstDcmFile), $output, $return_var);
         foreach ($output as $line) {
             if (strpos($line, '(0008,0050)') !== false) {
-                $strAccn = trim(explode('[', $line)[1], ']');
+                $strAccn = explode('[', $line)[1];
+                $strAccn = explode(']', $strAccn)[0];
                 break;
             }
         }
         foreach ($output as $line) {
             if (strpos($line, '(0010,0010)') !== false) {
-                $strPatientName = trim(explode('[', $line)[1], ']');
+                $strPatientName = explode('[', $line)[1];
+                $strPatientName = explode(']', $strPatientName)[0];
                 break;
             }
         }
         foreach ($output as $line) {
             if (strpos($line, '(0008,0020)') !== false) {
-                $strStudyDate = trim(explode('[', $line)[1], ']');
+                $strStudyDate = explode('[', $line)[1];
+                $strStudyDate = explode(']', $strStudyDate)[0];
                 break;
             }
         }
         foreach ($output as $line) {
             if (strpos($line, '(0008,0030)') !== false) {
-                $strStudyTime = trim(explode('[', $line)[1], ']');
+                $strStudyTime = explode('[', $line)[1];
+                $strStudyTime = explode(']', $strStudyTime)[0];
                 break;
             }
         }
