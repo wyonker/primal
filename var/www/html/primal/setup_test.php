@@ -40,6 +40,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     } else if(isset($_POST['btnBack'])) {
         header("Location: setup.php?action=Rule&rec=" . $_GET['rec'] . "&rule=" . $_GET['rule']);
+        exit();
+    } else if(isset($_POST['btnReset'])) {
+        $strTestConditionValue = "";
+        $strTestActionValue = "";
     }
 }
 
@@ -127,17 +131,24 @@ if($_GET['action'] == 'Rule') {
     echo '<tr><td>Result:</td>';
     echo '<td><input type="text" name="action_result" value ="' . $strTestActionResult . '" /></td></tr>';
     echo '<br>';
-    echo '<tr><td colspan="2"><input type="submit" name="btnTest" value="Test" /></td></tr>';
+    echo '<tr><td colspan="2"><input type="submit" name="btnTest" value="Test" /> <input type="submit" name="btnReset" value="Reset" /> <input type="submit" name="btnBack" value="Back" /></td></tr>';
     echo '</table>';
     echo '</form>';
     echo '<br><br>';
     //display strList
-    echo '<H3>Subdirectories in ' . $dir . ':</H3>';
+    echo '<table>';
+    echo '<tr><th>PUID</th><th>Accession Number</th><th>Patient Name</th><th>Study Date</th><th>Study Time</th></tr>';
     foreach ($arrList as $key => $value) {
         if($key == 'puid') {
-            echo '<p><a href="setup_test.php?action=Rule2&rec=' . $intRule . '&rule=' . $value . '">' . $value . '</a></p>';
-        } else {
-            echo '<p>' . $key . ': ' . $value . '</p>';
+            echo '<tr><td><a href="setup_test.php?action=Rule2&rec=' . $intRule . '&rule=' . $value . '">' . $value . '</a></td>';
+        } elseif($key == 'accn') {
+            echo '<td>' . $value . '</td>';
+        } elseif($key == 'patient_name') {
+            echo '<td>' . $value . '</td>';
+        } elseif($key == 'study_date') {
+            echo '<td>' . $value . '</td>';
+        } elseif($key == 'study_time') {
+            echo '<td>' . $value . '</td></tr>';
         }
     }
 }elseif($_GET['action'] == 'Rule2') {
