@@ -57,7 +57,11 @@ foreach (new FilesystemIterator($dir) as $fileInfo) {
 }
 // loop through the subdirectories and do dcmdump on the first .dcm file in each subdirectory
 $arrList = [];
+$intLC = 0;
 foreach ($subdirectories as $subdirectory) {
+    if($intLC >= 30) {
+        break;
+    }
     $subdirPath = $dir . '/' . $subdirectory;
     $dcmFiles = glob($subdirPath . '/*.dcm');
     if (!empty($dcmFiles)) {
@@ -102,6 +106,7 @@ foreach ($subdirectories as $subdirectory) {
         $arrList[$strPUID]['patient_name'] = $strPatientName;
         $arrList[$strPUID]['study_date'] = $strStudyDate;
         $arrList[$strPUID]['study_time'] = $strStudyTime;
+        $intLC++;
     }
 }
 
@@ -146,7 +151,7 @@ if($_GET['action'] == 'Rule') {
     echo '<tr><th>PUID</th><th>Accession Number</th><th>Patient Name</th><th>Study Date</th><th>Study Time</th></tr>';
     foreach ($arrList as $strPUID => $arrData) {
         echo '<tr>';
-        echo '<td>' . $arrData['puid'] . '</td>';
+        echo '<td><a href="setup_test.php?action=Test&rec=' . $intRule . '&rule=' . $_GET['rule'] . '&puid=' . $arrData['puid'] . '">' . $arrData['puid'] . '</a></td>';
         echo '<td>' . $arrData['accn'] . '</td>';
         echo '<td>' . $arrData['patient_name'] . '</td>';
         echo '<td>' . $arrData['study_date'] . '</td>';
