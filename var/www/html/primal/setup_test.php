@@ -38,6 +38,52 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         if($strTestConditionValue != "" && $strTestConditionValue != " ") {
             exec("prim_server -tc " . $_GET['rec'], $strTestConditionResult, $status);
         }
+    } else if(isset($_POST['btnBack'])) {
+        header("Location: setup.php?action=Rule&rec=" . $_GET['rec'] . "&rule=" . $_GET['rule']);
+    }
+}
+
+$dir = '/home/dicom/sent';
+$subdirectories = [];
+
+foreach (new FilesystemIterator($dir) as $fileInfo) {
+    if ($fileInfo->isDir()) {
+        $subdirectories[] = $fileInfo->getFilename();
+    }
+}
+// loop through the subdirectories and do dcmdump on the first .dcm file in each subdirectory
+$strList = "";
+foreach ($subdirectories as $subdirectory) {
+    $subdirPath = $dir . '/' . $subdirectory;
+    $dcmFiles = glob($subdirPath . '/*.dcm');
+    if (!empty($dcmFiles)) {
+        $firstDcmFile = $dcmFiles[0];
+        exec("dcmdump " . escapeshellarg($firstDcmFile), $output, $return_var);
+        foreach ($output as $line) {
+            if (strpos($line, '(0008,0050)') !== false) {
+                $strAccn = trim(explode('[', $line)[1], ']');
+                break;
+            }
+        }
+        foreach ($output as $line) {
+            if (strpos($line, '(0010,0010)') !== false) {
+                $strPatientName = trim(explode('[', $line)[1], ']');
+                break;
+            }
+        }
+        foreach ($output as $line) {
+            if (strpos($line, '(0008,0020)') !== false) {
+                $strStudyDate = trim(explode('[', $line)[1], ']');
+                break;
+            }
+        }
+        foreach ($output as $line) {
+            if (strpos($line, '(0008,0030)') !== false) {
+                $strStudyTime = trim(explode('[', $line)[1], ']');
+                break;
+            }
+        }
+        $strList .= htmlspecialchars($subdirectory) . " " . htmlspecialchars($strAccn) . " " . htmlspecialchars($strPatientName) . " " . htmlspecialchars($strStudyDate) . " " . htmlspecialchars($strStudyTime) . "<br>";
     }
 }
 
@@ -76,6 +122,10 @@ if($_GET['action'] == 'Rule') {
     echo '<tr><td colspan="2"><input type="submit" name="btnTest" value="Test" /></td></tr>';
     echo '</table>';
     echo '</form>';
+    echo '<br><br>';
+    //display strList
+    echo '<H3>Subdirectories in ' . $dir . ':</H3>';
+    echo $strList;
 }elseif($_GET['action'] == 'Rule2') {
     $intRule = $_GET['rec'];
     $strQuery = "SELECT * FROM conf_proc WHERE conf_proc_id = '$intRule'";
@@ -107,7 +157,7 @@ if($_GET['action'] == 'Rule') {
     echo '<tr><td>Result:</td>';
     echo '<td><input type="text" name="action_result" value ="' . $strTestActionResult . '" /></td></tr>';
     echo '<br>';
-    echo '<tr><td colspan="2"><input type="submit" name="btnTest" value="Test" /></td></tr>';
+    echo '<tr><td colspan="2"><input type="submit" name="btnTest" value="Test" /><input type="submit" name="btnBack" value="Back" /></td></tr>';
     echo '</table>';
     echo '</form>';
 }

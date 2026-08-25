@@ -849,8 +849,8 @@ int fRuleTagTest(int intConf_proc_id) {
         strCondTestResults = "No match found";
     }
 
-    std::regex patternAction(strActionValue);
-    strActionTestResults = std::regex_replace(strCondTestValue, pattern, patternAction);
+    //std::regex patternAction(strActionValue);
+    strActionTestResults = std::regex_replace(strCondTestValue, pattern, strActionValue);
 
     strLogMessage="RECV tag test results for conf_proc_id: " + std::to_string(intConf_proc_id) + "\n";
     strLogMessage+=" condition value to be tested: " + strCondTestValue + "\n";
