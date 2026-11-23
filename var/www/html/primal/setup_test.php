@@ -28,7 +28,9 @@ echo <<<EOT
 <BODY>
 EOT;
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if(isset($_POST['btnTest'])) {
+    if(isset($_GET['puid'])) {
+    
+    } else if(isset($_POST['btnTest'])) {
         $strTestConditionValue = $_POST['condition_value'];
         $strTestActionValue = $_POST['action_value'];
 
@@ -47,68 +49,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-$dir = '/home/dicom/sent';
-$subdirectories = [];
-
-foreach (new FilesystemIterator($dir) as $fileInfo) {
-    if ($fileInfo->isDir()) {
-        $subdirectories[] = $fileInfo->getFilename();
-    }
-}
-// loop through the subdirectories and do dcmdump on the first .dcm file in each subdirectory
-$arrList = [];
-$intLC = 0;
-foreach ($subdirectories as $subdirectory) {
-    if($intLC >= 30) {
-        break;
-    }
-    $subdirPath = $dir . '/' . $subdirectory;
-    $dcmFiles = glob($subdirPath . '/*.dcm');
-    if (!empty($dcmFiles)) {
-        $strPUID = $subdirectory;
-        //$arrList['puid'] = $subdirectory;
-        $firstDcmFile = $dcmFiles[0];
-        exec("dcmdump " . escapeshellarg($firstDcmFile), $output, $return_var);
-        foreach ($output as $line) {
-            if (strpos($line, '(0008,0050)') !== false) {
-                $strAccn = explode('[', $line)[1];
-                $strAccn = explode(']', $strAccn)[0];
-                //$arrList['accn'] = $strAccn;
-                break;
-            }
-        }
-        foreach ($output as $line) {
-            if (strpos($line, '(0010,0010)') !== false) {
-                $strPatientName = explode('[', $line)[1];
-                $strPatientName = explode(']', $strPatientName)[0];
-                //$arrList['patient_name'] = $strPatientName;
-                break;
-            }
-        }
-        foreach ($output as $line) {
-            if (strpos($line, '(0008,0020)') !== false) {
-                $strStudyDate = explode('[', $line)[1];
-                $strStudyDate = explode(']', $strStudyDate)[0];
-                //$arrList['study_date'] = $strStudyDate;
-                break;
-            }
-        }
-        foreach ($output as $line) {
-            if (strpos($line, '(0008,0030)') !== false) {
-                $strStudyTime = explode('[', $line)[1];
-                $strStudyTime = explode(']', $strStudyTime)[0];
-                //$arrList['study_time'] = $strStudyTime;
-                break;
-            }
-        }
-        $arrList[$strPUID]['puid'] = $strPUID;
-        $arrList[$strPUID]['accn'] = $strAccn;
-        $arrList[$strPUID]['patient_name'] = $strPatientName;
-        $arrList[$strPUID]['study_date'] = $strStudyDate;
-        $arrList[$strPUID]['study_time'] = $strStudyTime;
-        $intLC++;
-    }
-}
+$strQuery = "SELECT sent_dir FROM conf_rec WHERE conf_rec_id = '" . $_GET['rec'] . "'";
+$result = mysqli_query($conn, $strQuery);
+$row = mysqli_fetch_assoc($result);
+$dir = $row['sent_dir'];
 
 Display_Header2();
 echo "<H2>System Setup</H2>";
@@ -121,6 +65,67 @@ if($_GET['action'] != 'defaults') {
 	echo '<H3><a href="setup.php">Normal</a></H3>';
 }
 if($_GET['action'] == 'Rule') {
+    $subdirectories = [];
+
+    foreach (new FilesystemIterator($dir) as $fileInfo) {
+        if ($fileInfo->isDir()) {
+            $subdirectories[] = $fileInfo->getFilename();
+        }
+    }
+    // loop through the subdirectories and do dcmdump on the first .dcm file in each subdirectory
+    $arrList = [];
+    $intLC = 0;
+    foreach ($subdirectories as $subdirectory) {
+        if($intLC >= 30) {
+            break;
+        }
+        $subdirPath = $dir . '/' . $subdirectory;
+        $dcmFiles = glob($subdirPath . '/*.dcm');
+        if (!empty($dcmFiles)) {
+            $strPUID = $subdirectory;
+            //$arrList['puid'] = $subdirectory;
+            $firstDcmFile = $dcmFiles[0];
+            exec("dcmdump " . escapeshellarg($firstDcmFile), $output, $return_var);
+            foreach ($output as $line) {
+                if (strpos($line, '(0008,0050)') !== false) {
+                    $strAccn = explode('[', $line)[1];
+                    $strAccn = explode(']', $strAccn)[0];
+                    //$arrList['accn'] = $strAccn;
+                    break;
+                }
+            }
+            foreach ($output as $line) {
+                if (strpos($line, '(0010,0010)') !== false) {
+                    $strPatientName = explode('[', $line)[1];
+                    $strPatientName = explode(']', $strPatientName)[0];
+                    //$arrList['patient_name'] = $strPatientName;
+                    break;
+                }
+            }
+            foreach ($output as $line) {
+                if (strpos($line, '(0008,0020)') !== false) {
+                    $strStudyDate = explode('[', $line)[1];
+                    $strStudyDate = explode(']', $strStudyDate)[0];
+                    //$arrList['study_date'] = $strStudyDate;
+                    break;
+                }
+            }
+            foreach ($output as $line) {
+                if (strpos($line, '(0008,0030)') !== false) {
+                    $strStudyTime = explode('[', $line)[1];
+                    $strStudyTime = explode(']', $strStudyTime)[0];
+                    //$arrList['study_time'] = $strStudyTime;
+                    break;
+                }
+            }
+            $arrList[$strPUID]['puid'] = $strPUID;
+            $arrList[$strPUID]['accn'] = $strAccn;
+            $arrList[$strPUID]['patient_name'] = $strPatientName;
+            $arrList[$strPUID]['study_date'] = $strStudyDate;
+            $arrList[$strPUID]['study_time'] = $strStudyTime;
+            $intLC++;
+        }
+    }
     $intRule = $_GET['rec'];
     $strQuery = "SELECT * FROM conf_proc WHERE conf_proc_id = '$intRule'";
     $result = mysqli_query($conn, $strQuery);
@@ -148,16 +153,64 @@ if($_GET['action'] == 'Rule') {
     echo '<br><br>';
     //display strList
     echo '<table>';
+    echo '<tr><th>Using ' . $dir . ' directory</th></tr>';
     echo '<tr><th>PUID</th><th>Accession Number</th><th>Patient Name</th><th>Study Date</th><th>Study Time</th></tr>';
     foreach ($arrList as $strPUID => $arrData) {
         echo '<tr>';
-        echo '<td><a href="setup_test.php?action=Test&rec=' . $intRule . '&rule=' . $_GET['rule'] . '&puid=' . $arrData['puid'] . '">' . $arrData['puid'] . '</a></td>';
+        echo '<td><a href="setup_test.php?action=TestDir&rec=' . $intRule . '&rule=' . $_GET['rule'] . '&puid=' . $arrData['puid'] . '">' . $arrData['puid'] . '</a></td>';
         echo '<td>' . $arrData['accn'] . '</td>';
         echo '<td>' . $arrData['patient_name'] . '</td>';
         echo '<td>' . $arrData['study_date'] . '</td>';
         echo '<td>' . $arrData['study_time'] . '</td>';
         echo '</tr>';
     }
+}elseif($_GET['action'] == 'TestDir') {
+
+    $intRule = $_GET['rec'];
+    $strQuery = "SELECT * FROM conf_proc WHERE conf_proc_id = '$intRule'";
+    $result = mysqli_query($conn, $strQuery);
+    $row = mysqli_fetch_assoc($result);
+    $strTestConditionRule = $row["proc_cond"];
+    $strTestActionCondition = $row["proc_action_value"];
+
+    $subdirPath = $dir . '/' . $_GET['puid'];
+    $dcmFiles = glob($subdirPath . '/*.dcm');
+    $strQuery = "SELECT proc_tag FROM conf_proc WHERE conf_proc_id = '$_GET[rule]'";
+    $result = mysqli_query($conn, $strQuery);
+    $row = mysqli_fetch_assoc($result);
+    $strProcTag = $row["proc_tag"];
+
+    if (!empty($dcmFiles)) {
+        $strPUID = $_GET['puid'];
+        $firstDcmFile = $dcmFiles[0];
+        exec("dcmdump " . escapeshellarg($firstDcmFile), $output, $return_var);
+        foreach ($output as $line) {
+            if (strpos($line, '(' . $strProcTag . ')') !== false) {
+                $strTag = explode('[', $line)[1];
+                $strTag = explode(']', $strTag)[0];
+                $strTestConditionValue = $strTag;
+                break;
+            }
+        }
+    }
+    echo '<form method="post" action="setup_test.php?action=Rule2&rec=' . $intRule . '&rule=' . $_GET['rule'] . '">';
+    echo '<table>';
+    echo '<tr><td>Condition Value to be tested:</td>';
+    echo '<td><input type="text" name="condition_value" value ="' . $strTestConditionValue . '" /></td></tr>';
+    echo '<tr><td>' . 'Rule Condition:</td>';
+    echo '<td><input type="text" name="condition_rule" value ="' . $strTestConditionRule . '" /></td></tr>';
+    echo '<tr><td>Result:</td>';
+    echo '<td><input type="text" name="condition_result" value ="' . $strTestConditionResult . '" /></td></tr>';
+    echo '<br>';
+    echo '<tr><td>' . 'Action Rule:</td>';
+    echo '<td><input type="text" name="action_condition" value ="' . $strTestActionCondition . '" /></td></tr>';
+    echo '<tr><td>Result:</td>';
+    echo '<td><input type="text" name="action_result" value ="' . $strTestActionResult . '" /></td></tr>';
+    echo '<br>';
+    echo '<tr><td colspan="2"><input type="submit" name="btnTest" value="Test" /> <input type="submit" name="btnReset" value="Reset" /> <input type="submit" name="btnBack" value="Back" /></td></tr>';
+    echo '</table>';
+    echo '</form>';
+    echo '<br><br>';
 }elseif($_GET['action'] == 'Rule2') {
     $intRule = $_GET['rec'];
     $strQuery = "SELECT * FROM conf_proc WHERE conf_proc_id = '$intRule'";
