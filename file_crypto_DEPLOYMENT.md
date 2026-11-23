@@ -107,9 +107,10 @@ Enforcement is **server-side** (version-independent, fully in your control):
    ssl-key=/etc/primal/primal-client-key.pem
    ```
 
-The code **verifies** TLS is actually in effect after connecting (checks
-`Ssl_cipher`) and **fails closed** if the session is not encrypted — it will
-not transmit or use the MK over cleartext.
+The code reads `[client]` options from `my.cnf` (so the `ssl-ca` above takes
+effect), requests `SSL_MODE_REQUIRED`, then **verifies** TLS is actually in
+effect after connecting (via `mysql_get_ssl_cipher()`) and **fails closed** if
+the session is not encrypted — it will not transmit or use the MK over cleartext.
 
 ---
 
@@ -205,9 +206,11 @@ this is not yet implemented.
 ## 10. Build
 
 ```bash
-# With MySQL-backed MK lookup (RHEL 10, OpenSSL 3.x + Connector/C++):
-g++ -std=c++20 -DPRIMAL_WITH_MYSQL file_crypto.cpp -c -I/usr/include/cppconn
-#   link: -lssl -lcrypto -lmysqlcppconn
+# With MySQL-backed MK lookup (RHEL 10, OpenSSL 3.x + MySQL C API):
+g++ -std=c++20 -DPRIMAL_WITH_MYSQL file_crypto.cpp -c $(mysql_config --cflags)
+#   link: $(mysql_config --libs) -lssl -lcrypto
+#   (mariadb_config works the same if only MariaDB Connector/C is installed;
+#    install headers via `dnf install mysql-devel` or `mariadb-connector-c-devel`)
 
 # Crypto-core self-test, no DB (proves round-trip):
 g++ -std=c++20 -DFILE_CRYPTO_DEMO file_crypto.cpp -o file_crypto -lssl -lcrypto

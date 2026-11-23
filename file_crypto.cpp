@@ -51,15 +51,16 @@
 // ============================================================================
 //
 // Requires OpenSSL 3.x (the RHEL 10 system OpenSSL); also builds on 1.1.1.
-// The MySQL-backed layer requires MySQL Connector/C++ (JDBC-style cppconn, as
-// used elsewhere in PRIMAL) and is compiled only when PRIMAL_WITH_MYSQL is
-// defined. The crypto core (the *WithKey functions) needs only OpenSSL.
+// The MySQL-backed layer uses the MySQL C API (libmysqlclient / MariaDB
+// Connector/C) and is compiled only when PRIMAL_WITH_MYSQL is defined. The
+// crypto core (the *WithKey functions) needs only OpenSSL.
 //
 // Build (core self-test, no DB):
 //   g++ -std=c++20 -DFILE_CRYPTO_DEMO file_crypto.cpp -o file_crypto -lssl -lcrypto
-// Build (with MySQL-backed MK lookup):
-//   g++ -std=c++20 -DPRIMAL_WITH_MYSQL file_crypto.cpp -c \
-//       -I/usr/include/cppconn -lssl -lcrypto -lmysqlcppconn
+// Build (with MySQL-backed MK lookup) -- use mysql_config for flags:
+//   g++ -std=c++20 -DPRIMAL_WITH_MYSQL file_crypto.cpp -c $(mysql_config --cflags)
+//   # link: $(mysql_config --libs) -lssl -lcrypto
+//   # (mariadb_config works the same if only MariaDB Connector/C is installed)
 
 #include <openssl/evp.h>
 #include <openssl/rand.h>
@@ -123,7 +124,7 @@ std::string decryptFileWithKey(const std::string& encFileName,
 std::vector<unsigned char> decodeMasterKey(const std::string& encoded);
 
 #ifdef PRIMAL_WITH_MYSQL
-// ---- MySQL-backed layer (requires MySQL Connector/C++) ---------------------
+// ---- MySQL-backed layer (requires the MySQL C API / libmysqlclient) --------
 
 // Verify host identity (if db.expectedHostUuid is set). Throws (fails closed)
 // on mismatch or if the UUID cannot be read when a match is required.
@@ -436,18 +437,19 @@ std::string decryptFileWithKey(const std::string& encFileName,
 
 // ============================================================================
 // MySQL-backed layer: fetch MK from primal.config on the configured host.
-// Matches PRIMAL's JDBC-style MySQL Connector/C++ usage (get_driver_instance,
-// connect(url,user,pass), setSchema, prepareStatement).
+// Uses the MySQL C API (libmysqlclient / MariaDB Connector/C): mysql_init,
+// mysql_real_connect, mysql_real_query, mysql_store_result, mysql_fetch_row.
 // ============================================================================
 #ifdef PRIMAL_WITH_MYSQL
-#include <cppconn/driver.h>
-#include <cppconn/connection.h>
-#include <cppconn/statement.h>
-#include <cppconn/prepared_statement.h>
-#include <cppconn/resultset.h>
-#include <cppconn/exception.h>
+#include <mysql.h>
 
 namespace {
+
+// RAII wrappers for the C API handles so they are released on every path.
+struct MysqlDeleter    { void operator()(MYSQL* m)     const { if (m) mysql_close(m); } };
+struct MysqlResDeleter { void operator()(MYSQL_RES* r) const { if (r) mysql_free_result(r); } };
+using MysqlPtr    = std::unique_ptr<MYSQL, MysqlDeleter>;
+using MysqlResPtr = std::unique_ptr<MYSQL_RES, MysqlResDeleter>;
 
 std::string toLowerTrim(std::string s) {
     s = trim(s);
@@ -486,56 +488,92 @@ std::vector<unsigned char> loadMasterKey(const MasterKeyDbConfig& db) {
     // Fail closed if this is not the host we are bound to.
     verifyHostIdentity(db);
 
-    try {
-        sql::Driver* driver = get_driver_instance();
-        const std::string url = "tcp://" + db.host + ":" + std::to_string(db.port);
+    // NOTE: for a long-running / multithreaded receiver, call
+    // mysql_library_init() once at process start and mysql_library_end() at
+    // exit, plus mysql_thread_init()/mysql_thread_end() per worker thread.
+    // A lone call here still works, since mysql_init() auto-initializes.
+    MysqlPtr conn(mysql_init(nullptr));
+    if (!conn)
+        throw std::runtime_error("mysql_init failed (out of memory)");
 
-        // TLS: the hard enforcement is server-side -- the MK account MUST be
-        // created WITH `REQUIRE SSL` (or REQUIRE X509) so the server rejects any
-        // cleartext connection, and the client must trust the server CA (set
-        // ssl-ca in the client my.cnf / connector config). Connector/C++ then
-        // negotiates TLS automatically. Rather than depend on version-specific
-        // client SSL options, we VERIFY below that the live session is actually
-        // encrypted and fail closed if it is not. See the deployment file.
-        std::unique_ptr<sql::Connection> con(
-            driver->connect(url, db.user, db.password));
-        con->setSchema(db.schema);
+    // Honor [client] options (e.g. ssl-ca) from the client my.cnf, so the CA
+    // configured per the deployment file takes effect.
+    mysql_options(conn.get(), MYSQL_READ_DEFAULT_GROUP, "client");
 
-        if (db.requireTls) {
-            std::unique_ptr<sql::Statement> st(con->createStatement());
-            std::unique_ptr<sql::ResultSet> srs(
-                st->executeQuery("SHOW SESSION STATUS LIKE 'Ssl_cipher'"));
-            std::string cipher;
-            if (srs->next()) cipher = srs->getString(2);  // Value column
-            if (cipher.empty())
-                throw std::runtime_error(
-                    "TLS required but the MySQL session is NOT encrypted "
-                    "(Ssl_cipher is empty). Refusing to transmit the master "
-                    "key in cleartext. Create the account WITH REQUIRE SSL and "
-                    "configure the client CA.");
-        }
-
-        std::unique_ptr<sql::PreparedStatement> ps(con->prepareStatement(
-            "SELECT " + db.valueColumn + " FROM " + db.table +
-            " WHERE " + db.nameColumn + " = ?"));
-        ps->setString(1, db.keyName);
-        std::unique_ptr<sql::ResultSet> rs(ps->executeQuery());
-
-        if (!rs->next())
-            throw std::runtime_error("master key row not found: " + db.nameColumn +
-                                     " = '" + db.keyName + "'");
-        std::string encoded = rs->getString(1);
-        if (rs->next())
-            throw std::runtime_error("multiple master key rows found for " +
-                                     db.keyName + "; refusing to guess");
-
-        std::vector<unsigned char> key = decodeMasterKey(encoded);
-        scrub(encoded);  // best effort; std::string from the driver
-        return key;
-    } catch (const sql::SQLException& e) {
-        throw std::runtime_error(std::string("MySQL error loading master key: ") +
-                                 e.what());
+    // TLS: require an encrypted connection. The two client libraries spell this
+    // differently -- MariaDB Connector/C (the RHEL 10 system client) uses
+    // MYSQL_OPT_SSL_ENFORCE, while MySQL's libmysqlclient uses
+    // MYSQL_OPT_SSL_MODE = SSL_MODE_REQUIRED -- so branch on the MariaDB macro.
+    // For stronger MITM protection once the CA is deployed, additionally set
+    // MYSQL_OPT_SSL_VERIFY_SERVER_CERT (MariaDB) or SSL_MODE_VERIFY_CA (MySQL).
+    // Regardless, we verify after connecting that the session is actually
+    // encrypted (mysql_get_ssl_cipher) and fail closed, which together with
+    // server-side `REQUIRE SSL` is authoritative.
+    if (db.requireTls) {
+#if defined(MARIADB_BASE_VERSION) || defined(MARIADB_PACKAGE_VERSION)
+        char enforce = 1;  // my_bool; read as a single byte by the driver
+        mysql_options(conn.get(), MYSQL_OPT_SSL_ENFORCE, &enforce);
+#else
+        unsigned int ssl_mode = SSL_MODE_REQUIRED;
+        mysql_options(conn.get(), MYSQL_OPT_SSL_MODE, &ssl_mode);
+#endif
     }
+
+    if (!mysql_real_connect(conn.get(), db.host.c_str(), db.user.c_str(),
+                            db.password.c_str(), db.schema.c_str(),
+                            db.port, nullptr, 0))
+        throw std::runtime_error(std::string("MySQL connect failed: ") +
+                                 mysql_error(conn.get()));
+
+    if (db.requireTls) {
+        const char* cipher = mysql_get_ssl_cipher(conn.get());
+        if (cipher == nullptr || *cipher == '\0')
+            throw std::runtime_error(
+                "TLS required but the MySQL session is NOT encrypted. Refusing "
+                "to transmit the master key in cleartext. Create the account "
+                "WITH REQUIRE SSL and configure the client CA (ssl-ca).");
+    }
+
+    // Parameterize the only variable value (keyName) by escaping it. The table
+    // and column identifiers come from trusted configuration, not user input,
+    // and cannot be bound as parameters anyway.
+    std::string esc(db.keyName.size() * 2 + 1, '\0');
+    unsigned long escLen = mysql_real_escape_string(
+        conn.get(), esc.data(), db.keyName.data(),
+        static_cast<unsigned long>(db.keyName.size()));
+    esc.resize(escLen);
+
+    const std::string query =
+        "SELECT " + db.valueColumn + " FROM " + db.table +
+        " WHERE " + db.nameColumn + " = '" + esc + "'";
+
+    if (mysql_real_query(conn.get(), query.c_str(),
+                         static_cast<unsigned long>(query.size())) != 0)
+        throw std::runtime_error(std::string("MySQL query failed: ") +
+                                 mysql_error(conn.get()));
+
+    MysqlResPtr res(mysql_store_result(conn.get()));
+    if (!res)
+        throw std::runtime_error(std::string("MySQL store_result failed: ") +
+                                 mysql_error(conn.get()));
+
+    const my_ulonglong rows = mysql_num_rows(res.get());
+    if (rows == 0)
+        throw std::runtime_error("master key row not found: " + db.nameColumn +
+                                 " = '" + db.keyName + "'");
+    if (rows > 1)
+        throw std::runtime_error("multiple master key rows found for " +
+                                 db.keyName + "; refusing to guess");
+
+    MYSQL_ROW row = mysql_fetch_row(res.get());
+    unsigned long* lengths = mysql_fetch_lengths(res.get());
+    if (!row || !row[0] || !lengths)
+        throw std::runtime_error("master key value is NULL or unreadable");
+
+    std::string encoded(row[0], lengths[0]);
+    std::vector<unsigned char> key = decodeMasterKey(encoded);
+    scrub(encoded);  // best effort
+    return key;
 }
 
 std::string encryptFile(const std::string& fileName, const MasterKeyDbConfig& db) {
