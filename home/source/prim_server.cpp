@@ -54,9 +54,14 @@ With a large chunck of stuff now being in the DB, let work needs to be done here
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
 #include <regex>
+#include <stdexcept>
+#include <system_error>
+
+// PHI file encryption (envelope encryption with DB-sourced master key).
+// Defining PRIMAL_WITH_MYSQL exposes the MySQL-backed MasterKeySession.
+#define PRIMAL_WITH_MYSQL 1
+#include "file_crypto.h"
 
 namespace {
     volatile sig_atomic_t do_shutdown = 0;
@@ -256,28 +261,6 @@ std::size_t fWriteLog(std::string strLogMessage, std::string strLogFile) {
     return 0;
 }
 
-std::string fHexToBin(std::string hex) {
-    std::string bin;
-    bin.reserve(hex.length() / 2);
-    for (std::size_t i = 0; i < hex.length(); i += 2) {
-        std::string byteString = hex.substr(i, 2);
-        char byte = static_cast<char>(strtol(byteString.c_str(), nullptr, 16));
-        bin.push_back(byte);
-    }
-    return bin;
-}
-
-std::string fBinToHex(std::string bin) {
-    std::string hex;
-    hex.reserve(bin.length() * 2);
-    const char hexDigits[] = "0123456789ABCDEF";
-    for (unsigned char c : bin) {
-        hex.push_back(hexDigits[(c >> 4) & 0xF]);
-        hex.push_back(hexDigits[c & 0xF]);
-    }
-    return hex;
-}
-
 std::string fGetTagValue(std::string strTagID, std::string strDcmDump, std::size_t intType, std::size_t intOrder){
     std::size_t intFound, intEOL, intBracket, intBracketClose;
     std::string strReturn, strTemp, strTagType;
@@ -329,6 +312,13 @@ std::string fGetTagValue(std::string strTagID, std::string strDcmDump, std::size
 }
 
 int ReadDBConfFile() {
+    // Load the DB config exactly once. The connection parameters do not change
+    // at runtime, so loading once makes the global mainDB effectively immutable
+    // after startup, which removes the data race between the receive/process/send
+    // threads that all call this. std::call_once supplies the memory barriers so
+    // every thread sees the fully-populated mainDB.
+    static std::once_flag onceFlag;
+    std::call_once(onceFlag, []() {
     std::string strLine, strKey, strValue;
     std::size_t intPOS, intStartPOS, intEndConf=0;
     std::ifstream infile("/etc/primal/primal.db", std::ifstream::in);
@@ -369,102 +359,32 @@ int ReadDBConfFile() {
         }
     }
     infile.close();
+    });
 
     return 0;
 }
 
-bool encryptFile(const std::string& inputFile, const std::string& outputFile, const unsigned char* key, const unsigned char* iv) {
-    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-    if (!ctx) return false;
-
-    if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv)) {
-        EVP_CIPHER_CTX_free(ctx);
-        return false;
+// Centralized DB connection. Loads config (once), inits the handle, enables
+// reconnect, and connects with the correct NULL-check ordering. Returns NULL on
+// failure (the caller must handle it). strSchema empty => the main DB
+// (mainDB.DBNAME); pass e.g. "mirth_primal" for the HL7 database.
+MYSQL* connectMainDB(const std::string& strSchema, const std::string& strLogPrefix) {
+    ReadDBConfFile();
+    MYSQL* conn = mysql_init(NULL);
+    if (!conn) {
+        fWriteLog(strLogPrefix + "  MySQL Initilization failed.", "/var/log/primal/primal.log");
+        return nullptr;
     }
-
-    std::ifstream inFile(inputFile, std::ios::binary);
-    std::ofstream outFile(outputFile, std::ios::binary);
-    if (!inFile.is_open() || !outFile.is_open()) {
-        EVP_CIPHER_CTX_free(ctx);
-        return false;
+    mysql_options(conn, MYSQL_OPT_RECONNECT, "1");
+    const std::string strDB = strSchema.empty() ? mainDB.DBNAME : strSchema;
+    if (!mysql_real_connect(conn, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(),
+                            mainDB.DBPASS.c_str(), strDB.c_str(), mainDB.intDBPORT, NULL, 0)) {
+        fWriteLog(strLogPrefix + "  MySQL connection failed: " + std::string(mysql_error(conn)),
+                  "/var/log/primal/primal.log");
+        mysql_close(conn);
+        return nullptr;
     }
-
-    std::vector<unsigned char> inBuf(4096);
-    std::vector<unsigned char> outBuf(4096 + EVP_MAX_IV_LENGTH); // Account for potential padding
-    int len;
-
-    while (inFile.read(reinterpret_cast<char*>(inBuf.data()), inBuf.size())) {
-        if (1 != EVP_EncryptUpdate(ctx, outBuf.data(), &len, inBuf.data(), inFile.gcount())) {
-            EVP_CIPHER_CTX_free(ctx);
-            return false;
-        }
-        outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
-    }
-
-    // Process remaining data from last read
-    if (inFile.gcount() > 0) {
-        if (1 != EVP_EncryptUpdate(ctx, outBuf.data(), &len, inBuf.data(), inFile.gcount())) {
-            EVP_CIPHER_CTX_free(ctx);
-            return false;
-        }
-        outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
-    }
-
-    if (1 != EVP_EncryptFinal_ex(ctx, outBuf.data(), &len)) {
-        EVP_CIPHER_CTX_free(ctx);
-        return false;
-    }
-    outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
-
-    EVP_CIPHER_CTX_free(ctx);
-    return true;
-}
-
-bool decryptFile(const std::string& inputFile, const std::string& outputFile, const unsigned char* key, const unsigned char* iv) {
-    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-    if (!ctx) return false;
-
-    if (1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv)) {
-        EVP_CIPHER_CTX_free(ctx);
-        return false;
-    }
-
-    std::ifstream inFile(inputFile, std::ios::binary);
-    std::ofstream outFile(outputFile, std::ios::binary);
-    if (!inFile.is_open() || !outFile.is_open()) {
-        EVP_CIPHER_CTX_free(ctx);
-        return false;
-    }
-
-    std::vector<unsigned char> inBuf(4096);
-    std::vector<unsigned char> outBuf(4096 + EVP_MAX_IV_LENGTH); // Account for potential padding
-    int len;
-
-    while (inFile.read(reinterpret_cast<char*>(inBuf.data()), inBuf.size())) {
-        if (1 != EVP_DecryptUpdate(ctx, outBuf.data(), &len, inBuf.data(), inFile.gcount())) {
-            EVP_CIPHER_CTX_free(ctx);
-            return false;
-        }
-        outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
-    }
-
-    // Process remaining data from last read
-    if (inFile.gcount() > 0) {
-        if (1 != EVP_DecryptUpdate(ctx, outBuf.data(), &len, inBuf.data(), inFile.gcount())) {
-            EVP_CIPHER_CTX_free(ctx);
-            return false;
-        }
-        outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
-    }
-
-    if (1 != EVP_DecryptFinal_ex(ctx, outBuf.data(), &len)) {
-        EVP_CIPHER_CTX_free(ctx);
-        return false;
-    }
-    outFile.write(reinterpret_cast<char*>(outBuf.data()), len);
-
-    EVP_CIPHER_CTX_free(ctx);
-    return true;
+    return conn;
 }
 
 int fStartReceivers() {
@@ -474,36 +394,12 @@ int fStartReceivers() {
     std::vector<int> vecTemp;
 
     MYSQL *mconnect;
-    MYSQL *mconnect2;
-    ReadDBConfFile();
 
     MYSQL_ROW row;
     MYSQL_RES *result;
 
-    mconnect=mysql_init(NULL);
-    mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
+    mconnect = connectMainDB("", "SRECV");
     if (!mconnect) {
-        strLogMessage="SRECV  MySQL Initilization failed.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return -1;
-    }
-    mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
-    if (!mconnect) {
-        strLogMessage="SRECV  MySQL connection failed.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return -1;
-    }
-    mconnect2=mysql_init(NULL);
-    mysql_options(mconnect2,MYSQL_OPT_RECONNECT,"1");
-    if (!mconnect2) {
-        strLogMessage="SRECV  MySQL 2nd Initilization failed.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return -1;
-    }
-    mconnect2=mysql_real_connect(mconnect2, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), "mirth_primal", mainDB.intDBPORT,NULL,0);
-    if (!mconnect2) {
-        strLogMessage="SRECV  MySQL 2nd connection failed.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         return -1;
     }
 
@@ -578,34 +474,40 @@ int fStartReceivers() {
                     strLogMessage = "SRECV  " + strCMD;
                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                     strStatus = exec(strCMD.c_str());
-                    //Get list of running storescp processes now
+                    //Get list of running storescp processes now and detect the one(s) we just started.
                     strCMD = "ps -ef|grep /home/dicom/bin/storescp|grep -v grep|tr -s \" \"|cut -d \" \" -f2";
                     strReturn = exec(strCMD.c_str());
                     std::istringstream isLine2(strReturn);
+                    bool bFoundNew = false;
                     while (std::getline(isLine2, strLine)) {
                         strLine.erase(std::remove(strLine.begin(), strLine.end(), ' '), strLine.end());
                         if(!strLine.empty()) {
-                            //auto it = std::find(vecTemp.begin(), vecTemp.end(), atoi(strLine.c_str()));
-                            //if(it == vecTemp.end()) {
-                            if(std::find(vecTemp.begin(), vecTemp.end(), atoi(strLine.c_str())) != vecTemp.end()) {
-                                strLogMessage = "SRECV  WARN did not find a new PID.";
-                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                            } else {
-                                //PID not found must be the one we just started
-                                vecPIDs.push_back(atoi(strLine.c_str()));
+                            int intPID = atoi(strLine.c_str());
+                            //A PID not in our known set is one we just started.  Record it AND add
+                            //it to vecTemp so the next receiver in this loop doesn't re-detect it.
+                            if(std::find(vecTemp.begin(), vecTemp.end(), intPID) == vecTemp.end()) {
+                                vecPIDs.push_back(intPID);
+                                vecTemp.push_back(intPID);
+                                bFoundNew = true;
                                 strLogMessage = "SRECV  Started new storescp process with PID: " + strLine;
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                             }
                         }
                     }
+                    if(!bFoundNew) {
+                        strLogMessage = "SRECV  WARN did not find a new PID for " + strRecNum + ".";
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
                 }
             }
         }
+        mysql_free_result(result);
     }
 
     strLogMessage="SRECV  Finished the receive process.";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
+    mysql_close(mconnect);
     mysql_thread_end();
     return 0;
 }
@@ -616,10 +518,20 @@ int fRecShutdown() {
     strLogMessage="Stopping the receive process.";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
 
-    //Now kill all the storescp processes we started
+    //Ask each storescp we started to stop gracefully first (SIGTERM) so it can
+    //finish any in-flight association and close files cleanly.
     for (auto pid : vecPIDs) {
-        strCMD = "kill -9 " + std::to_string(pid);
-        strLogMessage = "Killing storescp process with PID: " + std::to_string(pid);
+        strLogMessage = "Sending SIGTERM to storescp process with PID: " + std::to_string(pid);
+        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+        strCMD = "kill -TERM " + std::to_string(pid) + " 2>/dev/null";
+        exec(strCMD.c_str());
+    }
+    //Give them a few seconds to exit, then force-kill any that remain.
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    for (auto pid : vecPIDs) {
+        //kill -0 tests existence; only SIGKILL if still alive.
+        strCMD = "kill -0 " + std::to_string(pid) + " 2>/dev/null && kill -9 " + std::to_string(pid) + " 2>/dev/null";
+        strLogMessage = "Ensuring storescp process with PID " + std::to_string(pid) + " is stopped.";
         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         exec(strCMD.c_str());
     }
@@ -637,41 +549,19 @@ void fEndReceive() {
     struct PatientData pData2;
 
     MYSQL *mconnect;
-    MYSQL *mconnect2;
-    ReadDBConfFile();
 
     MYSQL_ROW row, row2;
     MYSQL_RES *result, *result2;
 
-    mconnect=mysql_init(NULL);
-    mysql_options(mconnect,MYSQL_OPT_RECONNECT,"1");
+    mconnect = connectMainDB("", "RECV");
     if (!mconnect) {
-        strLogMessage="RECV  MySQL Initilization failed.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return;
-    }
-    mconnect=mysql_real_connect(mconnect, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), mainDB.DBNAME.c_str(), mainDB.intDBPORT,NULL,0);
-    if (!mconnect) {
-        strLogMessage="RECV  MySQL connection failed.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return;
-    }
-    mconnect2=mysql_init(NULL);
-    mysql_options(mconnect2,MYSQL_OPT_RECONNECT,"1");
-    if (!mconnect2) {
-        strLogMessage="RECV  MySQL 2nd Initilization failed.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-        return;
-    }
-    mconnect2=mysql_real_connect(mconnect2, mainDB.DBHOST.c_str(), mainDB.DBUSER.c_str(), mainDB.DBPASS.c_str(), "mirth_primal", mainDB.intDBPORT,NULL,0);
-    if (!mconnect2) {
-        strLogMessage="RECV  MySQL 2nd connection failed.";
-        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
         return;
     }
 
     strThisServerName = exec("hostname");
-    strThisServerName.pop_back(); // Remove trailing newline
+    //Strip a trailing newline if present (guard against empty output).
+    if (!strThisServerName.empty() && strThisServerName.back() == '\n')
+        strThisServerName.pop_back();
 
     strLogMessage="Starting the end receive process.";
     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
@@ -696,7 +586,10 @@ void fEndReceive() {
                     strServerName = row[3];
                     strRecID = row[4];
                     strDateTime = row[5];
-                    //Get the timeout
+                    //Get the timeout.  Clear first so a missing conf_rec row doesn't
+                    //reuse the previous study's timeout / proc_dir values.
+                    strRecTimeout.clear();
+                    strProcDir.clear();
                     strQuery2="SELECT rec_time_out, proc_dir FROM conf_rec WHERE conf_rec_id = \"" + strRecID + "\" limit 1;";
                     mysql_query(mconnect, strQuery2.c_str());
                     if(*mysql_error(mconnect)) {
@@ -711,6 +604,8 @@ void fEndReceive() {
                             strRecTimeout = row2[0];
                             strProcDir = row2[1];
                         }
+                        mysql_free_result(result2);
+                        result2 = NULL;
                     }
                     try {
                         intRecTimeout = stoi(strRecTimeout);
@@ -729,13 +624,25 @@ void fEndReceive() {
                         mysql_query(mconnect, strQuery3.c_str());
                         continue;
                     }
-                    //First let's see if the time out has been reached.
-                    auto temp = std::filesystem::path(strFullPath);
-                    auto ftime = fs::last_write_time(temp);
+                    //First let's see if the time out has been reached.  Use the
+                    //newest mtime among the study's files (not just the directory's
+                    //own mtime), so a large final object still being written keeps
+                    //the study "active" until it is fully received.
                     auto now = fs::file_time_type::clock::now();
-                    //need to compare ftime to now and get the difference
                     std::chrono::seconds duration(intRecTimeout);
-                    if ((now - ftime) > duration) {
+                    auto newest = fs::last_write_time(std::filesystem::path(strFullPath));
+                    try {
+                        for (const auto& entry : fs::directory_iterator(strFullPath)) {
+                            if (entry.is_regular_file()) {
+                                auto ft = fs::last_write_time(entry);
+                                if (ft > newest) newest = ft;
+                            }
+                        }
+                    } catch (const std::exception& e) {
+                        strLogMessage = strPUID + " RECV  WARN scanning study directory: " + std::string(e.what());
+                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                    }
+                    if ((now - newest) > duration) {
                         strLogMessage = strPUID + " RECV  Ending receive";
                         fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                         strQuery3="UPDATE receive SET complete=1, tendrec=NOW() WHERE puid = \"" + strPUID + "\";";
@@ -768,16 +675,15 @@ void fEndReceive() {
                     }
                 }
             }
+            mysql_free_result(result);
+            result = NULL;
         }
         if(do_shutdown) {
-            mysql_library_end();
+            mysql_thread_end();
             return;
         }
         std::this_thread::sleep_for(std::chrono::seconds(3));
     }
-    
-    mysql_thread_end();
-    return;
 }
 
 int fRuleTagTest(int intConf_proc_id) {
@@ -1261,9 +1167,6 @@ void fSend() {
 
     int intNumRows, intStartSec, intNowSec, intDateCheck, intLC, intDone, intSend=0;
 
-    unsigned char key[32]; // AES-256 key
-    unsigned char iv[16];  // AES IV
-
     MYSQL *mconnect;
     MYSQL *mconnect2;
     ReadDBConfFile();
@@ -1743,70 +1646,56 @@ void fSend() {
                                 strLocation = row3[0];
                             }
                             if(strSendType == "1") {
-                                //Dicom type
-                                //Now we have all the info we need to send.  Let's build the command.  We need to do this for each ilocation.
-                                strQuery3 = "SELECT ifilename, fkey, fiv FROM image WHERE puid = '" + strPUID + "';";
-                                mysql_query(mconnect, strQuery3.c_str());
-                                if(*mysql_error(mconnect)) {
-                                    strLogMessage="SEND  SQL Error: ";
-                                    strLogMessage+=mysql_error(mconnect);
-                                    strLogMessage+="strQuery3 = " + strQuery3 + ".";
+                                //Dicom type.  Studies in temporary storage are plaintext .dcm, but a
+                                //study may also contain file_crypto-encrypted files (e.g. retrieved
+                                //from the archive).  Detect any encrypted files by their container
+                                //header and decrypt them to plaintext .dcm before sending; plaintext
+                                //files are sent as-is.
+                                std::vector<fs::path> vecEnc;
+                                for (const auto& entry : fs::directory_iterator(strLocation)) {
+                                    if (entry.is_regular_file() && isFileCryptoContainer(entry.path().string()))
+                                        vecEnc.push_back(entry.path());
+                                }
+                                std::vector<fs::path> vecTempDec;
+                                bool bSendOk = true;
+                                if (!vecEnc.empty()) {
+                                    //Decrypt with the master key from the configured DB (fail closed).
+                                    try {
+                                        MasterKeyDbConfig mkCfg;
+                                        mkCfg.host       = mainDB.DBHOST;
+                                        mkCfg.port       = mainDB.intDBPORT;
+                                        mkCfg.user       = mainDB.DBUSER;
+                                        mkCfg.password   = mainDB.DBPASS;
+                                        mkCfg.schema     = mainDB.DBNAME;
+                                        mkCfg.requireTls = !(mainDB.DBHOST == "localhost" || mainDB.DBHOST == "127.0.0.1");
+                                        MasterKeySession mkSession(mkCfg);
+                                        for (const auto& enc : vecEnc) {
+                                            std::string strDec = mkSession.decryptFile(enc.string());  //strips .enc -> plaintext
+                                            vecTempDec.push_back(fs::path(strDec));
+                                            strLogMessage = strPUID + " SEND  Decrypted " + enc.filename().string() + " for sending.";
+                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                        }
+                                    } catch (const std::exception& e) {
+                                        bSendOk = false;
+                                        strLogMessage = strPUID + " SEND  ERROR: decrypt-before-send failed: " + std::string(e.what());
+                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                    }
+                                }
+                                if (bSendOk) {
+                                    strLogMessage = strPUID + " SEND  Sending " + strAccn + " to " + strSendHIP + " at location " + strLocation + ".";
+                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                    fWriteLog(strLogMessage, "/var/log/primal/prim_server_out.log");
+                                    strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
+                                    strStatus = exec(strCMD.c_str());
+                                } else {
+                                    strLogMessage = strPUID + " SEND  ERROR: send aborted; could not decrypt all files (fail closed).";
                                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                                 }
-                                result3 = mysql_store_result(mconnect);
-                                if(result3) {
-                                    intNumRows = mysql_num_rows(result3);
-                                    if(intNumRows > 0) {
-                                        while ((row3 = mysql_fetch_row(result3))) {
-                                            strFileName = row3[0];
-                                            strFKey = row3[1];
-                                            strFIV = row3[2];
-                                            if(strFKey != "0" && strFIV != "0") {
-                                                //File is encrypted.  Decrypt it.
-                                                strFileName2 = strFileName;
-                                                if (strFileName2.length() >= 3) {
-                                                    strFileName2.replace(strFileName2.length() - 3, 3, "dcm");
-                                                } else {
-                                                    strLogMessage = strPUID + " SEND  WARN: Filename too short to replace extension for " + strFileName + ".";
-                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                                }
-                                                //need to declare fHexToBin and fBinToHex functions to convert hex strings to binary and vice versa
-                                                const unsigned char* strFKey2 = reinterpret_cast<const unsigned char*>(strFKey.c_str());
-                                                const unsigned char* strFIV2 = reinterpret_cast<const unsigned char*>(strFIV.c_str());
-                                                if(decryptFile(strLocation + "/" + strFileName , strLocation + "/" + strFileName2, strFKey2, strFIV2)) {
-                                                    strLogMessage = strPUID + " SEND  File decrypted successfully.";
-                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                                } else {
-                                                    strLogMessage = strPUID + " SEND  File decryption failed for " + strFileName + ".";
-                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                                }
-                                            }
-                                        }
-                                    }
+                                //Remove any temporary plaintext we created, leaving the .enc originals.
+                                for (const auto& p : vecTempDec) {
+                                    std::error_code ec;
+                                    fs::remove(p, ec);
                                 }
-                                strLogMessage = strPUID + " SEND  Sending " + strAccn + " to " + strSendHIP + " at location " + strLocation + ".";
-                                fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                fWriteLog(strLogMessage, "/var/log/primal/prim_server_out.log");
-                                strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
-                                strStatus = exec(strCMD.c_str());
-                                //Remove all decrypted files if there are any .bin files.
-                                /*
-                                for (const auto& entry : fs::directory_iterator(strLocation)) {
-                                    if (entry.is_regular_file()) {
-                                        std::string currentFile = entry.path().filename().string();
-                                        if (currentFile.length() >= 3) {
-                                            std::string fileExtension = currentFile.substr(currentFile.length() - 3);
-                                            if (fileExtension == "dcm") {
-                                                if(fs::exists(entry.path().replace_extension(".bin"))) {
-                                                    std::remove(entry.path().c_str());
-                                                    strLogMessage = strPUID + " SEND  Removed decrypted file " + currentFile + ".";
-                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                */
                             } else if (strSendType == "2") {
                                 //SCP type
                                 strLogMessage = strPUID + " SEND  Not implemented yet.";
@@ -1816,60 +1705,68 @@ void fSend() {
                                 strLogMessage = strPUID + " SEND  Not implemented yet.";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
                             } else if (strSendType == "4") {
-                                //Archive type
-                                strLogMessage = strPUID + " SEND  Sending " + strAccn + " to archive and encrypting at " + strSendHIP + " " + strSendPort + ".";
+                                //Archive type: encrypt the study with file_crypto, then copy the
+                                //encrypted copy to the configured archive directory (send_arc_dir).
+                                //The original study at strLocation is left untouched for the normal
+                                //post-send flow (move to sent_directory).
+                                strLogMessage = strPUID + " SEND  Archiving " + strAccn + " (encrypting with file_crypto) to " + strSendArcDir + ".";
                                 fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                //Encrypt files before moving to the archive directory.
-                                if(strSendHIP == "localhost" || strSendHIP == "127.0.0.1") {
-                                    //This allows the host to be addressed by name or IP and files not be encrypted.
-                                    //First let's check if the archive directory exists.  If not, create it.
-                                    if (!fs::exists(strSendArcDir)) {
-                                        if (fs::create_directories(strSendArcDir)) {
-                                            strLogMessage = strPUID + " SEND  Created archive directory " + strSendArcDir + ".";
-                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                        } else {
-                                            strLogMessage = strPUID + " SEND  Failed to create archive directory " + strSendArcDir + ".";
-                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                        }
-                                    }
-                                    //Move the study to the archive directory and encrypt the files.  This will be done in place.
-                                    fs::path archivePath = fs::path(strSendArcDir) / fs::path(strLocation).filename();
-                                    fs::create_directories(archivePath);
-                                    fs::rename(strLocation, archivePath);
-                                    strLocation = archivePath.string();
-                                    //archive type really only makes sense if storing locally.
-                                    if(strSendEncrypt == "1") {
-                                        for (const auto& entry : fs::directory_iterator(strLocation)) {
-                                            if (entry.is_regular_file()) {
-                                                RAND_bytes(key, sizeof(key));
-                                                RAND_bytes(iv, sizeof(iv));
+                                try {
+                                    //Master key is fetched from the configured DB (config table, conf_name='MK').
+                                    //For the separate-host design, point mkCfg.host at the dedicated MK host
+                                    //(e.g. dc2primal02), supply a least-privilege account, and set an
+                                    //expectedHostUuid; TLS is auto-enabled for any non-local host below.
+                                    MasterKeyDbConfig mkCfg;
+                                    mkCfg.host       = mainDB.DBHOST;
+                                    mkCfg.port       = mainDB.intDBPORT;
+                                    mkCfg.user       = mainDB.DBUSER;
+                                    mkCfg.password   = mainDB.DBPASS;
+                                    mkCfg.schema     = mainDB.DBNAME;
+                                    mkCfg.requireTls = !(mainDB.DBHOST == "localhost" || mainDB.DBHOST == "127.0.0.1");
+                                    MasterKeySession mkSession(mkCfg);  //fetch MK once; throws (fails closed) on any problem
 
-                                                if (encryptFile(entry.path().filename(), entry.path().filename().replace_extension(".bin"), key, iv)) {
-                                                    strQuery = "UPDATE image SET ifilename = '" + entry.path().filename().replace_extension(".bin").string() + "', fkey = '" + fBinToHex(std::string(reinterpret_cast<char*>(key), sizeof(key))) + "', fiv = '" + fBinToHex(std::string(reinterpret_cast<char*>(iv), sizeof(iv))) + "' WHERE PUID = '" + strPUID + "' AND filename = '" + entry.path().filename().string() + "' limit 1;";
-                                                    mysql_query(mconnect, strQuery.c_str());
-                                                    if(*mysql_error(mconnect)) {
-                                                        strLogMessage="SEND  SQL Error: ";
-                                                        strLogMessage+=mysql_error(mconnect);
-                                                        strLogMessage+="strQuery = " + strQuery + ".";
-                                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                                    }
-                                                    strLogMessage = strPUID + " SEND  File encrypted successfully.";
-                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                                } else {
-                                                    strLogMessage = strPUID + " SEND  File encryption failed for " + entry.path().filename().string() + ".";
-                                                    fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                                }
-                                            }
+                                    //Encrypt each study file in place -> <file>.enc.  Fail closed: if any
+                                    //file fails to encrypt, do not copy anything to the archive.
+                                    std::vector<fs::path> vecEnc;
+                                    bool bAllEnc = true;
+                                    for (const auto& entry : fs::directory_iterator(strLocation)) {
+                                        if (!entry.is_regular_file()) continue;
+                                        if (entry.path().extension() == ".enc") continue;
+                                        try {
+                                            std::string strEnc = mkSession.encryptFile(entry.path().string());
+                                            vecEnc.push_back(fs::path(strEnc));
+                                        } catch (const std::exception& e) {
+                                            bAllEnc = false;
+                                            strLogMessage = strPUID + " SEND  ERROR: file_crypto encryption failed for " + entry.path().filename().string() + ": " + e.what();
+                                            fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                            break;
                                         }
-                                    } else {
-                                        strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
-                                        strStatus = exec(strCMD.c_str());
                                     }
-                                } else {
-                                    strLogMessage = strPUID + " SEND  Sending to archive server.";
+
+                                    if (bAllEnc) {
+                                        //Copy the encrypted study to the configured archive directory.
+                                        fs::path archivePath = fs::path(strSendArcDir) / fs::path(strLocation).filename();
+                                        fs::create_directories(archivePath);
+                                        for (const auto& encFile : vecEnc) {
+                                            fs::copy_file(encFile, archivePath / encFile.filename(), fs::copy_options::overwrite_existing);
+                                        }
+                                        strLogMessage = strPUID + " SEND  Archived " + std::to_string(vecEnc.size()) + " encrypted file(s) to " + archivePath.string() + ".";
+                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                    } else {
+                                        strLogMessage = strPUID + " SEND  ERROR: archive aborted; nothing copied (fail closed).";
+                                        fWriteLog(strLogMessage, "/var/log/primal/primal.log");
+                                    }
+
+                                    //Remove the .enc temporaries from the working location, leaving the
+                                    //original .dcm files for the normal post-send flow.
+                                    for (const auto& encFile : vecEnc) {
+                                        std::error_code ec;
+                                        fs::remove(encFile, ec);
+                                    }
+                                } catch (const std::exception& e) {
+                                    //Master key unavailable, host identity/TLS check failed, etc.  Fail closed.
+                                    strLogMessage = strPUID + " SEND  ERROR: archive encryption aborted (master key unavailable?): " + e.what();
                                     fWriteLog(strLogMessage, "/var/log/primal/primal.log");
-                                    strCMD = "dcmsend -ll debug -aet " + strSendAET + " -aec " + strSendAEC + " " + strSendHIP + " " + strSendPort + " " + strLocation + "/*.dcm >> /var/log/primal/prim_server_out.log 2>&1";
-                                    strStatus = exec(strCMD.c_str());
                                 }
                             }
                             strLogMessage = strPUID + " SEND  Finished sending " + strAccn + " to " + strSendHIP + ".";

@@ -78,89 +78,10 @@
 #include <vector>
 
 // ============================================================================
-// Public interface
+// Public interface -- declared in the shared header so prim_server and other
+// PRIMAL translation units can call into this module.
 // ============================================================================
-
-// Where the master key lives. Defaults match the PRIMAL deployment; supply
-// credentials from /etc/primal/primal.conf -- do NOT hardcode them.
-struct MasterKeyDbConfig {
-    std::string  host        = "dc2primal02";
-    unsigned     port        = 3306;
-    std::string  user;                       // dedicated, least-privilege account
-    std::string  password;
-    std::string  schema      = "primal";
-    std::string  table       = "config";
-    std::string  nameColumn  = "conf_name";
-    std::string  valueColumn = "conf_value";
-    std::string  keyName     = "MK";
-    bool         requireTls  = true;          // verified after connect (see loadMasterKey)
-
-    // Host identity binding. If expectedHostUuid is non-empty, the service
-    // reads its own SMBIOS/BIOS UUID and REFUSES to run (fails closed) unless
-    // it matches. The SMBIOS UUID is preserved across a vMotion but is
-    // reassigned when a VM is cloned/exported, so this tolerates legitimate
-    // live migration while blocking a copied VM booted elsewhere. Leaving it
-    // empty disables the check (not recommended for production PHI).
-    std::string  expectedHostUuid;            // e.g. "42151c0a-....". Case-insensitive.
-    std::string  uuidPath = "/sys/class/dmi/id/product_uuid";  // root-readable on RHEL
-};
-
-// ---- Crypto core (OpenSSL only; master key supplied as 32 raw bytes) -------
-
-// Encrypt `fileName` under `masterKey` (must be 32 bytes). Writes
-// "<fileName>.enc" and returns its path. Throws std::runtime_error on failure.
-std::string encryptFileWithKey(const std::string& fileName,
-                               const std::vector<unsigned char>& masterKey);
-
-// Decrypt `encFileName` under `masterKey`. If `outFileName` is empty, a
-// trailing ".enc" is stripped (or ".dec" appended) to form the output path.
-// Throws on failure, including authentication failure if the file or its
-// wrapped key was tampered with, or the wrong master key was supplied.
-std::string decryptFileWithKey(const std::string& encFileName,
-                               const std::vector<unsigned char>& masterKey,
-                               const std::string& outFileName = "");
-
-// Decode a conf_value string (hex or base64) into a 32-byte master key.
-std::vector<unsigned char> decodeMasterKey(const std::string& encoded);
-
-#ifdef PRIMAL_WITH_MYSQL
-// ---- MySQL-backed layer (requires the MySQL C API / libmysqlclient) --------
-
-// Verify host identity (if db.expectedHostUuid is set). Throws (fails closed)
-// on mismatch or if the UUID cannot be read when a match is required.
-void verifyHostIdentity(const MasterKeyDbConfig& db);
-
-// Verify host identity, connect to the MK host over a TLS-verified session,
-// and fetch+decode the master key. Throws on any failure -- callers MUST NOT
-// fall back to writing plaintext.
-std::vector<unsigned char> loadMasterKey(const MasterKeyDbConfig& db);
-
-// Stateless convenience wrappers: fetch MK from MySQL, then encrypt / decrypt.
-// Each call re-fetches the key. For a long-running receiver, prefer
-// MasterKeySession below, which fetches once and holds the key in RAM only.
-std::string encryptFile(const std::string& fileName, const MasterKeyDbConfig& db);
-std::string decryptFile(const std::string& encFileName, const MasterKeyDbConfig& db,
-                        const std::string& outFileName = "");
-
-// RAM-only, lifetime-cached master key for an unattended service. Construct
-// once at startup: it verifies host identity and fetches the MK over TLS,
-// failing closed if either step fails (so a cloned/misplaced VM never starts
-// processing). The key lives only in this object's memory and is scrubbed on
-// destruction; it is never written to disk.
-class MasterKeySession {
-public:
-    explicit MasterKeySession(MasterKeyDbConfig db);
-    ~MasterKeySession();
-    MasterKeySession(const MasterKeySession&) = delete;
-    MasterKeySession& operator=(const MasterKeySession&) = delete;
-
-    std::string encryptFile(const std::string& fileName) const;
-    std::string decryptFile(const std::string& encFileName,
-                            const std::string& outFileName = "") const;
-private:
-    std::vector<unsigned char> mk_;
-};
-#endif
+#include "file_crypto.h"
 
 // ============================================================================
 // Implementation
@@ -330,6 +251,15 @@ std::vector<unsigned char> decodeMasterKey(const std::string& encoded) {
             std::to_string(key.size()));
     }
     return key;
+}
+
+bool isFileCryptoContainer(const std::string& path) {
+    std::ifstream in(path, std::ios::binary);
+    if (!in) return false;
+    char hdr[kMagic.size()];
+    in.read(hdr, static_cast<std::streamsize>(kMagic.size()));
+    if (static_cast<size_t>(in.gcount()) != kMagic.size()) return false;
+    return std::memcmp(hdr, kMagic.data(), kMagic.size()) == 0;
 }
 
 std::string encryptFileWithKey(const std::string& fileName,
@@ -649,4 +579,89 @@ int main(int argc, char** argv) {
     }
     return 0;
 }
+#endif  // FILE_CRYPTO_DEMO
+
+// ============================================================================
+// Operational CLI (for root): decrypt/encrypt a file by path, using the master
+// key from the DB -- the operator never handles key material.
+//   Build: g++ -std=c++20 -DPRIMAL_WITH_MYSQL -DFILE_CRYPTO_CLI file_crypto.cpp \
+//              $(mysql_config --cflags) -o file_crypto $(mysql_config --libs) -lssl -lcrypto
+//   Install: /usr/local/bin/file_crypto   (root-only; it reads DB credentials)
+//   Use:
+//     file_crypto decrypt <path.enc> [outpath]   # outpath defaults to stripping .enc
+//     file_crypto encrypt <path>     [--]        # writes <path>.enc
+//   The DB connection (and thus the 'MK' row) is read from /etc/primal/primal.db,
+//   the same config prim_server uses. Override the path with $PRIMAL_DB.
+// ============================================================================
+#ifdef FILE_CRYPTO_CLI
+#ifndef PRIMAL_WITH_MYSQL
+#error "FILE_CRYPTO_CLI requires PRIMAL_WITH_MYSQL (the DB-backed master key layer)."
 #endif
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+
+namespace {
+
+// Parse /etc/primal/primal.db (key=value lines) into a MasterKeyDbConfig, the
+// same file and keys prim_server's ReadDBConfFile uses.
+MasterKeyDbConfig loadCliDbConfig(const std::string& path) {
+    std::ifstream in(path);
+    if (!in)
+        throw std::runtime_error("cannot open DB config: " + path +
+                                 " (run as root?)");
+    MasterKeyDbConfig db;
+    std::string line;
+    while (std::getline(in, line)) {
+        std::size_t pos = line.find('=');
+        if (pos == std::string::npos) continue;
+        std::string key = trim(line.substr(0, pos));
+        std::string val = trim(line.substr(pos + 1));
+        if      (key == "DBHOST") db.host     = val;
+        else if (key == "DBNAME") db.schema   = val;
+        else if (key == "DBUSER") db.user     = val;
+        else if (key == "DBPASS") db.password = val;
+        else if (key == "DBPORT") db.port     = static_cast<unsigned>(std::strtoul(val.c_str(), nullptr, 10));
+    }
+    // Enforce TLS for any non-local MK host (see loadMasterKey).
+    db.requireTls = !(db.host == "localhost" || db.host == "127.0.0.1");
+    return db;
+}
+
+} // namespace
+
+int main(int argc, char** argv) {
+    try {
+        if (argc < 3) {
+            std::cerr << "usage:\n"
+                      << "  " << argv[0] << " decrypt <path.enc> [outpath]\n"
+                      << "  " << argv[0] << " encrypt <path>\n"
+                      << "Master key is read from the DB in /etc/primal/primal.db "
+                         "(override with $PRIMAL_DB).\n";
+            return 2;
+        }
+        const std::string cmd  = argv[1];
+        const std::string path = argv[2];
+        const std::string out  = (argc >= 4) ? argv[3] : "";
+
+        const char* dbEnv = std::getenv("PRIMAL_DB");
+        MasterKeyDbConfig db = loadCliDbConfig(dbEnv ? dbEnv : "/etc/primal/primal.db");
+        MasterKeySession session(db);  // fetches MK (fails closed on any problem)
+
+        if (cmd == "decrypt") {
+            std::string result = session.decryptFile(path, out);
+            std::cout << "Decrypted -> " << result << "\n";
+        } else if (cmd == "encrypt") {
+            std::string result = session.encryptFile(path);
+            std::cout << "Encrypted -> " << result << "\n";
+        } else {
+            std::cerr << "unknown command '" << cmd << "' (expected decrypt|encrypt)\n";
+            return 2;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << "\n";
+        return 1;
+    }
+    return 0;
+}
+#endif  // FILE_CRYPTO_CLI

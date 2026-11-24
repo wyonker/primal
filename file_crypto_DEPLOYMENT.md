@@ -219,3 +219,58 @@ KEY=$(openssl rand -hex 32)
 ./file_crypto dec sample.dcm.enc "$KEY" out.dcm
 cmp sample.dcm out.dcm && echo "round-trip OK"
 ```
+
+---
+
+## 11. Root CLI (manual decrypt / encrypt)
+
+For operators who need to decrypt (or encrypt) an archived study by hand, build
+`file_crypto` in `FILE_CRYPTO_CLI` mode. It pulls the master key from the DB
+itself, so **the operator never handles key material**.
+
+```bash
+# Build the DB-backed CLI:
+g++ -std=c++20 -DPRIMAL_WITH_MYSQL -DFILE_CRYPTO_CLI file_crypto.cpp \
+    $(mysql_config --cflags) -o file_crypto $(mysql_config --libs) -lssl -lcrypto
+
+# Install root-only (it reads DB credentials):
+sudo install -m 0750 -o root -g root file_crypto /usr/local/bin/file_crypto
+```
+
+Usage:
+
+```bash
+# Decrypt an archived file (outpath defaults to stripping the .enc suffix):
+sudo file_crypto decrypt /path/to/study/IMG0001.dcm.enc
+sudo file_crypto decrypt /path/to/study/IMG0001.dcm.enc /tmp/IMG0001.dcm
+
+# Encrypt a file (writes <path>.enc):
+sudo file_crypto encrypt /path/to/IMG0001.dcm
+```
+
+Details:
+
+- **DB config source.** The CLI reads the MK-host connection from
+  `/etc/primal/primal.db` (the same `DBHOST`/`DBNAME`/`DBUSER`/`DBPASS`/`DBPORT`
+  file `prim_server` uses), then fetches the `conf_name = 'MK'` row from the
+  `config` table. Point that file at the dedicated MK host (e.g. dc2primal02)
+  for the separate-host design. Override the path for a one-off with the
+  `PRIMAL_DB` environment variable:
+  ```bash
+  sudo PRIMAL_DB=/etc/primal/primal-archive.db file_crypto decrypt study.dcm.enc
+  ```
+- **TLS.** As in the service, TLS is auto-required for any non-local MK host and
+  the session is verified after connect; it fails closed if not encrypted
+  (see §4). A `localhost`/`127.0.0.1` host connects over the local socket
+  without TLS.
+- **Fail-closed.** Exits non-zero with a message if the master key can't be
+  fetched, the host/TLS checks fail, the file isn't a valid `file_crypto`
+  container, or authentication fails (wrong key / tampering). It never writes a
+  partial or wrong-key output.
+- **Restrict access.** The binary reads DB credentials and decrypts PHI, so keep
+  it `0750 root:root` (or a dedicated ops group) and audit its use.
+
+> The same `file_crypto` container format is produced by the archive send path
+> in `prim_server` and decrypted automatically before forwarding (the send path
+> detects encrypted files by their header via `isFileCryptoContainer`). This CLI
+> is the manual equivalent for ad-hoc recovery.
